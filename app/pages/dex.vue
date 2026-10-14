@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { PEOPLE, PEOPLE_LIST } from '../../shared/data/people'
 import { withJosa } from '../../shared/logic'
 import type { Rarity } from '../../shared/types'
-import { HIDDEN_LABEL, RARITY_LABEL, badgeOf, howToMeet } from '../utils/labels'
+import { HIDDEN_LABEL, RARITY_GUIDE, RARITY_LABEL, RARITY_NOTE, badgeOf, howToMeet } from '../utils/labels'
 
 const game = useGame()
 const filter = ref<Filter>('all')
@@ -29,6 +29,25 @@ const numberOf = (id: string) => PEOPLE_LIST.findIndex((p) => p.id === id) + 1
 const itemNames = computed(() =>
   Object.entries(game.state.items).sort((a, b) => b[1].localeCompare(a[1])).map(([name]) => name),
 )
+/** '등급 기준'은 첫 방문에 펼쳐 두고, 접거나 펼친 상태를 기억한다 */
+const GUIDE_KEY = 'my-day-people:rarity-guide'
+const guideOpen = ref(true)
+onMounted(() => {
+  try {
+    guideOpen.value = window.localStorage.getItem(GUIDE_KEY) !== 'closed'
+  } catch {
+    // 저장이 막힌 환경에서는 늘 펼쳐 둔다
+  }
+})
+function toggleGuide() {
+  guideOpen.value = !guideOpen.value
+  try {
+    window.localStorage.setItem(GUIDE_KEY, guideOpen.value ? 'open' : 'closed')
+  } catch {
+    // 이번 방문 동안만 유지
+  }
+}
+
 const openPerson = computed(() => (open.value ? PEOPLE[open.value] : undefined))
 /** '커피 체리가 만난 사람', '노을의 찻잎이 만난 사람' */
 const metLabel = computed(() => `${withJosa(game.nickname.value, '이', '가')} 만난 사람`)
@@ -75,6 +94,22 @@ const metLabel = computed(() => `${withJosa(game.nickname.value, '이', '가')} 
     </section>
 
     <section aria-label="카드 목록">
+      <div class="guide panel">
+        <div class="guide-top">
+          <p class="guide-note">{{ RARITY_NOTE }}</p>
+          <button class="guide-btn" :aria-expanded="guideOpen" aria-controls="rarity-guide" @click="toggleGuide">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 11v6M12 7.5v.5" /></svg>
+            등급 기준
+            <svg class="caret" :class="{ up: guideOpen }" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
+          </button>
+        </div>
+        <dl v-if="guideOpen" id="rarity-guide" class="guide-list">
+          <template v-for="g in RARITY_GUIDE" :key="g.label">
+            <dt>{{ g.label }}</dt>
+            <dd>{{ g.how }}</dd>
+          </template>
+        </dl>
+      </div>
       <div class="filters" role="tablist">
         <button
           v-for="f in filters"
@@ -127,6 +162,20 @@ const metLabel = computed(() => `${withJosa(game.nickname.value, '이', '가')} 
 .set-row { display: flex; align-items: center; gap: 2px; flex-wrap: wrap; }
 .arrow { color: var(--accent); margin: 0 4px; }
 
+.guide { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
+.guide-top { display: flex; align-items: flex-start; gap: 10px; }
+.guide-note { margin: 0; flex: 1; font-size: 14px; line-height: 1.55; }
+.guide-btn {
+  flex-shrink: 0; display: inline-flex; align-items: center; gap: 4px;
+  min-height: 44px; padding: 0 12px; border-radius: 999px;
+  border: 1px solid var(--line); background: transparent; color: var(--accent);
+  font: inherit; font-size: 13px; font-weight: 700; cursor: pointer;
+}
+.caret { transition: transform 0.2s; }
+.caret.up { transform: rotate(180deg); }
+.guide-list { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; font-size: 13px; line-height: 1.5; }
+.guide-list dt { font-weight: 700; color: var(--accent); white-space: nowrap; }
+.guide-list dd { margin: 0; }
 .filters { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 12px; scrollbar-width: none; }
 .filters .chip { min-height: 40px; flex-shrink: 0; color: var(--muted); }
 .filters .chip.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 700; }
