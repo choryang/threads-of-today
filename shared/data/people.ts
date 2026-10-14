@@ -1,5 +1,6 @@
 import type { Face, Hair, Hat, Outfit, Person, Prop, Rarity } from '../types'
 import { hash } from '../random'
+import { nameOf } from './names'
 
 const HAIRS: Hair[] = ['short', 'bob', 'tied', 'curly', 'gray']
 
@@ -421,6 +422,12 @@ const list: Person[] = [
   p('table-setter', '급식실 영양사', 'kr', '수많은 사람의 한 끼를 위해 세계 곳곳에서 온 재료로 매일 식단을 짜요. 오늘의 밥상을 차리는 사람.', 'chef', 'clipboard', 'apron', 'smile', 'legendary', 'set'),
   p('safety-inspector', '산업안전 감독관', 'kr', '공장에서 일하는 사람들이 다치지 않도록 현장을 살피고 바꿔 나가요.', 'safetyHelmet', 'clipboard', 'vest', 'focus', 'legendary', 'set'),
 ]
+
+// 이름은 names.ts에서. 연결 카드는 원래 사람과 같은 이름을 쓴다
+for (const person of list) {
+  const name = nameOf(person.id)
+  if (name) person.name = name
+}
 
 export const PEOPLE: Record<string, Person> = Object.fromEntries(list.map((x) => [x.id, x]))
 export const PEOPLE_LIST = list

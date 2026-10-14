@@ -18,6 +18,7 @@ import { MYSTERY_HINT_COUNT, middleCandidates, mysteryHints } from '../shared/my
 import { MYSTERY_INFO } from '../shared/data/mystery'
 import { createMatcher, match, productEntries, type DictEntry } from '../shared/match'
 import { PERSON_DAYS, placeKindOf } from '../shared/data/durations'
+import { NAME_GROUPS } from '../shared/data/names'
 import { MAX_JOURNEY_DAYS, MIN_JOURNEY_DAYS, MS_PER_DAY, SPEEDS, journeySchedule } from '../shared/timing'
 
 const errors: string[] = []
@@ -225,6 +226,31 @@ for (let i = 0; i < 120; i++) {
   const answer = mysteryProduct(key)
   checkHints(answer, mysteryHints(answer, mysteryOptions(key).filter((o) => o.id !== answer.id)), ` (${key})`)
 }
+// 이름: 한글 1~6자, 일하는 나라 묶음에 넣고, 같은 나라 안에서 겹치지 않는다. 바다 위 이름은 가져온 나라의 이름과도 겹치지 않는다
+const namesByCountry = new Map<string, Map<string, string>>()
+const claim = (country: string, name: string, id: string) => {
+  const seen = namesByCountry.get(country) ?? new Map<string, string>()
+  namesByCountry.set(country, seen)
+  if (seen.has(name)) errors.push(`이름 '${name}'이 ${country || '바다'}에서 겹침: ${seen.get(name)}, ${id}`)
+  seen.set(name, id)
+}
+for (const group of NAME_GROUPS) {
+  for (const [id, name] of Object.entries(group.names)) {
+    const person = PEOPLE[id]
+    if (!person) { errors.push(`이름 ${id}: 사람 없음`); continue }
+    if (person.kind === 'link') errors.push(`이름 ${id}: 연결 카드는 원래 사람의 이름을 따른다 (names.ts에 넣지 않음)`)
+    if (PLACES[person.placeId]?.country !== group.country) errors.push(`이름 ${id}: ${group.country || '바다'} 묶음인데 장소는 ${PLACES[person.placeId]?.country || '바다'}`)
+    if (!/^[가-힣]{1,6}$/.test(name)) errors.push(`이름 ${id}: 한글 1~6자 — ${name}`)
+    if (!group.country && !group.from?.[id]) errors.push(`이름 ${id}: 바다 위 사람은 이름을 가져온 나라(from)를 적는다`)
+    claim(group.from?.[id] ?? group.country, name, id)
+  }
+}
+for (const rule of LINK_RULES) {
+  if (PEOPLE[rule.cardId]?.name !== PEOPLE[rule.personId]?.name) errors.push(`${rule.cardId}: 연결 카드 이름이 원래 사람(${rule.personId})과 다름`)
+}
+const unnamed = PEOPLE_LIST.filter((p) => !p.name)
+console.log('이름:', PEOPLE_LIST.length - unnamed.length, '/', PEOPLE_LIST.length, unnamed.length ? `· 이름 없음 ${unnamed.map((p) => p.id).join(', ')}` : '')
+
 // 여정 시계: 여정에 나오는 사람은 모두 장소 종류가 정해져 있어야 하고, 여정 길이는 MIN~MAX 날수 안
 for (const person of PEOPLE_LIST) {
   if (person.kind === 'stage' && !PERSON_DAYS[person.id] && !placeKindOf(person.id)) errors.push(`${person.id}(${person.job}): 머무는 날수를 정할 장소 종류가 없음 (data/durations.ts)`)

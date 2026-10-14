@@ -8,6 +8,11 @@ import { badgeOf } from '../utils/labels'
 const props = defineProps<{ personId: string; isNew?: boolean; number?: number }>()
 const person = computed(() => PEOPLE[props.personId]!)
 const place = computed(() => PLACES[person.value.placeId]!)
+/** 우리나라·바다는 장소 이름만, 나라 밖은 이름에 나라가 없으면 앞에 붙인다 */
+const placeLabel = computed(() => {
+  const { name, country, continent } = place.value
+  return continent === 'korea' || !country || name.includes(country) ? name : `${country} ${name}`
+})
 
 const game = useGame()
 const met = computed(() => game.owns(props.personId))
@@ -37,8 +42,9 @@ onBeforeUnmount(() => clearTimeout(waveTimer))
       <span v-if="isNew" class="new">NEW</span>
     </div>
     <div class="body">
-      <h3 class="job">{{ person.job }}</h3>
-      <p class="place">{{ place.name }}<template v-if="place.country && !place.name.includes(place.country)"> · {{ place.country }}</template></p>
+      <h3 class="who">
+        <template v-if="person.name"><span class="name">{{ person.name }}</span> · </template>{{ person.job }}<span class="place"> · {{ placeLabel }}</span>
+      </h3>
       <p class="story">{{ person.story }}</p>
       <div v-if="met" class="thanks" aria-live="polite">
         <button v-if="!thanked" class="thank-btn" @click="thank">
@@ -49,7 +55,7 @@ onBeforeUnmount(() => clearTimeout(waveTimer))
           <p class="reply">“{{ reply }}”</p>
           <p class="thanked-note">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z" /></svg>
-            고마움을 전했어요
+            {{ person.name ? `${person.name}에게 ` : '' }}고마움을 전했어요
           </p>
         </template>
       </div>
@@ -103,8 +109,8 @@ onBeforeUnmount(() => clearTimeout(waveTimer))
   color: #fff;
 }
 .body { padding: 14px 18px 20px; display: flex; flex-direction: column; gap: 4px; }
-.job { margin: 0; font-size: 20px; }
-.place { margin: 0; font-size: 13px; color: #4a4a4a; }
+.who { margin: 0; font-size: 20px; line-height: 1.35; word-break: keep-all; }
+.who .place { font-size: 13px; font-weight: 400; color: #4a4a4a; }
 .story { margin: 8px 0 0; font-size: 14px; line-height: 1.6; color: #2a2a2a; }
 .thanks { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
 .thank-btn {

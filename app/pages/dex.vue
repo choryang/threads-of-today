@@ -2,7 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { PEOPLE, PEOPLE_LIST } from '../../shared/data/people'
 import { DAILY_LIMIT, withJosa } from '../../shared/logic'
-import type { Rarity } from '../../shared/types'
+import type { Person, Rarity } from '../../shared/types'
 import { HIDDEN_LABEL, RARITY_GUIDE, RARITY_LABEL, RARITY_NOTE, badgeOf, howToMeet } from '../utils/labels'
 
 const game = useGame()
@@ -26,6 +26,7 @@ const total = PEOPLE_LIST.length
 const percent = computed(() => Math.round((game.ownedCount.value / total) * 100))
 const sets = computed(() => game.setProgress())
 const numberOf = (id: string) => PEOPLE_LIST.findIndex((p) => p.id === id) + 1
+const labelOf = (p: Person) => (p.name ? `${p.name} · ${p.job}` : p.job)
 const itemNames = computed(() =>
   Object.entries(game.state.items).sort((a, b) => b[1].localeCompare(a[1])).map(([name]) => name),
 )
@@ -131,11 +132,13 @@ const metLabel = computed(() => `${withJosa(game.nickname.value, '이', '가')} 
         </button>
       </div>
       <div class="grid">
-        <button v-for="p in list" :key="p.id" class="cell" :aria-label="game.owns(p.id) ? p.job : '아직 만나지 못한 사람'" @click="open = p.id">
+        <button v-for="p in list" :key="p.id" class="cell" :aria-label="game.owns(p.id) ? labelOf(p) : '아직 만나지 못한 사람'" @click="open = p.id">
           <MiniCard :person-id="p.id" :locked="!game.owns(p.id)" :is-new="game.state.cards[p.id] === game.todayKey" :thanked="game.thanked(p.id)" />
         </button>
       </div>
     </section>
+
+    <p class="people-note">이 게임 속 사람들은 실제로 그 일을 하는 사람들을 바탕으로 만든 가상의 인물이에요.</p>
 
     <div v-if="openPerson" class="modal" role="dialog" aria-modal="true" @click.self="open = null">
       <div class="sheet">
@@ -155,6 +158,7 @@ const metLabel = computed(() => `${withJosa(game.nickname.value, '이', '가')} 
 .head { display: flex; flex-direction: column; gap: 8px; }
 .title { font-size: 30px; }
 .small { margin: 0; font-size: 13px; }
+.people-note { margin: 0; font-size: 12px; line-height: 1.5; color: var(--muted); text-align: center; word-break: keep-all; }
 .h2 { margin: 0 0 10px; font-size: 15px; }
 .ending-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; color: var(--bad); }
 .bar { height: 8px; border-radius: 4px; background: var(--line); overflow: hidden; }

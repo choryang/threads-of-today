@@ -42,6 +42,8 @@ export interface Look {
 
 export interface Person {
   id: string
+  /** 그 나라에서 흔한 이름(성 없이). 출처는 data/names.ts. 확인이 안 된 나라는 없다 */
+  name?: string
   job: string
   placeId: string
   story: string
