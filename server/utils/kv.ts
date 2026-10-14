@@ -45,6 +45,38 @@ export async function incrementCounter(key: string, ttlSeconds: number): Promise
   return count
 }
 
+/**
+ * 정렬 집합의 이름마다 점수를 1씩 올린다 (재료 요청 집계). Upstash에서는 ZINCRBY를 한 번의 요청(pipeline)으로 보낸다.
+ * 메모리·파일 드라이버에서는 { 이름: 횟수 } 객체 하나로 흉내 낸다 (원자성 없음).
+ */
+export async function incrementScores(key: string, members: string[]): Promise<void> {
+  if (!members.length) return
+  const r = redisClient()
+  if (r) {
+    const full = `${KV_PREFIX}:${key}`
+    const p = r.pipeline()
+    for (const m of members) p.zincrby(full, 1, m)
+    await p.exec()
+    return
+  }
+  const counts = (await kv().getItem<Record<string, number>>(key)) ?? {}
+  for (const m of members) counts[m] = (counts[m] ?? 0) + 1
+  await kv().setItem(key, counts)
+}
+
+/** incrementScores로 센 점수를 많은 순으로 돌려준다 */
+export async function readScores(key: string): Promise<Array<[string, number]>> {
+  const r = redisClient()
+  if (r) {
+    const flat = await r.zrange<(string | number)[]>(`${KV_PREFIX}:${key}`, 0, -1, { rev: true, withScores: true })
+    const out: Array<[string, number]> = []
+    for (let i = 0; i < flat.length; i += 2) out.push([String(flat[i]), Number(flat[i + 1])])
+    return out
+  }
+  const counts = (await kv().getItem<Record<string, number>>(key)) ?? {}
+  return Object.entries(counts).sort((a, b) => b[1] - a[1])
+}
+
 /** 키가 없을 때만 쓴다 (복구 코드 중복 방지). 썼으면 true */
 export async function setIfAbsent(key: string, value: string, ttlSeconds: number): Promise<boolean> {
   const r = redisClient()

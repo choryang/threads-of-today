@@ -1,5 +1,6 @@
-import { allowAiCall, readCache, toDecomposed, writeCache } from '../utils/ai-cache'
+import { allowAiCall, countMissing, readCache, toDecomposed, writeCache } from '../utils/ai-cache'
 import { decomposeWithClaude, type DecomposeInput, type DecomposeResult } from '../utils/decompose'
+import type { H3Event } from 'h3'
 import { matchText } from '../utils/matcher'
 
 const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp']
@@ -10,8 +11,15 @@ const LIMIT_MESSAGE = '오늘은 새 물건을 정말 많이 알아봤어요. �
 /**
  * 텍스트: 로컬 매칭(대표 물건·물건 사전·동의어·오타·합성어·재료 별칭) → 공유 캐시 → (하루 한도 안에서) Claude → 캐시에 저장
  * 사진:   (하루 한도 안에서) Claude → 알아본 물건 이름으로 사전·캐시를 다시 조회 → 없으면 이름 키로 캐시에 저장
+ * 결과에 missing(아직 여정이 없는 주재료)이 있으면 어느 경로든 Upstash에 횟수를 센다.
  */
 export default defineEventHandler(async (event): Promise<DecomposeResult> => {
+  const result = await decompose(event)
+  if (result.ok) await countMissing(result.missing).catch((err) => console.error('[decompose] missing count', err))
+  return result
+})
+
+async function decompose(event: H3Event): Promise<DecomposeResult> {
   const body = await readBody<Partial<DecomposeInput>>(event).catch(() => null)
   const text = typeof body?.text === 'string' ? body.text.trim().slice(0, 60) : ''
   const image = body?.image
@@ -64,4 +72,4 @@ export default defineEventHandler(async (event): Promise<DecomposeResult> => {
     console.error('[decompose] failed', err)
     return { ok: false, message: '물건을 분석하는 중에 문제가 생겼어요. 잠시 후 다시 시도해 주세요.' }
   }
-})
+}

@@ -34,6 +34,8 @@ export interface DictEntry {
   materialIds: string[]
   twist?: string
   voices?: string[]
+  /** 주재료인데 아직 여정이 없는 재료 이름. 이것만 있고 materialIds가 비어 있을 수도 있다 */
+  missing?: string[]
 }
 
 export function productEntries(): DictEntry[] {
@@ -146,7 +148,8 @@ export function createMatcher(entries: DictEntry[]) {
     if ('entry' in t) {
       const { entry } = t
       const voice = entry.voices?.length ? entry.voices[Math.floor(Math.random() * entry.voices.length)] : undefined
-      return { name: entry.name, materialIds: entry.materialIds.slice(0, MAX_MATERIALS), twist: entry.twist, voice, via, key: entry.key }
+      const missing = entry.missing?.length ? { missing: entry.missing } : {}
+      return { name: entry.name, materialIds: entry.materialIds.slice(0, MAX_MATERIALS), twist: entry.twist, voice, ...missing, via, key: entry.key }
     }
     return { name: display, materialIds: t.materialIds.slice(0, MAX_MATERIALS), via, key }
   }
@@ -182,7 +185,7 @@ export function createMatcher(entries: DictEntry[]) {
     // 5. 합성어
     if (seg.parts.length >= 2) {
       const ids = [...new Set(seg.parts.flatMap(materialIdsOf))]
-      return result({ materialIds: ids }, 'compound', s, display)
+      if (ids.length) return result({ materialIds: ids }, 'compound', s, display)
     }
 
     // 6. 재료 별칭 부분 일치 (2글자 이상만)

@@ -27,6 +27,12 @@ const total = PEOPLE_LIST.length
 const quickPicks = PRODUCTS
 const previewVoice = computed(() => renderVoice(preview.value?.voice, game.nickname.value))
 
+/** "망고·딸기의 여정은 아직 준비 중이에요" */
+const missingNotice = computed(() => {
+  const names = preview.value?.missing
+  return names?.length ? `${names.join('·')}의 여정은 아직 준비 중이에요` : ''
+})
+
 function materialNames(ids: string[]) {
   return ids.map((id) => MATERIALS[id]?.name).join(' · ')
 }
@@ -37,7 +43,7 @@ async function ask(body: Record<string, unknown>, source: JourneySource) {
   preview.value = null
   try {
     const res = await $fetch<ApiResult>('/api/decompose', { method: 'POST', body })
-    if (res.ok) preview.value = { name: res.name, materialIds: res.materialIds, twist: res.twist, voice: res.voice, source }
+    if (res.ok) preview.value = { name: res.name, materialIds: res.materialIds, twist: res.twist, voice: res.voice, missing: res.missing, source }
     else error.value = res.message
   } catch {
     error.value = '연결이 불안정해요. 잠시 후 다시 시도해 주세요.'
@@ -74,7 +80,7 @@ function pick(productId: string) {
 }
 
 function start() {
-  if (!preview.value) return
+  if (!preview.value?.materialIds.length) return
   const journey = game.startJourney(preview.value, preview.value.source)
   if (!journey) {
     error.value = '오늘의 여정을 모두 떠났어요. 내일 다시 만나요!'
@@ -172,14 +178,20 @@ function journeyProgress(materialIds: string[], step: number, id: string) {
           <span v-if="!game.knowsItem(preview.name)" class="first mono">FIRST</span>
         </div>
         <p v-if="previewVoice" class="voice">“{{ previewVoice }}”</p>
-        <p class="muted small">이렇게 나뉘어요</p>
-        <div class="mats">
-          <template v-for="(id, i) in preview.materialIds" :key="id">
-            <span v-if="i" class="plus" aria-hidden="true">+</span>
-            <span class="mat">{{ MATERIALS[id]?.name }}</span>
-          </template>
+        <template v-if="preview.materialIds.length">
+          <p class="muted small">이렇게 나뉘어요</p>
+          <div class="mats">
+            <template v-for="(id, i) in preview.materialIds" :key="id">
+              <span v-if="i" class="plus" aria-hidden="true">+</span>
+              <span class="mat">{{ MATERIALS[id]?.name }}</span>
+            </template>
+          </div>
+        </template>
+        <div v-if="missingNotice" class="missing">
+          <p class="missing-title">{{ missingNotice }}</p>
+          <p class="muted small">{{ preview.materialIds.length ? '지금은 나머지 재료의 여정만 떠날 수 있어요.' : '다른 물건을 적거나 "골라 보기"에서 골라 볼까요?' }}</p>
         </div>
-        <button class="btn btn-primary btn-block" @click="start">여정 떠나기 →</button>
+        <button v-if="preview.materialIds.length" class="btn btn-primary btn-block" @click="start">여정 떠나기 →</button>
       </div>
     </section>
 
@@ -274,6 +286,9 @@ function journeyProgress(materialIds: string[], step: number, id: string) {
 
 .items-line { margin: -8px 0 0; text-align: center; }
 .twist { margin: 0; font-size: 13px; color: var(--accent); }
+.missing { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border: 1px dashed var(--line); border-radius: 10px; }
+.missing p { margin: 0; }
+.missing-title { font-size: 14px; font-weight: 600; }
 .p-top { display: flex; align-items: center; gap: 8px; }
 .first { font-size: 11px; padding: 3px 7px; border-radius: 6px; background: var(--r-epic); color: var(--ink); }
 .voice {

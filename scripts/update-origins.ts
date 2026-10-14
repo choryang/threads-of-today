@@ -20,7 +20,7 @@ const FIELD_WEIGHT = process.env.CUSTOMS_FIELD_IMPORT_WEIGHT ?? ''
 /** 재료 → HS 코드(4단위). 생두 커피 0901, 카카오 콩 1801 */
 const HS: Record<string, string> = { coffee: '0901', cacao: '1801' }
 /** 출발지 id → ISO 국가 코드 */
-const COUNTRY: Record<string, string> = { et: 'ET', co: 'CO', vn: 'VN', ci: 'CI', gh: 'GH' }
+const COUNTRY: Record<string, string> = { et: 'ET', co: 'CO', vn: 'VN', br: 'BR', ci: 'CI', gh: 'GH' }
 
 async function importsByCountry(hs: string, year: string): Promise<Record<string, number>> {
   const url = new URL(API_URL!)

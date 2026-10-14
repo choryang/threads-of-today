@@ -17,7 +17,7 @@ Upstash 없이 `npm run dev`로 띄우면 캐시·요청 제한·진행 상황 �
 npm test               # 매칭·병합·닉네임·복구 코드 단위 테스트
 npm run check:data     # 데이터 무결성 검사
 npm run dict:build -- --dry-run   # 물건 사전 만들기 (요청 예시와 예상 비용만)
-npm run cache:export   # AI 캐시를 조회 수 순으로 data/review/cache.csv에 (커밋하지 않음)
+npm run cache:export   # AI 캐시를 조회 수 순으로 data/review/cache.csv에, 준비 중 재료 집계를 missing-live.csv에 (커밋하지 않음)
 ```
 
 ## Vercel 배포
@@ -46,7 +46,17 @@ npm run cache:export   # AI 캐시를 조회 수 순으로 data/review/cache.csv
 
 1. **로컬 매칭** (`shared/match`): 정규화 → 대표 물건·물건 사전 정확 일치 → 동의어 → 오타(자모 편집 거리) → 합성어 분해 → 재료 별칭 부분 일치
 2. **공유 캐시** (Upstash): 예전에 누군가 AI로 분해한 입력이면 그 결과를 쓴다. 정규화한 입력이 키
-3. **Claude**: IP별 하루 한도(`NUXT_AI_DAILY_LIMIT`) 안에서만. 결과는 캐시에 저장
+3. **Claude**: IP별 하루 한도(`NUXT_AI_DAILY_LIMIT`) 안에서만. 결과는 캐시에 저장. 하루는 한국 시간(Asia/Seoul) 자정에 바뀐다
+
+### 아직 여정이 없는 주재료
+
+주재료가 재료 목록에 없으면 AI는 다른 작물·과일·차로 대신하지 않고(망고주스 → 바나나 ✕), 실제로 들어가는 재료만 고른 뒤
+목록에 없는 주재료 이름을 `missing_ingredients`로 따로 보고한다. 화면에는 "망고의 여정은 아직 준비 중이에요"를 보여 주고,
+나머지 재료가 있으면 그 재료로만 여정을 떠난다. 실제로 들어가는 재료가 하나도 없으면(둥굴레차) 여정을 떠날 수 없다.
+
+- 사전·캐시·Claude 어느 경로로 나왔든, 사용자에게 "준비 중"을 보여 줄 때마다 Upstash 정렬 집합 `mdp:stats:missing`에 재료 이름별로 1씩 센다.
+- `npm run cache:export`가 이 집계를 `data/review/missing-live.csv`로 뽑는다.
+- 사전 만들기는 사전 전체의 `missing`을 많이 나온 순서로 `data/review/missing.csv`에 집계한다. 새 재료를 고를 때 둘을 함께 본다.
 
 사진은 입력 자체를 캐시할 수 없어서 Claude를 먼저 부르고, 알아본 물건 이름으로 사전과 캐시를 다시 찾는다. 없으면 이름을 키로 캐시에 저장한다.
 캐시 항목에는 조회 수(`hits`), `firstSeen`, `source: 'ai'`가 남는다. `npm run cache:export`로 뽑아 검토하고 좋은 것은 사전으로 옮긴다.
@@ -81,6 +91,7 @@ npm run cache:export   # AI 캐시를 조회 수 순으로 data/review/cache.csv
 | `mdp:code:{코드}` | id | 사용자와 같게 |
 | `mdp:cache:text:{정규화한 입력}` | AI 분해 결과 + hits | 마지막 조회부터 180일 |
 | `mdp:rate:…` | 요청 제한 카운터 (IP는 해시로만) | 1~2일 |
+| `mdp:stats:missing` | 준비 중 재료 이름 → 요청 횟수 (정렬 집합) | 계속 |
 
 사용자 한 명의 값 크기 (실측, JSON):
 
@@ -101,6 +112,7 @@ npm run cache:export   # AI 캐시를 조회 수 순으로 data/review/cache.csv
 | 분해: 캐시에 없음 → Claude | 4 | GET + INCR·EXPIRE(한 번에 보냄) + SET |
 | 분해: 하루 한도 초과 | 3 | GET + INCR·EXPIRE |
 | 분해: 사진 | 2~4 | INCR·EXPIRE + (사전에 있으면 끝) GET + SET |
+| 분해: 결과에 준비 중 재료가 있음 | +1~3 | 위에 더해 재료마다 ZINCRBY(한 번에 보냄) |
 | 첫 방문 (`POST /api/profile`) | 4~5 | INCR·EXPIRE + SET NX(코드) + SET(사용자) (+ 코드 보관 기간 SET) |
 | 동기화 (`/api/profile/sync`) | 2~3 | GET + SET (+ 한 달에 한 번 코드 보관 기간 SET) |
 | 이어 하기 (`/api/profile/restore`) | 5~6 | INCR·EXPIRE + GET(코드) + GET(사용자) + SET (+ 코드 SET) |
@@ -132,7 +144,7 @@ npm run cache:export   # AI 캐시를 조회 수 순으로 data/review/cache.csv
   - 전설: 세트(바다·땅·광산·밥상·공장)를 모두 모으면 만남
   - 숨은 만남(에픽): 여정 중 아주 낮은 확률로 만남
 - 여정은 데이터와 확률로 매번 조금씩 달라진다. 무작위는 **여정 id를 시드로** 써서 새로고침하거나 다른 기기에서 열어도 같다 (`shared/journey.ts`).
-  - 출발지 변형: 커피(에티오피아·콜롬비아·베트남), 카카오(코트디부아르·가나)처럼 재료의 앞부분 경로가 가중치에 따라 바뀐다
+  - 출발지 변형: 커피(에티오피아·콜롬비아·베트남·브라질), 카카오(코트디부아르·가나)처럼 재료의 앞부분 경로가 가중치에 따라 바뀐다
   - 이야기: 사람과 사람 사이에 낮은 확률(4%, 여정당 최대 2번)로 짧은 장면이 끼어든다. 화면에 '이야기' 표시를 붙이고, 실제 있었던 일이 아니라고 밝힌다
   - 숨은 만남: 아주 낮은 확률(1~2%, 여정당 최대 1명)로 배 위의 요리사, 식물 검역관 같은 숨은 카드가 나온다. 도감에서 '숨은 만남'으로 따로 볼 수 있다
   - 퀴즈: 재료 20개는 퀴즈가 2~3개라 여정마다 하나가 나온다. 보상 카드는 같다
@@ -187,4 +199,69 @@ tests/            node:test 단위 테스트
 ## 출시 전에 확인할 것
 
 - 여정은 "대표 경로 예시"로 표기돼 있다. 재료 데이터의 사실관계를 한 번 더 검토하고, 출처 메모를 남기는 걸 권장한다.
+- **출발지 가중치는 실제 수입 비중이 아니다.** 커피(에티오피아 3·콜롬비아 4·베트남 3·브라질 4)와 카카오(코트디부아르 6·가나 4)의
+  `origins[].weight`는 게임에서 출발지가 골고루 나오도록 정한 임시값이다(`shared/data/materials.ts`에 `// 임시값` 표시).
+  관세청 품목별·국가별 수출입실적(`scripts/update-origins.ts`, 생두 HS 0901·카카오 콩 HS 1801)으로 한국의 실제 수입 비중을 확인해 고친 뒤 `임시값` 표시를 지운다.
+  그 전까지는 화면이나 홍보 문구에서 "많이 들어오는 나라 순" 같은 표현을 쓰지 않는다.
+- 브라질 커피 카드(`br-coffee-farmer`, `br-santos-coffee`)의 근거는 `shared/data/people.ts` 주석의 Conab·Cecafé 인용 기사다. 원 자료(Conab 작황 조사, Cecafé 월간 보고서)로 한 번 더 확인하면 좋다.
+- 물건 사전(`shared/data/dictionary.json`)은 AI가 만든 결과다. `data/review/dictionary.csv`를 훑어보고 재료가 어색한 항목은 고치거나 지운다.
+  새 재료를 추가하면, 그 재료가 `missing`에 들어 있는 사전 항목을 지우고 사전 만들기를 다시 돌려야 새 재료로 분해된다.
 - Upstash를 연결하지 않으면 AI 요청 제한이 서버 인스턴스마다 따로 세어져 느슨해지고, 다른 기기에서 이어 하기가 꺼진다.
+
+## Upstash 연결 후 확인할 것
+
+Vercel에서 Upstash Redis를 연결한 다음 아래 순서로 확인한다. 키는 Upstash 콘솔의 Data Browser에서 `mdp:`로 검색하면 보인다.
+`<도메인>`은 배포 주소다.
+
+**0. 연결 자체**
+
+- [ ] Vercel → Settings → Environment Variables에 `KV_REST_API_URL`, `KV_REST_API_TOKEN`이 Production(필요하면 Preview도)에 들어가 있다
+- [ ] `NUXT_IP_SALT`를 긴 무작위 문자열로 넣었다 (바꾸면 진행 중인 요청 제한 카운터가 새로 시작된다)
+- [ ] 환경 변수를 넣은 **뒤에** 다시 배포했다 (이미 만든 배포에는 새 변수가 들어가지 않는다)
+- [ ] 첫 화면을 열었을 때 Vercel 함수 로그에 `[profile] … failed`, `[decompose] cache write` 오류가 없다
+
+**1. 캐시 저장·조회** (`NUXT_ANTHROPIC_API_KEY`가 있어야 확인할 수 있다)
+
+- [ ] 사전에 없을 법한 입력(예: 평소 안 쓰는 긴 물건 이름)을 '말로 쓰기'로 넣는다. 응답(개발자 도구 Network의 `/api/decompose`)에 `"source":"ai"`가 있고 `via`는 없다
+- [ ] Data Browser에 `mdp:cache:text:{정규화한 입력}` 키가 생겼고 `hits: 1`, `firstSeen`, `source: "ai"`가 들어 있다. TTL은 약 180일(15,552,000초)
+- [ ] 같은 입력을 **다른 브라우저나 기기**에서 다시 넣으면 응답에 `"via":"cache"`가 붙고, 키의 `hits`가 2로 오른다
+- [ ] 띄어쓰기만 다르게 넣어도 같은 키로 잡힌다
+- [ ] 대표 물건(예: "아메리카노")을 넣으면 `"source":"local"`이고 캐시 키가 새로 생기지 않는다 (Redis 명령 0개)
+
+```bash
+curl -s -X POST https://<도메인>/api/decompose -H 'content-type: application/json' -d '{"text":"<시험할 입력>"}'
+```
+
+**2. 요청 제한**
+
+- [ ] Preview 배포에서 `NUXT_AI_DAILY_LIMIT=2`로 두고, 캐시에 없는 새 입력 3개를 차례로 넣는다. 세 번째에 "오늘은 새 물건을 정말 많이 알아봤어요…" 안내가 나온다
+- [ ] `mdp:rate:ai:{날짜}:{IP 해시}` 키 값이 3이고 TTL이 약 2일(172,800초)이다. 키에 IP가 그대로 들어 있지 않다
+- [ ] 한도를 넘긴 뒤에도 대표 물건·캐시에 있는 입력은 그대로 분해된다
+
+**2-1. 준비 중 재료 집계**
+
+- [ ] 주재료가 목록에 없는 물건(예: 망고주스)을 넣으면 화면에 "망고의 여정은 아직 준비 중이에요"가 나오고, 응답에 `"missing":["망고"]`가 있다
+- [ ] Data Browser의 `mdp:stats:missing`(정렬 집합)에서 `망고`의 점수가 1 오른다. 같은 입력을 다시 넣어(캐시) 또 오른다
+- [ ] `npm run cache:export`를 Upstash 변수와 함께 돌리면 `data/review/missing-live.csv`에 같은 숫자가 나온다
+- [ ] 다른 네트워크(예: 휴대폰 데이터)에서는 따로 센다
+- [ ] 날짜는 한국 시간(Asia/Seoul, `seoulDateKey`) 기준이다. 한국 시간 자정이 지나면 키의 날짜가 바뀌고 한도가 새로 시작된다
+- [ ] 확인이 끝나면 `NUXT_AI_DAILY_LIMIT`을 원래 값(기본 20)으로 되돌린다
+- [ ] 복구 코드 시도 제한: 틀린 코드를 11번 넣으면 11번째에 "잠시 후 다시 시도해 주세요."가 나온다 (`mdp:rate:restore:…`, 시간당 10번)
+
+**3. 진행 상황 동기화**
+
+- [ ] 새 브라우저(시크릿 창)로 처음 열면 `/api/profile` 응답이 `ok: true`이고 id·복구 코드가 온다. `reason: "unavailable"`이 오면 Upstash 변수가 안 읽힌 것이다
+- [ ] `mdp:user:u_…`, `mdp:code:{복구 코드}` 키가 생겼다. 진행 기록이 없을 때 TTL은 약 30일
+- [ ] 여정을 하나 마치면 `/api/profile/sync`가 호출되고, `mdp:user:u_…`의 `save.cards`에 새 카드가 들어간다. TTL이 약 400일로 늘어난다
+- [ ] 앱을 새로 고쳐도 `/api/profile`이 다시 불리지 않고 `sync`만 불린다 (localStorage `my-day-people:profile` 유지)
+- [ ] 닉네임을 바꾸고 여정을 마치면 서버 값의 닉네임도 바뀐다
+- [ ] Data Browser에서 사용자 값 크기가 README의 실측(새 사용자 약 0.5KB)과 크게 다르지 않다
+
+**4. 복구 코드로 이어 하기**
+
+- [ ] 기기 A의 도감 → "다른 기기에서 이어 하기"에 코드가 보인다
+- [ ] 기기 B(다른 브라우저)에서 카드를 1장 이상 따로 모은 뒤 A의 코드를 넣으면, 두 기기의 카드가 합쳐져 보인다
+- [ ] 이후 A에서 여정을 마치고 A·B를 각각 다시 열면 같은 기록이 된다
+- [ ] 서버 사용자 값의 `devices`가 2개가 됐다 (최대 5개)
+- [ ] 코드를 띄어쓰기로 넣거나(`바다 연필 4827`) 하이픈 없이 넣어도 찾는다
+- [ ] 없는 코드를 넣으면 "코드를 찾지 못했어요…" 안내가 나온다

@@ -1,10 +1,11 @@
 import type { Decomposed } from '../../shared/logic'
-import { dateKey } from '../../shared/logic'
+import { seoulDateKey as dateKey } from '../../shared/logic'
 import { normalize } from '../../shared/match'
-import { hashIp, incrementCounter, kv } from './kv'
+import { hashIp, incrementCounter, incrementScores, kv } from './kv'
 
 /**
  * AI가 분해한 결과를 모든 사용자가 함께 쓰는 캐시. 키는 정규화한 입력(사진이면 Claude가 알아본 물건 이름).
+ * 날짜는 모두 한국 시간 기준(seoulDateKey). 하루 AI 한도도 한국 자정에 바뀐다.
  * hits는 조회 수(동시에 들어온 조회는 하나로 셀 수 있는 근사값). 검토 후 사전에 옮길 수 있게 scripts/export-cache.ts로 뽑는다.
  */
 export interface CachedDecompose extends Decomposed {
@@ -24,7 +25,7 @@ export async function readCache(text: string): Promise<CachedDecompose | null> {
   if (!normalize(text)) return null
   const key = cacheKey(text)
   const entry = await kv().getItem<CachedDecompose>(key)
-  if (!entry?.materialIds?.length) return null
+  if (!entry?.materialIds || (!entry.materialIds.length && !entry.missing?.length)) return null
   const updated = { ...entry, hits: (entry.hits ?? 0) + 1, lastSeen: dateKey() }
   await kv().setItem(key, updated, { ttl: CACHE_TTL })
   return updated
@@ -39,6 +40,7 @@ export async function writeCache(text: string, result: Decomposed): Promise<void
     materialIds: result.materialIds,
     ...(result.twist ? { twist: result.twist } : {}),
     ...(result.voice ? { voice: result.voice } : {}),
+    ...(result.missing?.length ? { missing: result.missing } : {}),
     hits: 1,
     firstSeen: today,
     lastSeen: today,
@@ -53,4 +55,18 @@ export async function allowAiCall(ip: string, dailyLimit: number): Promise<boole
   return count <= dailyLimit
 }
 
-export const toDecomposed = ({ name, materialIds, twist, voice }: Decomposed): Decomposed => ({ name, materialIds, twist, voice })
+/** 아직 여정이 없는 재료를 요청받은 횟수. 사전에 넣을 재료를 고를 때 scripts/export-cache.ts로 뽑아 본다. */
+export const MISSING_KEY = 'stats:missing'
+
+/** 사용자에게 "준비 중"을 보여 준 재료를 1씩 센다. 사전·캐시·AI 어느 경로로 나왔든 실제 요청 한 번에 한 번 (ZINCRBY) */
+export async function countMissing(missing: string[] | undefined): Promise<void> {
+  if (missing?.length) await incrementScores(MISSING_KEY, missing)
+}
+
+export const toDecomposed = ({ name, materialIds, twist, voice, missing }: Decomposed): Decomposed => ({
+  name,
+  materialIds,
+  twist,
+  voice,
+  ...(missing?.length ? { missing } : {}),
+})

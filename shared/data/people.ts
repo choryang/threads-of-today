@@ -242,6 +242,12 @@ const list: Person[] = [
   //        Oxford Business Group "Vietnam 2017 report: coffee looks to remain a major player"
   p('vn-coffee-farmer', '로부스타 커피 농부', 'vn-daklak', '중부 고원의 붉은 흙에서 쓴맛이 진한 로부스타 커피를 길러요. 수확한 열매는 마당에 펼쳐 햇볕에 말려요.', 'straw', 'cherry'),
   p('vn-coffee-port', '호찌민 커피 수출 담당', 'vn-hcm', '고원에서 트럭으로 내려온 생두 자루를 검사하고 컨테이너에 실어 보내요.', 'safetyHelmet', 'clipboard'),
+  // 커피: 브라질. 미나스제라이스주가 브라질 커피 생산의 절반 가까이를 차지하는 최대 산지이고 아라비카가 중심이다.
+  //   커피 수출은 산투스 항구가 가장 많고(2026년 1~4월 74.7%), 리우데자네이루 항만이 그다음(21.3%)이다.
+  //   출처: Rádio Itatiaia(2026-02-23) "Minas Gerais assume quase 50% da produção de café no Brasil" (Conab 1차 조사 인용),
+  //        Datamar News(2026-05-18) "Cecafé: Coffee exports rise as Santos handles nearly 75% of shipments" (Cecafé 수치 인용)
+  p('br-coffee-farmer', '아라비카 커피 농부', 'br-mg', '브라질에서 커피를 가장 많이 기르는 미나스제라이스주에서 아라비카 커피를 길러요.', 'straw', 'cherry'),
+  p('br-santos-coffee', '산투스 커피 수출 담당', 'br-santos', '브라질 커피가 가장 많이 떠나는 항구예요. 내륙 농장에서 온 생두를 검사하고 컨테이너에 실어 보내요.', 'safetyHelmet', 'clipboard'),
   // 카카오: 가나. 서부 주가 큰 산지이고, 카카오는 주로 서부의 타코라디 항구와 동부의 테마 항구로 나간다.
   //   출처: Citi Newsroom(2019/20 Cocoa Marketing Company 수치 인용: 타코라디 52%, 테마 42%),
   //        MyJoyOnline "COCOBOD re-routes cocoa"

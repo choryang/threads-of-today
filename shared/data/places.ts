@@ -77,6 +77,7 @@ const list: Place[] = [
   { id: 'br-sp', name: '브라질 상파울루주', country: '브라질', continent: 'americas' },
   { id: 'br-mt', name: '브라질 마투그로수', country: '브라질', continent: 'americas' },
   { id: 'br-santos', name: '산투스 항구', country: '브라질', continent: 'americas' },
+  { id: 'br-mg', name: '브라질 미나스제라이스', country: '브라질', continent: 'americas' },
   { id: 'co-huila', name: '콜롬비아 우일라', country: '콜롬비아', continent: 'americas' },
   { id: 'co-buenaventura', name: '부에나벤투라 항구', country: '콜롬비아', continent: 'americas' },
   { id: 'cl-atacama', name: '칠레 아타카마 사막', country: '칠레', continent: 'americas' },

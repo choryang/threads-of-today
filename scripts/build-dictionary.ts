@@ -9,7 +9,9 @@
  * 환경 변수: ANTHROPIC_API_KEY (없으면 NUXT_ANTHROPIC_API_KEY), DICT_MODEL (기본 claude-haiku-5-5)
  *
  * 이미 대표 물건 이름·별칭과 정확히 같은 시드, 이미 사전에 있는 시드는 건너뛴다.
- * 결과 검증: 재료가 0개면 버리고, 숫자·나라 이름이 섞인 voice와 twist는 버린다(shared/safety.ts).
+ * 결과 검증: 재료도 missing_ingredients도 없으면 버리고, 숫자·나라 이름이 섞인 voice와 twist는 버린다(shared/safety.ts).
+ * 주재료가 목록에 없는 물건은 missing에 남겨 사전에 넣는다(화면에 "○○의 여정은 아직 준비 중이에요").
+ * 사전 전체의 missing을 많이 나온 순서로 data/review/missing.csv에 집계한다. 새 재료를 고를 때 본다.
  */
 import fs from 'node:fs'
 import path from 'node:path'
@@ -18,13 +20,14 @@ import Anthropic from '@anthropic-ai/sdk'
 import { MATERIALS } from '../shared/data/materials'
 import { sanitizeMaterialIds } from '../shared/logic'
 import { compact, createMatcher, productEntries, type DictEntry } from '../shared/match'
-import { SYSTEM, TOOL_NAME, buildTool, clean, cleanFlavor, textPrompt } from '../server/utils/decompose'
+import { SYSTEM, TOOL_NAME, buildTool, clean, cleanFlavor, cleanMissing, textPrompt } from '../server/utils/decompose'
 
 const ROOT = process.cwd()
 const SEED_FILES = { item: 'data/seeds/items.txt', word: 'data/seeds/words.txt' } as const
 const DICT_PATH = 'shared/data/dictionary.json'
 const REVIEW_CSV = 'data/review/dictionary.csv'
 const REJECTED_CSV = 'data/review/dictionary-rejected.csv'
+const MISSING_CSV = 'data/review/missing.csv'
 const BATCH_DIR = 'data/review/batches'
 
 const MODEL = process.env.DICT_MODEL ?? 'claude-haiku-5-5'
@@ -144,7 +147,8 @@ function toEntry(seed: Seed, input: any): DictEntry | string {
   if (!input) return '도구 호출 없음'
   if (!input.recognized) return '물건으로 잇지 못함'
   const materialIds = sanitizeMaterialIds(input.material_ids)
-  if (!materialIds.length) return '재료 0개'
+  const missing = cleanMissing(input.missing_ingredients)
+  if (!materialIds.length && !missing.length) return '재료 0개'
   const rawVoices: unknown[] = Array.isArray(input.voices) ? input.voices : []
   const voices = [...new Set(rawVoices.map((v) => cleanFlavor(v, 50, { allowName: true })).filter(Boolean))]
   const name = clean(input.item_name, 20) || seed.text
@@ -157,6 +161,7 @@ function toEntry(seed: Seed, input: any): DictEntry | string {
     materialIds,
     ...(twist ? { twist } : {}),
     voices,
+    ...(missing.length ? { missing } : {}),
   }
 }
 
@@ -167,13 +172,29 @@ function writeOutputs(entries: DictEntry[], rejected: Rejected[]) {
   const sorted = [...entries].sort((a, b) => Number(!!a.twist) - Number(!!b.twist) || a.key.localeCompare(b.key, 'ko'))
   write(DICT_PATH, JSON.stringify(sorted, null, 1) + '\n')
 
-  const header = ['key', 'name', 'aliases', 'materials', 'twist', 'voices']
+  const header = ['key', 'name', 'aliases', 'materials', 'missing', 'twist', 'voices']
   const rows = sorted.map((e) =>
-    [e.key, e.name, e.aliases.join(' / '), e.materialIds.map((id) => MATERIALS[id]?.name ?? id).join(' / '), e.twist ?? '', (e.voices ?? []).join(' | ')]
+    [e.key, e.name, e.aliases.join(' / '), e.materialIds.map((id) => MATERIALS[id]?.name ?? id).join(' / '), (e.missing ?? []).join(' / '), e.twist ?? '', (e.voices ?? []).join(' | ')]
       .map(csvCell)
       .join(','),
   )
   write(REVIEW_CSV, '﻿' + [header.join(','), ...rows].join('\n') + '\n')
+
+  // 아직 여정이 없는 주재료: 많이 나온 순서, 여정을 아예 못 떠나는 물건 수, 예시 물건
+  const tally = new Map<string, { count: number; blocked: number; items: string[] }>()
+  for (const e of sorted) {
+    for (const m of e.missing ?? []) {
+      const t = tally.get(m) ?? { count: 0, blocked: 0, items: [] }
+      t.count++
+      if (!e.materialIds.length) t.blocked++
+      t.items.push(e.name)
+      tally.set(m, t)
+    }
+  }
+  const mrows = [...tally]
+    .sort((a, b) => b[1].count - a[1].count || a[0].localeCompare(b[0], 'ko'))
+    .map(([name, t]) => [name, String(t.count), String(t.blocked), t.items.join(' / ')].map(csvCell).join(','))
+  write(MISSING_CSV, '﻿' + ['ingredient,count,blocked,items', ...mrows].join('\n') + '\n')
 
   if (rejected.length) {
     const rrows = rejected.map((r) => [r.seed.text, r.seed.kind, r.reason, r.detail ?? ''].map(csvCell).join(','))
@@ -207,7 +228,7 @@ async function collect(client: Anthropic, batchId: string) {
   }
 
   writeOutputs([...byKey.values()], rejected)
-  console.log(`사전 반영 ${added}개, 버림 ${rejected.length}개 → ${DICT_PATH}, ${REVIEW_CSV}`)
+  console.log(`사전 반영 ${added}개, 버림 ${rejected.length}개 → ${DICT_PATH}, ${REVIEW_CSV}, ${MISSING_CSV}`)
   if (rejected.length) console.log(`버린 항목: ${REJECTED_CSV}`)
 }
 

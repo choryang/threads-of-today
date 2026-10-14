@@ -16,6 +16,8 @@ export interface Decomposed {
   twist?: string
   /** 물건이 직접 건네는 한마디 */
   voice?: string
+  /** 주재료인데 아직 여정이 없는 재료 이름 ('망고'). 있으면 "○○의 여정은 아직 준비 중이에요"를 보여 준다. materialIds가 비어 있으면 여정을 떠날 수 없다. */
+  missing?: string[]
 }
 
 /** 받침 유무에 따라 조사를 붙인다. withJosa('광부', '이', '가') → '광부가' */
@@ -78,6 +80,11 @@ export function dateKey(d = new Date()): string {
   const m = String(d.getMonth() + 1).padStart(2, '0')
   const day = String(d.getDate()).padStart(2, '0')
   return `${y}-${m}-${day}`
+}
+
+/** 한국 시간(Asia/Seoul) 기준 날짜. 서버(Vercel은 UTC)에서 하루 한도를 한국 자정에 바꾸려고 쓴다. 한국은 서머타임이 없어 +9시간 고정 */
+export function seoulDateKey(now = Date.now()): string {
+  return new Date(now + 9 * 60 * 60 * 1000).toISOString().slice(0, 10)
 }
 
 export function previousDateKey(key: string): string {

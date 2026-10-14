@@ -10,12 +10,14 @@ const list: Material[] = [
   {
     id: 'coffee', name: '커피 원두', aliases: ['커피', '원두', '아메리카노', '라떼', '콜드브루', '에스프레소'],
     stages: ['coffee-picker', 'washing-station', 'djibouti-docker', ...SEA.slice(0, 2), 'roaster', 'warehouse'],
-    // 출발지 변형. 가중치는 대략값이다(나중에 scripts/update-origins.ts로 수입 실적에 맞춘다). 근거는 people.ts 주석
+    // 출발지 변형. 경로 근거는 people.ts 주석.
+    // 가중치는 모두 임시값이다. 실제 한국 수입 비중이 아니다. 관세청 수출입실적(scripts/update-origins.ts)으로 갱신하기 전까지 그대로 둔다.
     originHead: 3,
     origins: [
-      { id: 'et', name: '에티오피아', weight: 3, head: ['coffee-picker', 'washing-station', 'djibouti-docker'] },
-      { id: 'co', name: '콜롬비아', weight: 4, head: ['co-coffee-farmer', 'co-buenaventura-docker'] },
-      { id: 'vn', name: '베트남', weight: 3, head: ['vn-coffee-farmer', 'vn-coffee-port'] },
+      { id: 'et', name: '에티오피아', weight: 3, head: ['coffee-picker', 'washing-station', 'djibouti-docker'] }, // 임시값
+      { id: 'co', name: '콜롬비아', weight: 4, head: ['co-coffee-farmer', 'co-buenaventura-docker'] }, // 임시값
+      { id: 'vn', name: '베트남', weight: 3, head: ['vn-coffee-farmer', 'vn-coffee-port'] }, // 임시값
+      { id: 'br', name: '브라질', weight: 4, head: ['br-coffee-farmer', 'br-santos-coffee'] }, // 임시값
     ],
     quiz: {
       q: '에티오피아는 바다가 없는 나라예요. 커피는 어느 나라 항구를 통해 나갈까요?',
@@ -32,10 +34,11 @@ const list: Material[] = [
   {
     id: 'cacao', name: '카카오', aliases: ['초콜릿', '초코', '카카오', '코코아', '핫초코', '브라우니'],
     stages: ['cacao-farmer', 'cacao-dryer', 'abidjan-docker', 'sea-crew', 'cocoa-grinder', 'busan-crane', 'warehouse'],
+    // 가중치는 임시값이다. 실제 한국 수입 비중이 아니다. 관세청 수출입실적으로 갱신하기 전까지 그대로 둔다.
     originHead: 3,
     origins: [
-      { id: 'ci', name: '코트디부아르', weight: 6, head: ['cacao-farmer', 'cacao-dryer', 'abidjan-docker'] },
-      { id: 'gh', name: '가나', weight: 4, head: ['gh-cacao-farmer', 'gh-takoradi-docker'] },
+      { id: 'ci', name: '코트디부아르', weight: 6, head: ['cacao-farmer', 'cacao-dryer', 'abidjan-docker'] }, // 임시값
+      { id: 'gh', name: '가나', weight: 4, head: ['gh-cacao-farmer', 'gh-takoradi-docker'] }, // 임시값
     ],
     quiz: {
       q: '세계에서 카카오를 가장 많이 생산하는 나라는?',

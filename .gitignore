@@ -10,3 +10,5 @@ dist
 
 # 사용자가 입력한 문장이 들어 있어 커밋하지 않는다
 data/review/cache.csv
+
+data/review/missing-live.csv

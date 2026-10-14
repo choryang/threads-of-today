@@ -25,7 +25,7 @@ test('첫 칸은 늘 사람, 출발지 변형이 실제로 나온다', () => {
     assert.equal(t[0]?.type, 'stage')
     if (t[0]?.type === 'stage') firsts.add(t[0].personId)
   }
-  assert.deepEqual([...firsts].sort(), ['co-coffee-farmer', 'coffee-picker', 'vn-coffee-farmer'])
+  assert.deepEqual([...firsts].sort(), ['br-coffee-farmer', 'co-coffee-farmer', 'coffee-picker', 'vn-coffee-farmer'])
 })
 
 test('퀴즈 변형: 타임라인의 퀴즈와 quizFor가 같고, 여러 변형이 나온다', () => {
