@@ -2,9 +2,11 @@
 import { LINK_RULES, MATERIAL_LIST, PRODUCTS, SETS } from '../shared/data/materials'
 import { PEOPLE, PEOPLE_LIST } from '../shared/data/people'
 import { PLACES } from '../shared/data/places'
+import dictionary from '../shared/data/dictionary.json'
 import { SYNONYM_GROUPS } from '../shared/data/synonyms'
+import { looksFactual } from '../shared/safety'
 import { dayStats, findLinkCards, mysteryHints, mysteryOptions, mysteryProduct } from '../shared/logic'
-import { createMatcher, match, productEntries } from '../shared/match'
+import { createMatcher, match, productEntries, type DictEntry } from '../shared/match'
 
 const errors: string[] = []
 const reachable = new Set<string>()
@@ -42,6 +44,16 @@ for (const person of PEOPLE_LIST) {
   if (!reachable.has(person.id)) errors.push(`${person.id}: 어떤 경로로도 얻을 수 없음`)
 }
 
+// 물건 사전 항목 검사
+const dictKeys = new Set<string>()
+for (const e of dictionary as DictEntry[]) {
+  if (dictKeys.has(e.key)) errors.push(`사전 ${e.key}: key 중복`)
+  dictKeys.add(e.key)
+  if (!e.materialIds.length) errors.push(`사전 ${e.key}: 재료 0개`)
+  for (const id of e.materialIds) if (!MATERIAL_LIST.find((m) => m.id === id)) errors.push(`사전 ${e.key}: 재료 ${id} 없음`)
+  for (const v of [...(e.voices ?? []), e.twist ?? '']) if (v && looksFactual(v)) errors.push(`사전 ${e.key}: 사실처럼 보이는 문구 "${v}"`)
+}
+
 // 동의어의 대표 표기는 사전에 있는 단어여야 한다
 const { lookup } = createMatcher(productEntries())
 for (const [canonical] of SYNONYM_GROUPS) {
@@ -71,7 +83,7 @@ for (const key of ['2026-10-14', '2026-10-15', '2027-01-01']) {
   if (new Set(options.map((o) => o.id)).size !== 6) errors.push(`${key}: 보기 중복`)
 }
 
-console.log('재료', MATERIAL_LIST.length, '· 사람 카드', PEOPLE_LIST.length, '· 대표 물건', PRODUCTS.length, '· 장소', Object.keys(PLACES).length)
+console.log('물건 사전', dictKeys.size, '· 재료', MATERIAL_LIST.length, '· 사람 카드', PEOPLE_LIST.length, '· 대표 물건', PRODUCTS.length, '· 장소', Object.keys(PLACES).length)
 console.log('스마트폰 하루 통계', dayStats([phone!.materialIds]))
 console.log('오늘 미스터리', mysteryProduct('2026-10-14').name, mysteryHints(mysteryProduct('2026-10-14')))
 if (errors.length) {

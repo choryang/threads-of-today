@@ -66,3 +66,31 @@ test('재료 별칭 부분 일치', () => {
   assert.ok(r)
   assert.ok(r.materialIds.includes('milk'))
 })
+
+test('사실처럼 보이는 문구 거르기', async () => {
+  const { looksFactual } = await import('../shared/safety')
+  assert.ok(looksFactual('브라질에서 왔어요'))
+  assert.ok(looksFactual('전 세계 70%가 여기서 나와요'))
+  assert.ok(!looksFactual('아메리카노 한 잔 어때요?'))
+  assert.ok(!looksFactual('오늘도 수고했어요'))
+})
+
+test('물건 사전 항목: 같은 물건을 다시 넣으면 voices 중 하나를 준다', async () => {
+  const { createMatcher, productEntries } = await import('../shared/match')
+  const voices = ['하나', '둘', '셋']
+  const m = createMatcher([
+    ...productEntries(),
+    { key: '고양이', name: '고양이 사료', aliases: ['고양이'], materialIds: ['chicken', 'corn'], twist: '고양이 밥그릇을 채우는 것부터', voices },
+  ])
+  const seen = new Set<string>()
+  for (let i = 0; i < 50; i++) {
+    const r = m.match('고양이')
+    assert.equal(r?.name, '고양이 사료')
+    assert.ok(r?.twist)
+    assert.ok(voices.includes(r!.voice!))
+    seen.add(r!.voice!)
+  }
+  assert.ok(seen.size > 1)
+  // 대표 물건이 사전보다 먼저 잡힌다
+  assert.equal(m.match('라면')?.key, 'ramen')
+})

@@ -1,4 +1,4 @@
-import { match } from '../../shared/match'
+import { matchText } from '../utils/matcher'
 import { decomposeWithClaude, type DecomposeInput, type DecomposeResult } from '../utils/decompose'
 
 const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp']
@@ -30,9 +30,9 @@ export default defineEventHandler(async (event): Promise<DecomposeResult> => {
     return { ok: false, message: '물건 이름을 적어 주세요.' }
   }
 
-  // 로컬 매칭(사전·동의어·오타·합성어·재료 별칭)으로 잡히면 API를 부르지 않는다
+  // 로컬 매칭(대표 물건·물건 사전·동의어·오타·합성어·재료 별칭)으로 잡히면 API를 부르지 않는다
   if (!image) {
-    const local = match(text)
+    const local = matchText(text)
     if (local) return { ok: true, source: 'local', ...local }
   }
 

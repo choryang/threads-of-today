@@ -19,16 +19,21 @@ shared/                 앱과 서버가 상대 경로로 함께 import (Nuxt �
   data/people.ts        사람 카드. kind: stage | quiz | link | set, rarity: common | rare | epic | legendary
   data/materials.ts     재료 여정(stages = 사람 id 순서), 퀴즈, 대표 물건(PRODUCTS), 연결 규칙, 세트
   data/synonyms.ts      동의어 묶음 (첫 단어가 대표 표기)
+  data/dictionary.json  미리 만든 물건 사전 (scripts/build-dictionary.ts가 생성). 서버에서만 import
+  safety.ts             looksFactual: AI 문구에 숫자·나라 이름이 섞였는지 검사
   match/                AI 없는 매칭. normalize → exact → synonym → typo(자모 편집 거리) → compound → partial, 결과에 via
   logic.ts              sanitizeMaterialIds / dayStats / findLinkCards / 미스터리 등 순수 함수
 server/
-  api/decompose.post.ts 텍스트·사진 → 재료 id. shared/match로 잡히면 끝, 아니면 Claude (키 없으면 안내 문구)
-  utils/decompose.ts    Claude Messages API 호출. tool_choice로 report_materials 강제, material_ids는 enum
+  api/decompose.post.ts 텍스트·사진 → 재료 id. utils/matcher로 잡히면 끝, 아니면 Claude (키 없으면 안내 문구)
+  utils/matcher.ts      대표 물건 + 물건 사전으로 만든 서버 매처 (사전을 클라이언트 번들에 넣지 않으려고 서버에 둔다)
+  utils/decompose.ts    Claude Messages API 호출. SYSTEM·buildTool을 사전 스크립트와 공유. voice/twist는 looksFactual로 거름
 app/
   composables/useGame.ts  게임 상태·규칙 (effectScope로 저장 watch, 하루 여정 3번, 미스터리 보너스)
   pages/                  index(입력 3방식) · journey/[id] · mystery · dex · result(html-to-image 공유)
   utils/character.ts      모자(hat)·소품(prop) 파츠를 조합한 SVG 콩 캐릭터
 scripts/check-data.ts     데이터 검사. 모든 변경 후 반드시 통과시킬 것
+scripts/build-dictionary.ts  data/seeds/*.txt → Message Batches API → dictionary.json + data/review/dictionary.csv (--dry-run, --limit, --resume)
+scripts/import-foodsafety.ts (선택, 실행 보류) 식품안전나라 원재료 → 재료 규칙 연결 뼈대
 tests/                    node:test + tsx 단위 테스트
 ```
 
