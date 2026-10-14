@@ -51,8 +51,9 @@ function tripStatus(j: Journey): { where: string; left: string; state: 'arrived'
 function whereAt(timeline: ReturnType<typeof buildTimeline>, index: number): string {
   for (let i = Math.min(index, timeline.length - 1); i >= 0; i--) {
     const t = timeline[i]!
-    if (t.type !== 'stage' && t.type !== 'hidden') continue
-    const place = PLACES[PEOPLE[t.personId]?.placeId ?? '']
+    const personId = t.type === 'stage' || t.type === 'hidden' ? t.personId : t.type === 'pass' ? t.personIds[t.personIds.length - 1] : undefined
+    if (!personId) continue
+    const place = PLACES[PEOPLE[personId]?.placeId ?? '']
     return place?.continent === 'sea' ? '바다 위' : place?.country ?? ''
   }
   return ''

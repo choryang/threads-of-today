@@ -9,7 +9,9 @@ import { SYNONYM_GROUPS } from '../shared/data/synonyms'
 import { SET_THANKS_SCENES, THANKS_BY_PERSON } from '../shared/data/thanks'
 import { CLOSINGS, CLOSING_PEOPLE, closingKind, type ClosingKind } from '../shared/data/shops'
 import { thanksRepliesOf } from '../shared/thanks'
-import { buildTimeline, quizzesOf, resolveStages } from '../shared/journey'
+import { buildTimeline, forwardTimeline, quizzesOf, resolveStages, reverseTimeline, timelinePeople } from '../shared/journey'
+import { FORMS } from '../shared/data/forms'
+import { reverseDistances } from '../shared/distance'
 import { looksFactual } from '../shared/safety'
 import { CODE_WORDS } from '../shared/recovery'
 import { NICKNAME_MAX, NICKNAME_PARTS } from '../shared/nickname'
@@ -273,6 +275,62 @@ for (const rule of LINK_RULES) {
 }
 const unnamed = PEOPLE_LIST.filter((p) => !p.name)
 console.log('이름:', PEOPLE_LIST.length - unnamed.length, '/', PEOPLE_LIST.length, unnamed.length ? `· 이름 없음 ${unnamed.map((p) => p.id).join(', ')}` : '')
+
+// 장소 좌표: 지나가는 바다 말고는 모두 있어야 거리를 잴 수 있다
+for (const place of Object.values(PLACES)) {
+  const has = place.lat !== undefined && place.lng !== undefined
+  if (place.continent !== 'sea' && !has) errors.push(`장소 ${place.id}: 위도·경도 없음`)
+  if (has && (Math.abs(place.lat!) > 90 || Math.abs(place.lng!) > 180)) errors.push(`장소 ${place.id}: 좌표 범위 오류`)
+  if (has && place.continent === 'korea' && (place.lat! < 33 || place.lat! > 39 || place.lng! < 124 || place.lng! > 132)) errors.push(`장소 ${place.id}: 우리나라 밖 좌표`)
+}
+
+// 되감기 변신: 재료마다 형태 목록. 첫 형태는 출발지 모습(by 없음), 나머지는 그 재료의 여정에 있는 사람이 만든다.
+// 어느 출발지로 가도 형태가 뒤로 돌아가지 않아야 한다(실제 가공 순서)
+for (const m of MATERIAL_LIST) {
+  const forms = FORMS[m.id]
+  if (!forms?.length) { errors.push(`${m.id}: 형태 목록(forms.ts) 없음`); continue }
+  if (forms[0]!.by?.length) errors.push(`${m.id}: 첫 형태 '${forms[0]!.name}'에는 by를 두지 않는다`)
+  if (new Set(forms.map((f) => f.name)).size !== forms.length) errors.push(`${m.id}: 형태 이름 중복`)
+  const routes = [m.stages, ...(m.origins ?? []).map((o) => [...o.head, ...m.stages.slice(m.originHead ?? 0)])]
+  const onRoute = new Set(routes.flat())
+  forms.slice(1).forEach((f, k) => {
+    if (!f.by?.length) errors.push(`${m.id}: 형태 '${f.name}'에 by가 없음`)
+    for (const id of f.by ?? []) if (!onRoute.has(id)) errors.push(`${m.id}: 형태 '${f.name}'의 ${id}는 이 재료의 여정에 없음`)
+    if (!(f.by ?? []).some((id) => onRoute.has(id))) errors.push(`${m.id}: 형태 ${k + 2} '${f.name}'은 어느 경로에서도 나오지 않음`)
+  })
+  for (const route of routes) {
+    let last = 0
+    for (const id of route) {
+      const made = forms.findIndex((f) => f.by?.includes(id))
+      if (made < 0) continue
+      if (made < last) errors.push(`${m.id}: ${route.join('>')} 경로에서 ${id}의 형태가 앞 형태보다 앞섬`)
+      last = Math.max(last, made)
+    }
+  }
+}
+
+// 거꾸로 가는 여정: 정방향과 같은 사람·퀴즈·숨은 만남·연결 카드, 순서만 다르다. 첫 칸은 가게 사람
+const pairs = (list: Array<{ materialId: string; personId: string }>) => [...new Set(list.map((x) => `${x.materialId}:${x.personId}`))].sort().join(',')
+const forwardPairs = (ids: string[], id: string, name: string) =>
+  pairs(forwardTimeline(ids, id, name).flatMap((t) => (t.type === 'stage' || t.type === 'hidden' ? [{ materialId: t.materialId, personId: t.personId }] : [])))
+let maxKm = 0
+for (const product of PRODUCTS) {
+  for (let i = 0; i < 40; i++) {
+    const id = `2026-10-15-1-${i.toString(36).padStart(4, '0')}-r`
+    const rev = reverseTimeline(product.materialIds, id, product.name)
+    const fwd = forwardTimeline(product.materialIds, id, product.name)
+    if (rev[0]?.type !== 'stage' || !rev[0].closing) errors.push(`${product.id} ${id}: 거꾸로 가는 여정의 첫 칸이 가게 사람이 아님`)
+    if (pairs(timelinePeople(product.materialIds, id, product.name)) !== forwardPairs(product.materialIds, id, product.name)) errors.push(`${product.id} ${id}: 거꾸로 간 여정의 사람이 정방향과 다름`)
+    const kinds = (list: typeof rev) => list.filter((t) => t.type === 'quiz' || t.type === 'hidden' || t.type === 'event').map((t) => JSON.stringify(t)).sort().join()
+    if (kinds(rev) !== kinds(fwd)) errors.push(`${product.id} ${id}: 퀴즈·숨은 만남·이야기가 정방향과 다름`)
+    const km = reverseDistances(rev).total
+    if (!Number.isFinite(km)) errors.push(`${product.id} ${id}: 거리 계산 오류`)
+    maxKm = Math.max(maxKm, km)
+  }
+}
+if (JSON.stringify(buildTimeline(['coffee'], '2026-10-15-1-k3x9-r', '아메리카노')) !== JSON.stringify(reverseTimeline(['coffee'], '2026-10-15-1-k3x9-r', '아메리카노'))) errors.push("'-r' 여정은 거꾸로 가야 함")
+if (JSON.stringify(buildTimeline(['coffee'], '2026-10-15-1-k3x9', '아메리카노')) !== JSON.stringify(forwardTimeline(['coffee'], '2026-10-15-1-k3x9', '아메리카노'))) errors.push("'-r'이 없는 여정은 예전 순서여야 함")
+console.log('형태:', Object.values(FORMS).flat().length, '개 · 거꾸로 가는 여정 검사', PRODUCTS.length * 40, '개 · 가장 먼 여정 약', Math.round(maxKm), 'km')
 
 const today = mysteryProduct('2026-10-15')
 console.log('오늘 미스터리', today.name, mysteryHints(today, mysteryOptions('2026-10-15').filter((o) => o.id !== today.id)))

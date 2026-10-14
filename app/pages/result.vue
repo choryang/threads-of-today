@@ -2,8 +2,9 @@
 import { computed, nextTick, onMounted, ref } from 'vue'
 import { MATERIALS } from '../../shared/data/materials'
 import { PEOPLE } from '../../shared/data/people'
-import { buildTimeline } from '../../shared/journey'
+import { buildTimeline, reverseTimeline } from '../../shared/journey'
 import { dayStats } from '../../shared/logic'
+import { formatKm, reverseDistances, roundKm } from '../../shared/distance'
 
 const game = useGame()
 /** 공유 이미지에는 오늘 지나온 실만 */
@@ -14,9 +15,12 @@ const message = ref('')
 
 const done = computed(() => game.today.value.journeys.filter((j) => j.done))
 const stats = computed(() => dayStats(done.value))
+/** 여정마다 내 손에서 원산지까지 거슬러 올라간 거리 (예전 순서로 간 여정도 같은 길을 뒤집어 잰다) */
+const kmOf = (j: { id: string; name: string; materialIds: string[] }) => reverseDistances(reverseTimeline(j.materialIds, j.id, j.name)).total
 const perItem = computed(() =>
-  done.value.map((j) => ({ id: j.id, name: j.name, ...dayStats([j]) })),
+  done.value.map((j) => ({ id: j.id, name: j.name, km: kmOf(j), ...dayStats([j]) })),
 )
+const totalKm = computed(() => perItem.value.reduce((sum, it) => sum + it.km, 0))
 /** 카드에 그릴 캐릭터: 오늘 처음 만난 사람 우선, 최대 6명 */
 const faces = computed(() => {
   const fresh = done.value.flatMap((j) => j.newCards).filter((id) => PEOPLE[id])
@@ -131,6 +135,8 @@ async function save(share: boolean) {
             닿아 있었다
           </h2>
 
+          <p v-if="roundKm(totalKm)" class="s-km">모두 합쳐 약 <strong>{{ formatKm(totalKm) }}</strong>km를 거쳐 왔다</p>
+
           <div class="faces" aria-hidden="true">
             <Character v-for="id in faces" :key="id" :person-id="id" :size="54" />
           </div>
@@ -146,7 +152,7 @@ async function save(share: boolean) {
           <ul class="items">
             <li v-for="it in perItem" :key="it.id">
               <span>{{ it.name }}</span>
-              <span class="mono">{{ it.countries.length }}개국 · {{ it.people.length }}명</span>
+              <span class="mono">{{ it.countries.length }}개국 · {{ it.people.length }}명<template v-if="roundKm(it.km)"> · 약 {{ formatKm(it.km) }}km</template></span>
             </li>
           </ul>
 
@@ -185,6 +191,8 @@ async function save(share: boolean) {
 .s-date { margin: 0; font-size: 12px; color: #4a4a4a; }
 .s-title { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 30px; line-height: 1.3; }
 .s-title em { font-style: normal; color: #b8462f; }
+.s-km { margin: -6px 0 0; font-size: 15px; color: #2a2a2a; }
+.s-km strong { font-family: var(--font-mono); font-weight: 500; color: #3b6ea8; }
 .s-threads { width: 100%; max-width: 280px; align-self: center; }
 .faces { display: flex; flex-wrap: wrap; gap: 2px; }
 .stamps { display: flex; flex-wrap: wrap; gap: 10px 8px; padding: 4px 2px; }

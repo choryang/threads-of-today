@@ -7,7 +7,7 @@ import {
 } from '../../shared/logic'
 import { mysteryHints } from '../../shared/mystery'
 import { normalizeNickname, randomNickname } from '../../shared/nickname'
-import { FIRST_SUFFIX, buildTimeline, firstJourneyGift, quizFor } from '../../shared/journey'
+import { FIRST_SUFFIX, REVERSE_SUFFIX, buildTimeline, firstJourneyGift, quizFor } from '../../shared/journey'
 import { addJourneyToThreads, backfillThreads } from '../../shared/threads'
 import { everyoneThanked, sceneKey, thanksReply, unseenScenes, type ThanksScene } from '../../shared/thanks'
 import { emptySave, type DayLog, type Journey, type JourneySource, type MysteryLog, type Save } from '../../shared/progress'
@@ -148,8 +148,9 @@ export function useGame() {
     if (source !== 'mystery' && regularCount.value >= DAILY_LIMIT) return null
     const journey: Journey = {
       // 여러 기기의 기록을 합칠 때 겹치지 않게 무작위 꼬리를 붙인다 (앞 10글자는 날짜, '-꼬리'가 있으면 새 여정 규칙을 쓴다)
+      // '-r': 내 손에서 원산지로 거슬러 올라가는 여정. 이 꼬리가 없는 예전 여정은 예전 순서 그대로 끝난다
       // 첫 여정에는 '-first'를 더 붙여 숨은 만남(또는 퀴즈 보상)을 보장한다 (shared/journey.ts)
-      id: `${todayKey}-${day.journeys.length + 1}-${Math.random().toString(36).slice(2, 6)}${firstVisit.value ? FIRST_SUFFIX : ''}`,
+      id: `${todayKey}-${day.journeys.length + 1}-${Math.random().toString(36).slice(2, 6)}${REVERSE_SUFFIX}${firstVisit.value ? FIRST_SUFFIX : ''}`,
       name: item.name,
       twist: item.twist,
       voice: item.voice,
@@ -191,12 +192,11 @@ export function useGame() {
     if (item.type === 'quiz' && journey.quiz[item.materialId] === undefined) return []
     journey.step++
     const next = timeline[journey.step]
-    if (next?.type === 'stage' || next?.type === 'hidden') {
-      const gained = collect(next.personId)
-      journey.newCards.push(...gained)
-      return gained
-    }
-    return []
+    // 같은 길(pass)의 사람은 앞에서 이미 만났지만, 카드가 빠진 기록이어도 얻게 한다
+    const ids = next?.type === 'stage' || next?.type === 'hidden' ? [next.personId] : next?.type === 'pass' ? next.personIds : []
+    const gained = ids.flatMap((id) => collect(id))
+    journey.newCards.push(...gained)
+    return gained
   }
 
   function answerQuiz(journey: Journey, materialId: string, choice: number): { correct: boolean; gained: string[] } {

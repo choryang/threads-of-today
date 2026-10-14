@@ -2,17 +2,14 @@
 import { computed, onBeforeUnmount, ref } from 'vue'
 import { PEOPLE } from '../../shared/data/people'
 import { PLACES } from '../../shared/data/places'
+import { placeLabel as labelOf } from '../../shared/rewind'
 import { thanksReply } from '../../shared/thanks'
 import { badgeOf } from '../utils/labels'
 
 const props = defineProps<{ personId: string; isNew?: boolean; number?: number }>()
 const person = computed(() => PEOPLE[props.personId]!)
 const place = computed(() => PLACES[person.value.placeId]!)
-/** 우리나라·바다는 장소 이름만, 나라 밖은 이름에 나라가 없으면 앞에 붙인다 */
-const placeLabel = computed(() => {
-  const { name, country, continent } = place.value
-  return continent === 'korea' || !country || name.includes(country) ? name : `${country} ${name}`
-})
+const placeLabel = computed(() => labelOf(place.value))
 
 const game = useGame()
 const met = computed(() => game.owns(props.personId))

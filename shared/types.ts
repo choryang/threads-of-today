@@ -18,6 +18,21 @@ export interface Place {
   /** 국가명. 바다 위처럼 국가가 없으면 빈 문자열 */
   country: string
   continent: Continent
+  /** 대표 지점의 위도·경도(거리 계산기). 지나가는 바다(sea)에는 없다 */
+  lat?: number
+  lng?: number
+}
+
+/**
+ * 재료가 여정에서 거치는 형태 하나(커피 체리 → 생두 → 생두 자루 → 볶은 원두). 실제 가공 순서대로 나열한다.
+ * 사람 칸에는 그 사람이 다음 사람에게 넘기는 형태를 보여 준다.
+ */
+export interface MaterialForm {
+  name: string
+  /** 새 아이콘을 그리기 전까지 임시로 쓰는 기존 소품 */
+  prop: Prop
+  /** 이 사람들의 손을 거치면 이 형태가 된다. 첫 형태(출발지에서 나오는 모습)는 비워 둔다 */
+  by?: string[]
 }
 
 export type Outfit =

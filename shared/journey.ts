@@ -7,6 +7,12 @@
  * 숨은 만남이 나올 자리가 없는 경로면 퀴즈 보상을 대신 준다(firstJourneyGift).
  * 물건 이름을 넘기면 여정 맨 끝에 손에 닿기 직전의 가게·사무실 사람을 붙인다(shared/data/shops.ts). 끝에만 붙어서
  * 이미 진행 중인 여정의 앞부분은 바뀌지 않는다.
+ *
+ * 거꾸로 가는 여정: id에 '-r'(REVERSE_SUFFIX)이 붙은 여정은 내 손에 가장 가까운 사람(가게)부터 원산지로 거슬러 올라간다.
+ * 순서만 뒤집는다. 위의 정방향 타임라인을 같은 난수로 만든 뒤 재배치하므로 출발지·이야기·숨은 만남·퀴즈 변형은 정방향과 같다.
+ * 재료는 하나씩 끝까지 거슬러 올라간 뒤 다음 재료로 가고, 그 재료의 퀴즈는 원산지를 만난 뒤에 나온다.
+ * 앞 재료에서 이미 만난 사람(물류센터·항구)이 이어지는 구간은 '같은 길' 한 칸(pass)으로 줄인다.
+ * '-r'이 없는 여정(이 기능 전에 시작한 여정)은 예전 순서 그대로 끝난다.
  */
 import { EVENTS, HIDDEN_RULES } from './data/journey-extras'
 import { MATERIALS } from './data/materials'
@@ -22,17 +28,26 @@ export const MAX_EVENTS = 2
 export const MAX_HIDDEN = 1
 
 export type TimelineItem =
-  | { type: 'stage'; materialId: string; personId: string }
+  /** closing: 여정 끝(거꾸로 가는 여정에서는 처음)의 가게·사무실 사람 */
+  | { type: 'stage'; materialId: string; personId: string; closing?: true }
   | { type: 'hidden'; materialId: string; personId: string }
   | { type: 'event'; materialId: string; eventId: string }
   | { type: 'quiz'; materialId: string; quizIndex: number }
+  /** 거꾸로 가는 여정에서 앞 재료와 같은 길(이미 만난 사람들)을 한 칸으로 줄인 것 */
+  | { type: 'pass'; materialId: string; personIds: string[] }
 
-const NEW_ID = /^\d{4}-\d{2}-\d{2}-\d+-[0-9a-z]+(-first)?$/
+const NEW_ID = /^\d{4}-\d{2}-\d{2}-\d+-[0-9a-z]+(-r)?(-first)?$/
 /** 사용자의 첫 여정 id 꼬리 */
 export const FIRST_SUFFIX = '-first'
+/** 거꾸로 가는 여정 id 꼬리. 첫 여정이면 '-r-first' */
+export const REVERSE_SUFFIX = '-r'
 
 export function isFirstJourney(journeyId?: string): boolean {
-  return !!journeyId && /^\d{4}-\d{2}-\d{2}-\d+-[0-9a-z]+-first$/.test(journeyId)
+  return !!journeyId && /^\d{4}-\d{2}-\d{2}-\d+-[0-9a-z]+(-r)?-first$/.test(journeyId)
+}
+
+export function isReverseJourney(journeyId?: string): boolean {
+  return !!journeyId && /^\d{4}-\d{2}-\d{2}-\d+-[0-9a-z]+-r(-first)?$/.test(journeyId)
 }
 
 /** 여정 id에서 난수를 만든다. 예전 id나 id가 없으면 null(기본 경로) */
@@ -77,7 +92,13 @@ const isAbroad = (personId: string) => {
   return !!place?.country && place.country !== '대한민국'
 }
 
+/** 여정 id에 맞는 순서의 타임라인. 거꾸로 가는 여정이면 reverseTimeline */
 export function buildTimeline(materialIds: string[], journeyId?: string, itemName?: string): TimelineItem[] {
+  return isReverseJourney(journeyId) ? reverseTimeline(materialIds, journeyId, itemName) : forwardTimeline(materialIds, journeyId, itemName)
+}
+
+/** 원산지 → 내 손 순서의 타임라인 (예전 여정의 순서, 되감기 엔딩과 거리 계산의 기준) */
+export function forwardTimeline(materialIds: string[], journeyId?: string, itemName?: string): TimelineItem[] {
   const rand = journeyRandom(journeyId)
   const items: TimelineItem[] = []
   let events = 0
@@ -137,9 +158,40 @@ export function buildTimeline(materialIds: string[], journeyId?: string, itemNam
   const lastMaterial = known[known.length - 1]
   if (rand && itemName && journeyId && lastMaterial) {
     const imported = items.some((t) => t.type === 'stage' && isAbroad(t.personId))
-    for (const personId of closingPeople(itemName, materialIds, journeyId, imported)) items.push({ type: 'stage', materialId: lastMaterial, personId })
+    for (const personId of closingPeople(itemName, materialIds, journeyId, imported)) items.push({ type: 'stage', materialId: lastMaterial, personId, closing: true })
   }
   return items
+}
+
+/** 내 손 → 원산지 순서. 정방향 타임라인을 재배치만 한다 */
+export function reverseTimeline(materialIds: string[], journeyId?: string, itemName?: string): TimelineItem[] {
+  const forward = forwardTimeline(materialIds, journeyId, itemName)
+  const closing = forward.filter((t) => t.type === 'stage' && t.closing)
+  const out: TimelineItem[] = closing.reverse()
+  const seen = new Set(out.flatMap((t) => (t.type === 'stage' ? [t.personId] : [])))
+  for (const materialId of [...new Set(materialIds)]) {
+    const own = forward.filter((t) => t.materialId === materialId && !(t.type === 'stage' && t.closing))
+    const body = own.filter((t) => t.type !== 'quiz').reverse()
+    // 앞에서 이미 지나온 사람이 이어지는 구간은 '같은 길' 한 칸으로 줄인다
+    let pass: Extract<TimelineItem, { type: 'pass' }> | null = null
+    for (const t of body) {
+      if (t.type === 'stage' && seen.has(t.personId)) {
+        if (pass) pass.personIds.push(t.personId)
+        else out.push((pass = { type: 'pass', materialId, personIds: [t.personId] }))
+        continue
+      }
+      pass = null
+      out.push(t)
+      if (t.type === 'stage' || t.type === 'hidden') seen.add(t.personId)
+    }
+    out.push(...own.filter((t) => t.type === 'quiz'))
+  }
+  return out
+}
+
+/** 이번 여정에서 이 재료가 지나는 사람들 (가공 순서, 가게·사무실 사람 제외). 형태 변화(formAt)의 기준 */
+export function materialRoute(materialIds: string[], journeyId: string | undefined, materialId: string): string[] {
+  return forwardTimeline(materialIds, journeyId).flatMap((t) => (t.type === 'stage' && t.materialId === materialId ? [t.personId] : []))
 }
 
 /** 이 여정에서 나오는 퀴즈 (재료당 하나) */
@@ -166,9 +218,12 @@ export function optionOrder(journeyId: string | undefined, materialId: string, c
 
 /** 여정에서 만나는 사람(단계 + 숨은 만남) */
 export function timelinePeople(materialIds: string[], journeyId?: string, itemName?: string): Array<{ materialId: string; personId: string }> {
-  return buildTimeline(materialIds, journeyId, itemName).flatMap((t) =>
-    t.type === 'stage' || t.type === 'hidden' ? [{ materialId: t.materialId, personId: t.personId }] : [],
-  )
+  return buildTimeline(materialIds, journeyId, itemName).flatMap((t) => {
+    if (t.type === 'stage' || t.type === 'hidden') return [{ materialId: t.materialId, personId: t.personId }]
+    // 같은 길로 줄인 사람도 이 재료가 지나온 사람이다 (연결 카드 판정이 순서와 무관하게 같도록)
+    if (t.type === 'pass') return t.personIds.map((personId) => ({ materialId: t.materialId, personId }))
+    return []
+  })
 }
 
 /** 첫 여정인데 숨은 만남이 나올 자리가 없으면, 퀴즈를 틀려도 보상 카드를 준다 */

@@ -4,12 +4,14 @@ import { MATERIALS, PRODUCTS } from '../../../shared/data/materials'
 import { PEOPLE } from '../../../shared/data/people'
 import { PLACES } from '../../../shared/data/places'
 import { EVENTS } from '../../../shared/data/journey-extras'
-import { buildTimeline, optionOrder, quizFor } from '../../../shared/journey'
+import { buildTimeline, forwardTimeline, isReverseJourney, optionOrder, quizFor, reverseTimeline } from '../../../shared/journey'
 import { dayStats, withJosa } from '../../../shared/logic'
+import { formatKm, reverseDistances, roundKm } from '../../../shared/distance'
+import { formsAlong, placeLabel, replayFrames, reverseKicker, stopQuestion } from '../../../shared/rewind'
 import { lineupOf, linkPersonOf, pickTeaser } from '../../../shared/next'
 import type { Product } from '../../../shared/types'
 import { renderVoice } from '../../../shared/voice'
-import { characterSvg } from '../../utils/character'
+import { PROP_VIEWBOX, characterSvg, propSvg } from '../../utils/character'
 import { MOTION, autoDwellMs, reducedMotion } from '../../utils/motion'
 import { productIconSvg } from '../../utils/product-icon'
 
@@ -21,6 +23,9 @@ const timeline = computed(() => (journey.value ? buildTimeline(journey.value.mat
 const current = computed(() => (journey.value ? timeline.value[journey.value.step] : undefined))
 const voice = computed(() => renderVoice(journey.value?.voice, game.nickname.value))
 const isLast = computed(() => !!journey.value && journey.value.step >= timeline.value.length - 1)
+/** 내 손에서 원산지로 거슬러 올라가는 여정 ('-r' id). 예전 여정은 예전 순서 그대로 */
+const reverse = computed(() => isReverseJourney(journey.value?.id))
+const reduced = reducedMotion()
 
 /** 방금 얻은 카드 알림 */
 const toast = shallowRef<string[]>([])
@@ -46,6 +51,37 @@ const materialIndex = computed(() => {
   return mid ? journey.value!.materialIds.indexOf(mid) : -1
 })
 const material = computed(() => (current.value ? MATERIALS[current.value.materialId] : undefined))
+/** 거꾸로 가는 여정에서 가게·사무실 사람 칸 (재료가 갈라지기 전, 내 손 가까이) */
+const atClosing = computed(() => reverse.value && current.value?.type === 'stage' && !!current.value.closing)
+const barSub = computed(() =>
+  atClosing.value ? '내 손 가까이' : `재료 ${materialIndex.value + 1}/${journey.value?.materialIds.length ?? 0} · ${material.value?.name ?? ''}`,
+)
+
+// ── 되감기 변신: 칸마다 물건의 형태 ──
+const forms = computed(() => (journey.value ? formsAlong(timeline.value, journey.value.materialIds, journey.value.id, journey.value.name) : []))
+const currentForm = computed(() => forms.value[journey.value?.step ?? 0])
+const kicker = computed(() => (reverse.value && journey.value ? reverseKicker(timeline.value, forms.value, journey.value.step) : ''))
+
+// ── 거리 계산기: 내 손에서 거슬러 올라간 거리. 예전 여정은 같은 여정을 뒤집어서 잰다 ──
+const distances = computed(() => {
+  const j = journey.value
+  if (!j) return { at: [] as number[], total: 0 }
+  return reverseDistances(reverse.value ? timeline.value : reverseTimeline(j.materialIds, j.id, j.name))
+})
+const kmSoFar = computed(() => (reverse.value && journey.value ? distances.value.at[journey.value.step] ?? 0 : 0))
+
+// ── 다음 정거장 맞히기: 항구·바다 칸에서 보기 2개. 맞히면 반짝임만, 보상 없음. 저장하지 않는다 ──
+const stop = computed(() => (reverse.value && journey.value && current.value?.type === 'stage' ? stopQuestion(timeline.value, journey.value.step, journey.value.id) : null))
+const stopPick = ref<number | null>(null)
+watch(() => journey.value?.step, () => { stopPick.value = null })
+
+/** 같은 길 칸: 다시 지나는 곳들 */
+const passPlaces = computed(() => {
+  const t = current.value
+  if (t?.type !== 'pass') return ''
+  return [...new Set(t.personIds.map((id) => placeLabel(PLACES[PEOPLE[id]!.placeId]!)))].join(' · ')
+})
+const passPeople = computed(() => (current.value?.type === 'pass' ? current.value.personIds : []))
 
 /** 지금까지 만난 사람들 (작은 얼굴로 줄지어) */
 const metFaces = computed(() => {
@@ -64,13 +100,17 @@ watch(() => metFaces.value.length, () => {
 const routeStops = computed(() => {
   if (!journey.value || !material.value) return []
   const mid = material.value.id
-  const stagesBefore = timeline.value.slice(0, journey.value.step + 1).filter(
-    (t) => t.type === 'stage' && t.materialId === mid,
-  ).length
-  const stages = timeline.value.flatMap((t) => (t.type === 'stage' && t.materialId === mid ? [t.personId] : []))
-  return stages.map((pid, i) => {
+  const step = journey.value.step
+  // 거꾸로 가는 여정은 가게·사무실 사람을 빼고, 같은 길 칸의 사람도 경유지로 그린다
+  const stops = timeline.value.flatMap((t, i) => {
+    if (t.materialId !== mid) return []
+    if (t.type === 'stage' && !(reverse.value && t.closing)) return [{ pid: t.personId, i }]
+    if (t.type === 'pass') return t.personIds.map((pid) => ({ pid, i }))
+    return []
+  })
+  return stops.map(({ pid, i }) => {
     const place = PLACES[PEOPLE[pid]!.placeId]!
-    return { pid, label: place.country || '바다', reached: i < stagesBefore, here: i === stagesBefore - 1 && current.value?.type === 'stage' }
+    return { pid, label: place.country || '바다', reached: i <= step, here: i === step && (current.value?.type === 'stage' || current.value?.type === 'pass') }
   })
 })
 
@@ -121,6 +161,8 @@ function next() {
   clearTimers()
   if (isLast.value) {
     game.finishJourney(j)
+    // 거꾸로 가는 여정은 원산지에서 다시 내 손까지 빨리 감아 본 뒤 끝 장면으로
+    if (reverse.value) replaying.value = true
     window.scrollTo({ top: 0 })
     return
   }
@@ -129,9 +171,11 @@ function next() {
 }
 
 const nextLabel = computed(() => {
-  if (isLast.value) return '여정 마치기'
+  if (isLast.value) return reverse.value ? '이제 다시 내 손까지' : '여정 마치기'
   const after = timeline.value[(journey.value?.step ?? 0) + 1]
-  return after?.type === 'stage' || after?.type === 'hidden' ? '다음 사람 만나기' : '다음'
+  const person = after?.type === 'stage' || after?.type === 'hidden' || after?.type === 'pass'
+  if (reverse.value) return person ? '그 전으로' : '다음'
+  return person ? '다음 사람 만나기' : '다음'
 })
 
 function answer(i: number) {
@@ -236,7 +280,18 @@ const metPeople = computed(() => summary.value.people)
 
 // ── 끝 장면 ──
 const productId = computed(() => PRODUCTS.find((p) => p.name === journey.value?.name)?.id ?? '')
-const lineup = computed(() => lineupOf(metPeople.value))
+/** 끝 장면은 원산지 → 내 손 순서로 줄을 선다 (거꾸로 간 여정도) */
+const forwardPeople = computed(() => {
+  const j = journey.value
+  if (!j) return []
+  return [...new Set(forwardTimeline(j.materialIds, j.id, j.name).flatMap((t) => (t.type === 'stage' || t.type === 'hidden' ? [t.personId] : [])))]
+})
+const lineup = computed(() => lineupOf(forwardPeople.value))
+const totalKm = computed(() => roundKm(distances.value.total))
+
+// ── 빨리 감기 엔딩: 여정을 마친 그 자리에서만 (다시 열면 바로 끝 장면) ──
+const replaying = ref(false)
+const frames = computed(() => (journey.value ? replayFrames(journey.value.materialIds, journey.value.id, journey.value.name) : []))
 
 /** 추천을 따라 떠나 그 사람을 다시 만났으면, 그 연결 카드를 평소보다 크게 보여 준다 */
 const reunionCard = computed(() => {
@@ -277,6 +332,11 @@ function followTeaser(p: Product) {
       <NuxtLink to="/" class="btn btn-primary">처음으로</NuxtLink>
     </div>
 
+    <!-- 되감기 엔딩 -->
+    <template v-else-if="journey.done && replaying">
+      <RewindReplay :frames="frames" :product-id="productId" :item-name="journey.name" @done="replaying = false" />
+    </template>
+
     <!-- 도착 -->
     <template v-else-if="journey.done">
       <header class="head">
@@ -287,9 +347,11 @@ function followTeaser(p: Product) {
       <EndScene :people="lineup" :product-id="productId" :item-name="journey.name" />
 
       <p class="touched">
-        이 {{ journey.name }}에 <strong class="mono">{{ summary.countries.length }}</strong>개 나라,
-        <strong class="mono">{{ metPeople.length }}</strong>명이 닿아 있었어요
+        이 {{ withJosa(journey.name, '은', '는') }}
+        <template v-if="totalKm">약 <strong class="mono">{{ formatKm(distances.total) }}</strong>km, </template>
+        <strong class="mono">{{ metPeople.length }}</strong>명의 손을 거쳐 왔어요
       </p>
+      <p class="muted small">{{ summary.countries.length }}개 나라를 지나왔어요</p>
       <p v-if="voice" class="voice">“{{ voice }}”</p>
 
       <section v-if="linkGained.length && !reunionCard" class="link-banner">
@@ -357,7 +419,7 @@ function followTeaser(p: Product) {
         </NuxtLink>
         <div class="bar-title">
           <span class="name">{{ journey.name }}</span>
-          <span class="mono muted small">재료 {{ materialIndex + 1 }}/{{ journey.materialIds.length }} · {{ material?.name }}</span>
+          <span class="mono muted small">{{ barSub }}</span>
         </div>
         <span class="mono muted small">{{ journey.step + 1 }}/{{ timeline.length }}</span>
       </header>
@@ -374,7 +436,12 @@ function followTeaser(p: Product) {
         <li v-if="hasNext" class="face next-face" aria-label="다음 사람">?</li>
       </ol>
 
-      <ol class="route" aria-label="경유지">
+      <div v-if="reverse && currentForm" class="rewind">
+        <FormBadge :form="currentForm" :product-id="productId" label="지금 모습" />
+        <p v-if="roundKm(kmSoFar)" class="km">벌써 약 <strong class="mono">{{ formatKm(kmSoFar) }}</strong>km를 거슬러 왔어요</p>
+      </div>
+
+      <ol v-if="!atClosing" class="route" aria-label="경유지">
         <li v-for="(stop, i) in routeStops" :key="stop.pid + i" :class="{ reached: stop.reached, here: stop.here }">
           <span class="dot" />
           <span class="label">{{ stop.reached ? stop.label : '?' }}</span>
@@ -390,7 +457,40 @@ function followTeaser(p: Product) {
         @pointercancel="onPointerCancel"
       >
         <section v-if="current.type === 'stage'" class="stage">
+          <p v-if="kicker" class="kicker-q">{{ kicker }}</p>
+          <!-- 건네기: 지금 사람이 앞사람에게서 물건을 받아 든다 -->
+          <span v-if="reverse && currentForm && !reduced" class="handover" aria-hidden="true">
+            <!-- eslint-disable vue/no-v-html -- 직접 그린 SVG -->
+            <svg v-if="currentForm.prop" :viewBox="PROP_VIEWBOX" width="40" height="40" v-html="propSvg(currentForm.prop)" />
+            <svg v-else viewBox="0 0 32 32" width="40" height="40" v-html="productIconSvg(productId)" />
+            <!-- eslint-enable vue/no-v-html -->
+          </span>
           <PersonCard :person-id="current.personId" :is-new="journey.newCards.includes(current.personId)" />
+          <div v-if="stop" class="stop panel">
+            <p class="stop-q">이 전엔 어디 있었을까요?</p>
+            <div class="stop-options">
+              <button
+                v-for="(opt, i) in stop.options"
+                :key="opt"
+                class="opt"
+                :class="{ right: stopPick !== null && i === stop.answer, wrong: stopPick === i && i !== stop.answer, sparkle: stopPick === i && i === stop.answer }"
+                :disabled="stopPick !== null"
+                @click="stopPick = i"
+              >
+                {{ opt }}
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <section v-else-if="current.type === 'pass'" class="pass panel">
+          <p v-if="kicker" class="kicker-q">{{ kicker }}</p>
+          <span class="chip pass-chip">같은 길</span>
+          <p class="pass-title">같은 길을 지났어요</p>
+          <p class="small muted">{{ passPlaces }}에서 앞 재료와 같은 사람들을 다시 지나요</p>
+          <div class="pass-faces">
+            <Character v-for="pid in passPeople" :key="pid" :person-id="pid" :size="56" />
+          </div>
         </section>
 
         <section v-else-if="current.type === 'hidden'" class="stage hidden-meet">
@@ -516,7 +616,40 @@ function followTeaser(p: Product) {
 .reached .label { color: var(--text); }
 .label { white-space: nowrap; max-width: 64px; overflow: hidden; text-overflow: ellipsis; }
 
-.stage { animation: pop-in var(--motion-enter) var(--motion-ease); }
+.stage { position: relative; animation: pop-in var(--motion-enter) var(--motion-ease); }
+.kicker-q { margin: 0 0 8px; font-family: var(--font-display); font-size: 20px; line-height: 1.35; word-break: keep-all; }
+
+.rewind { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 12px; }
+.km { margin: 0; font-size: 13px; color: var(--muted); }
+.km strong { color: var(--accent); font-weight: 500; }
+
+/* 건네기: 왼쪽(앞사람 쪽)에서 물건이 날아와 지금 사람 손에 들린다 */
+.handover {
+  position: absolute; z-index: 2; right: 18%; top: 120px;
+  display: flex; padding: 4px; border-radius: 999px; background: #fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  animation: hand-over var(--motion-hand) var(--motion-ease) both;
+}
+@keyframes hand-over {
+  from { transform: translateX(-140px) scale(0.7); opacity: 0; }
+  to { transform: translateX(0) scale(1); opacity: 1; }
+}
+
+.pass { display: flex; flex-direction: column; gap: 8px; animation: rise var(--motion-enter) var(--motion-ease); }
+.pass .kicker-q { margin: 0; }
+.pass-chip { align-self: flex-start; color: var(--accent); }
+.pass-title { margin: 0; font-size: 18px; font-weight: 700; }
+.pass-faces { display: flex; flex-wrap: wrap; gap: 4px; }
+
+.stop { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
+.stop-q { margin: 0; font-size: 16px; font-weight: 700; }
+.stop-options { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.stop-options .opt { justify-content: center; text-align: center; padding: 8px 10px; line-height: 1.35; word-break: keep-all; }
+.opt.sparkle { animation: sparkle var(--motion-enter) var(--motion-ease); }
+@keyframes sparkle {
+  0% { box-shadow: 0 0 0 0 rgba(242, 193, 78, 0.8); }
+  100% { box-shadow: 0 0 0 12px rgba(242, 193, 78, 0); }
+}
 
 .story { display: flex; flex-direction: column; gap: 10px; animation: rise var(--motion-enter) var(--motion-ease); cursor: pointer; user-select: none; }
 .story-chip { align-self: flex-start; color: var(--accent); }

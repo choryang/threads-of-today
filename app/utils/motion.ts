@@ -25,6 +25,10 @@ export const MOTION = {
   lineStaggerMs: 600,
   /** 실타래를 처음 열 때 실이 그려지는 시간 */
   drawMs: 1600,
+  /** 카드를 넘길 때 지금 사람이 물건을 받아 드는 동작, 형태가 바뀌는 효과 */
+  handMs: 300,
+  /** 되감기 엔딩에서 사람 한 명이 지나가는 시간 */
+  replayStepMs: 200,
 } as const
 
 /** 자동으로 넘어가는 화면이 머무는 시간. 글자 수에 비례하고 최소·최대 사이로 자른다 */
@@ -47,5 +51,7 @@ export function motionCssVars(): Record<string, string> {
     '--motion-wave': `${MOTION.waveMs}ms`,
     '--motion-bob': `${MOTION.bobMs}ms`,
     '--motion-draw': `${MOTION.drawMs}ms`,
+    '--motion-hand': `${MOTION.handMs}ms`,
+    '--motion-replay': `${MOTION.replayStepMs}ms`,
   }
 }
