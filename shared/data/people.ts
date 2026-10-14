@@ -430,17 +430,19 @@ const list: Person[] = [
 const WORK_FACTS: Record<string, { fact: string; source: FactSource }> = {
   warehouse: { fact: '큰 허브는 하루 약 170만 상자를 나눠 보낼 수 있어요.', source: { name: "이투데이 '창고혁명' CJ대한통운, 하루 170만 상자 처리", year: 2020, url: 'https://www.etoday.co.kr/news/view/1884915' } },
   'bulk-crew': { fact: '큰 벌크선 한 척에 철광석을 약 17만 톤 실어요.', source: { name: 'Marine Link, capesize 시장 보고', year: 2017, url: 'https://www.marinelink.com/news/bulkcapesize-increased422429' } },
-  'sea-crew': { fact: '큰 배 한 척에 컨테이너를 약 2만 4천 개 실어요.', source: { name: '데일리안 [르포] HMM, 최대 컨테이너선 12척 확보', year: 2020, url: 'https://www.dailian.co.kr/news/view/912046/' } },
+  // 출처 수치는 TEU(20피트 컨테이너 환산 단위)라 '20피트로 치면'으로 쓴다
+  'sea-crew': { fact: '큰 배 한 척에 20피트 컨테이너로 치면 약 2만 4천 개만큼 실어요.', source: { name: '데일리안 [르포] HMM, 최대 컨테이너선 12척 확보', year: 2020, url: 'https://www.dailian.co.kr/news/view/912046/' } },
   'trade-clerk': { fact: '배가 들어와 통관이 끝나기까지 보통 약 1.7일 걸려요.', source: { name: '관세청 보도자료 "수입화물 처리시간 전년대비 18% 단축"(2016년 기준)', year: 2017, url: 'https://www.kctdi.or.kr/service/board/BoardServlet?cmd=detail&type=HT4_1&sc.row_id=3296&sc.layout=left_news&sc.rowsPerPage=10&sc.boardid=B00004&sc.endRow=0&sc.startRow=0&sc.passTF=false&sc.pageNo=1' } },
   'merch-md': { fact: '대형마트에는 보통 약 3만~5만 가지 물건이 놓여요.', source: { name: '파이낸셜뉴스(뉴스1)', year: 2026, url: 'https://www.fnnews.com/news/202607270620337290' } },
   'busan-crane': { fact: '한 시간에 컨테이너를 약 25개 들어 옮겨요.', source: { name: '부산일보 [SEA&기사] 해양직업 11 초대형 크레인 기사', year: 2010, url: 'https://www.busan.com/view/busan/view.php?code=20100528000167' } },
   'tanker-crew': { fact: '초대형 유조선 한 척에 원유를 약 200만 배럴 실어요.', source: { name: 'U.S. EIA, Today in Energy', year: 2014, url: 'https://www.eia.gov/todayinenergy/detail.php?id=17991' } },
-  'oil-worker': { fact: '원유가 든 땅속 층은 약 2,100m 깊이에 있어요.', source: { name: 'Offshore Technology, Ghawar Oil Field', year: 2026, url: 'https://www.offshore-technology.com/projects/ghawar-oil-field/' } },
+  'oil-worker': { fact: '사우디 가와르 유전에서는 원유 층이 약 2,100m 깊이에 있어요.', source: { name: 'Offshore Technology, Ghawar Oil Field', year: 2026, url: 'https://www.offshore-technology.com/projects/ghawar-oil-field/' } },
   'ulsan-refinery': { fact: '하루 약 84만 배럴의 원유를 정제해요.', source: { name: '비즈워치, SK 울산CLX 기사', year: 2023, url: 'https://news.bizwatch.co.kr/article/industry/2023/09/15/0029' } },
   'yeosu-chem': { fact: '공장 한 곳이 한 해 에틸렌을 약 200만 톤 만들 수 있어요.', source: { name: '뉴데일리경제, LG화학 여수공장 NCC 증설', year: 2021, url: 'https://biz.newdaily.co.kr/site/data/html/2021/06/25/2021062500035.html' } },
   injection: { fact: '병뚜껑은 약 3.5초마다 72개씩 찍혀 나와요.', source: { name: 'INEOS Olefins & Polymers Europe, Fakuma 시연', year: 2011, url: 'https://www.ineos.com/no/businesses/Ineos-olefinpolymerer-Europa/Nyheter/meet-us-there-ineos-olefins-polymers-europe-at-the-fakuma/' } },
   'santos-port': { fact: '한 해 약 1억 8천만 톤의 화물이 이 항구를 지나요.', source: { name: 'Datamar News, Port of Santos 2024년 화물 처리 기록', year: 2025, url: 'https://www.datamarnews.com/noticias/port-of-santos-sets-historical-record-for-cargo-throughput-in-2024/' } },
   'garak-auctioneer': { fact: '경매 한 건은 보통 약 4~5초면 끝나요.', source: { name: "서울신문 '가락시장 40년'", year: 2025, url: 'https://m.seoul.co.kr/news/2025/06/16/20250616002003' } },
+  // 기사: '지난해(2024년) 인천항 벌크 물동량은 9천328만3천965t' (해운항만물류정보시스템)
   'incheon-port': { fact: '인천항에는 한 해 벌크 화물 약 9,300만 톤이 오가요.', source: { name: "경인일보 '컨테이너 물동량 역대최고' 인천항", year: 2025, url: 'https://www.kyeongin.com/article/1727839' } },
   eucalyptus: { fact: '심은 나무를 베기까지 보통 약 7년을 가꿔요.', source: { name: 'Suzano BIO, Behind our innovation, there is BIO', year: 2026, url: 'https://biopulp.suzano.com.br/news/behind-our-innovation-there-is-bio' } },
   'pulp-mill': { fact: '큰 공장 한 곳이 한 해 펄프 약 255만 톤을 만들어요.', source: { name: 'PaperAge, Suzano begins operation of new pulp mill', year: 2024, url: 'https://paperage.com/2024news/07-22-2024suzano-begins-operation-of-new-pulp-mill.html' } },
@@ -448,9 +450,12 @@ const WORK_FACTS: Record<string, { fact: string; source: FactSource }> = {
   courier: { fact: '하루 보통 약 250~300개의 상자를 문 앞까지 날라요.', source: { name: '바이라인네트워크, CJ대한통운 택배기사 인터뷰', year: 2019, url: 'https://byline.network/2019/05/03-9/' } },
   'cane-harvester': { fact: '수확기 한 대로 하루 약 800~1,000톤을 거둬요.', source: { name: 'Farmonline, Capacity the key to cane harvest', year: 2016, url: 'https://www.farmonline.com.au/story/4210325/capacity-the-key-to-cane-harvest/' } },
   'raw-sugar-mill': { fact: '공장 한 곳이 한 해 사탕수수 약 150만 톤을 짜요.', source: { name: 'Wikipedia, List of sugar mills in Queensland (Macknade)', year: 2026, url: 'https://en.wikipedia.org/wiki/List_of_sugar_mills_in_Queensland' } },
-  'grain-elevator': { fact: '저장탑 하나에 밀을 약 50만~150만 부셸 담아요.', source: { name: 'Kansas Historical Society, Kansapedia "Milling and Grain Storage"', year: 2011, url: 'https://www.kansashistory.gov/kansapedia/milling-and-grain-storage/12149' } },
-  'pnw-port': { fact: '큰 배 한 척에 밀을 약 160만 부셸 실어요.', source: { name: 'Federal Reserve Bank of San Francisco, Exploring Grain Exports in Oregon', year: 2025, url: 'https://www.frbsf.org/research-and-insights/blog/around-the-district/2025/04/15/exploring-grain-exports-in-oregon/' } },
-  'flour-mill': { fact: '밀 한 부셸(60파운드)에서 밀가루가 약 42파운드 나와요.', source: { name: 'Kansas Wheat, What does a bushel of wheat mean to me?', year: 2015, url: 'https://kswheat.com/news/what-does-a-bushel-of-wheat-mean-to-me' } },
+  // 밀 1부셸 = 60파운드 = 약 27.2kg. 50만 부셸 × 27.2kg ≈ 1만 3,600톤, 150만 부셸 × 27.2kg ≈ 4만 800톤
+  'grain-elevator': { fact: '저장탑 하나에 밀을 약 1만 4천~4만 톤 담아요.', source: { name: 'Kansas Historical Society, Kansapedia "Milling and Grain Storage"', year: 2011, url: 'https://www.kansashistory.gov/kansapedia/milling-and-grain-storage/12149' } },
+  // 160만 부셸 × 27.2kg ≈ 4만 3,520톤
+  'pnw-port': { fact: '큰 배 한 척에 밀을 약 4만 4천 톤 실어요.', source: { name: 'Federal Reserve Bank of San Francisco, Exploring Grain Exports in Oregon', year: 2025, url: 'https://www.frbsf.org/research-and-insights/blog/around-the-district/2025/04/15/exploring-grain-exports-in-oregon/' } },
+  // 출처: 밀 1부셸(60파운드)에서 밀가루 42파운드. 42 ÷ 60 = 0.7 → 밀 100kg에서 약 70kg
+  'flour-mill': { fact: '밀 100kg에서 밀가루가 약 70kg 나와요.', source: { name: 'Kansas Wheat, What does a bushel of wheat mean to me?', year: 2015, url: 'https://kswheat.com/news/what-does-a-bushel-of-wheat-mean-to-me' } },
   'coffee-picker': { fact: '약 8~10일마다 나무를 돌며 익은 체리만 따요.', source: { name: 'Wikipedia, Coffee production', year: 2026, url: 'https://en.wikipedia.org/wiki/Coffee_production' } },
 }
 

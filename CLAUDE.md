@@ -80,6 +80,8 @@ tests/                    node:test + tsx 단위 테스트
 9. 여정 이벤트(이야기)는 직접 쓴 연출이라 허구여도 된다. 화면에 '이야기' 칩만 붙이고, 연출임을 설명하는 안내 문장은 붙이지 않는다.
    문장은 현재진행형 해요체로 쓰고 숫자·나라 이름은 넣지 않는다(check:data의 looksFactual 검사). 무작위는 늘 여정 id 시드로.
 10. Save 모양을 바꾸면 `shared/progress.ts`의 mergeSaves·sanitizeSave와 tests/progress.test.ts도 함께 고친다.
+11. 일의 크기 숫자(workFact·work-quizzes)를 보강할 때는 시설 규모나 나라 전체 통계보다 한 사람의 하루(하루에 몇 개, 몇 시간, 몇 km)나
+    한 그루·한 송이처럼 손에 잡히는 단위의 숫자를 먼저 고른다. 단위는 미터법(톤·kg·km)으로 환산하고 계산식을 주석에 남긴다.
 
 ## 알려진 상태
 

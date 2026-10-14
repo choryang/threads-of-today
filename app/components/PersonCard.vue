@@ -29,7 +29,7 @@ function thank() {
   game.thank(props.personId)
   waving.value = true
   clearTimeout(waveTimer)
-  waveTimer = setTimeout(() => { waving.value = false }, 1800)
+  waveTimer = setTimeout(() => { waving.value = false }, MOTION.waveMs)
 }
 onBeforeUnmount(() => clearTimeout(waveTimer))
 </script>
