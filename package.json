@@ -1,0 +1,22 @@
+{
+  "name": "my-day-people",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "nuxt dev",
+    "build": "nuxt build",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare",
+    "check:data": "tsx scripts/check-data.ts"
+  },
+  "dependencies": {
+    "html-to-image": "^1.11.11",
+    "nuxt": "^4.1.0",
+    "vue": "^3.5.0",
+    "vue-router": "^4.5.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  }
+}
