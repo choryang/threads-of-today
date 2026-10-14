@@ -2,7 +2,7 @@ import type { CardSet, LinkRule, Material, Product } from '../types'
 
 /**
  * 재료별 대표 여정.
- * 실제 경로는 제품·브랜드마다 다르며, 여기 담긴 것은 무역·생산 구조를 바탕으로 한 "대표 경로 예시"다.
+ * 무역·생산 구조를 바탕으로 직접 쓴 여정이다. 게임이라 허구가 조금 섞여도 되고, 실제 자료에서 가져온 사실에는 출처를 주석으로 남긴다.
  */
 const SEA = ['sea-crew', 'busan-crane', 'warehouse']
 

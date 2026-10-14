@@ -201,7 +201,6 @@ function journeyProgress(materialIds: string[], step: number, id: string) {
       <NuxtLink to="/result" class="btn btn-primary btn-block">오늘의 결과 카드 보기</NuxtLink>
     </section>
 
-    <p class="foot muted">여정은 무역·생산 구조를 바탕으로 한 대표 경로 예시예요. 실제 경로는 제품마다 다를 수 있어요.</p>
   </main>
 </template>
 
@@ -298,5 +297,4 @@ function journeyProgress(materialIds: string[], step: number, id: string) {
 }
 
 .done-panel { display: flex; flex-direction: column; gap: 10px; }
-.foot { font-size: 12px; line-height: 1.5; margin: 0; }
 </style>

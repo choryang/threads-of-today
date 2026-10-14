@@ -122,7 +122,6 @@ async function save(share: boolean) {
             </li>
           </ul>
 
-          <p class="s-foot">무역·생산 구조를 바탕으로 한 대표 경로 예시예요.</p>
         </article>
       </div>
 
@@ -162,7 +161,6 @@ async function save(share: boolean) {
 .stamp:nth-child(3n) { border-color: #4f8a7a; color: #4f8a7a; border-style: dashed; }
 .items { list-style: none; margin: 0; padding: 14px 0 0; border-top: 1px dashed #b5ad99; display: flex; flex-direction: column; gap: 8px; }
 .items li { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; }
-.s-foot { margin: 0; font-size: 11px; color: #4a4a4a; }
 
 .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 </style>
