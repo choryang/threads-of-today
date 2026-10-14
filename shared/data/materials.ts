@@ -2,7 +2,9 @@ import type { CardSet, LinkRule, Material, Product } from '../types'
 
 /**
  * 재료별 대표 여정.
- * 무역·생산 구조를 바탕으로 직접 쓴 여정이다. 게임이라 허구가 조금 섞여도 되고, 실제 자료에서 가져온 사실에는 출처를 주석으로 남긴다.
+ * 무역·생산 구조를 바탕으로 직접 쓴 여정이다.
+ * 출발지 가중치(origins[].weight)는 게임용이다. 실제 생산·수입 비중이 아니라, 한 재료의 출발지가 고루 나오도록
+ * 가장 드문 출발지도 25% 이상 나오게 정했다(2곳 3:2, 3곳 2:1:1, 4곳 1:1:1:1). 실제 통계는 각 재료 주석에 남긴다. 게임이라 허구가 조금 섞여도 되고, 실제 자료에서 가져온 사실에는 출처를 주석으로 남긴다.
  */
 const SEA = ['sea-crew', 'busan-crane', 'warehouse']
 
@@ -10,14 +12,13 @@ const list: Material[] = [
   {
     id: 'coffee', name: '커피 원두', aliases: ['커피', '원두', '아메리카노', '라떼', '콜드브루', '에스프레소'],
     stages: ['coffee-picker', 'washing-station', 'djibouti-docker', ...SEA.slice(0, 2), 'roaster', 'warehouse'],
-    // 출발지 변형. 경로 근거는 people.ts 주석.
-    // 가중치는 모두 임시값이다. 실제 한국 수입 비중이 아니다. 관세청 수출입실적(scripts/update-origins.ts)으로 갱신하기 전까지 그대로 둔다.
+    // 출발지 변형. 경로 근거는 people.ts 주석. 가중치는 게임용(GAME_WEIGHTS 참고)
     originHead: 3,
     origins: [
-      { id: 'et', name: '에티오피아', weight: 3, head: ['coffee-picker', 'washing-station', 'djibouti-docker'] }, // 임시값
-      { id: 'co', name: '콜롬비아', weight: 4, head: ['co-coffee-farmer', 'co-buenaventura-docker'] }, // 임시값
-      { id: 'vn', name: '베트남', weight: 3, head: ['vn-coffee-farmer', 'vn-coffee-port'] }, // 임시값
-      { id: 'br', name: '브라질', weight: 4, head: ['br-coffee-farmer', 'br-santos-coffee'] }, // 임시값
+      { id: 'et', name: '에티오피아', weight: 1, head: ['coffee-picker', 'washing-station', 'djibouti-docker'] },
+      { id: 'co', name: '콜롬비아', weight: 1, head: ['co-coffee-farmer', 'co-buenaventura-docker'] },
+      { id: 'vn', name: '베트남', weight: 1, head: ['vn-coffee-farmer', 'vn-coffee-port'] },
+      { id: 'br', name: '브라질', weight: 1, head: ['br-coffee-farmer', 'br-santos-coffee'] },
     ],
     quiz: {
       q: '에티오피아는 바다가 없는 나라예요. 커피는 어느 나라 항구를 통해 나갈까요?',
@@ -34,11 +35,10 @@ const list: Material[] = [
   {
     id: 'cacao', name: '카카오', aliases: ['초콜릿', '초코', '카카오', '코코아', '핫초코', '브라우니'],
     stages: ['cacao-farmer', 'cacao-dryer', 'abidjan-docker', 'sea-crew', 'cocoa-grinder', 'busan-crane', 'warehouse'],
-    // 가중치는 임시값이다. 실제 한국 수입 비중이 아니다. 관세청 수출입실적으로 갱신하기 전까지 그대로 둔다.
     originHead: 3,
     origins: [
-      { id: 'ci', name: '코트디부아르', weight: 6, head: ['cacao-farmer', 'cacao-dryer', 'abidjan-docker'] }, // 임시값
-      { id: 'gh', name: '가나', weight: 4, head: ['gh-cacao-farmer', 'gh-takoradi-docker'] }, // 임시값
+      { id: 'ci', name: '코트디부아르', weight: 1, head: ['cacao-farmer', 'cacao-dryer', 'abidjan-docker'] },
+      { id: 'gh', name: '가나', weight: 1, head: ['gh-cacao-farmer', 'gh-takoradi-docker'] },
     ],
     quiz: {
       q: '세계에서 카카오를 가장 많이 생산하는 나라는?',
@@ -339,7 +339,7 @@ const list: Material[] = [
   },
   {
     id: 'cabbage', name: '배추', aliases: ['배추', '김치', '김치찌개', '김치볶음밥', '겉절이', '보쌈김치', '배추전'],
-    stages: ['cabbage-farmer', 'cabbage-trader', 'kimchi-maker', 'warehouse'],
+    stages: ['cabbage-farmer', 'cabbage-trader', 'garak-auctioneer', 'kimchi-maker', 'warehouse'],
     quiz: {
       q: '더운 여름에 배추는 주로 어디에서 기를까요?',
       options: ['강원도 높은 산의 고랭지', '제주도 해안가', '도시의 비닐하우스'], answer: 0,
@@ -457,11 +457,11 @@ const list: Material[] = [
   {
     id: 'red-bean', name: '팥', aliases: ['팥', '단팥', '팥앙금', '팥빙수', '단팥빵', '붕어빵', '팥죽', '양갱', '시루떡'],
     stages: ['redbean-farmer', 'anko-maker', 'warehouse'],
-    // 가중치: 2023년 국내 생산 약 6천 톤, 중국산 수입 약 2만 톤(KREI 식품수급표 2023, UN Comtrade)
+    // 실제 공급은 중국산이 약 3/4(2023년 국내 약 6천 톤, 중국산 수입 약 2만 톤). 가중치는 게임용
     originHead: 1,
     origins: [
-      { id: 'kr', name: '국산', weight: 6, head: ['redbean-farmer'] },
-      { id: 'cn', name: '중국', weight: 20, head: ['cn-redbean-farmer'] },
+      { id: 'kr', name: '국산', weight: 1, head: ['redbean-farmer'] },
+      { id: 'cn', name: '중국', weight: 1, head: ['cn-redbean-farmer'] },
     ],
     // 근거: 농촌진흥청 RDA 인테러뱅 91호(2012)
     quiz: {
@@ -474,12 +474,12 @@ const list: Material[] = [
   {
     id: 'buckwheat', name: '메밀', aliases: ['메밀', '모밀', '메밀국수', '막국수', '소바', '메밀묵', '메밀전', '메밀차', '메밀가루'],
     stages: ['jeju-buckwheat-farmer', 'noodle-maker', 'warehouse'],
-    // 가중치: 2023년 국내 2,975톤, 수입 중국 1,236톤·미국 739톤(제주메밀 기본계획 2025, UN Comtrade). 백 톤 단위
+    // 실제 공급은 2023년 국내 2,975톤, 수입 중국 1,236톤·미국 739톤. 가중치는 게임용
     originHead: 1,
     origins: [
-      { id: 'kr', name: '제주', weight: 30, head: ['jeju-buckwheat-farmer'] },
-      { id: 'cn', name: '중국', weight: 12, head: ['cn-buckwheat-farmer'] },
-      { id: 'us', name: '미국', weight: 7, head: ['us-buckwheat-farmer'] },
+      { id: 'kr', name: '제주', weight: 1, head: ['jeju-buckwheat-farmer'] },
+      { id: 'cn', name: '중국', weight: 1, head: ['cn-buckwheat-farmer'] },
+      { id: 'us', name: '미국', weight: 1, head: ['us-buckwheat-farmer'] },
     ],
     // 근거: 제주특별자치도「제3차 제주메밀 산업 육성 기본계획」(2025, KOSIS 2023)
     quiz: {
@@ -492,11 +492,11 @@ const list: Material[] = [
   {
     id: 'potato', name: '감자', aliases: ['감자', '감자칩', '포테이토칩', '감자튀김', '프렌치프라이', '감자전', '감자탕', '알감자', '해시브라운'],
     stages: ['potato-farmer', 'potato-storage', 'garak-auctioneer', 'warehouse'],
-    // 가중치: 2024년 국내 생산 52만 톤, 미국산 감자 수입 연 12만 톤 안팎(강원도 감자 통계, 한국농어민신문 2026-02-03 KREI 인용). 만 톤 단위
+    // 실제 공급은 국내 생산 약 52만 톤, 미국산 수입 연 12만 톤 안팎. 가중치는 게임용
     originHead: 3,
     origins: [
-      { id: 'kr', name: '국산', weight: 52, head: ['potato-farmer', 'potato-storage', 'garak-auctioneer'] },
-      { id: 'us', name: '미국', weight: 12, head: ['us-fries-plant'] },
+      { id: 'kr', name: '국산', weight: 1, head: ['potato-farmer', 'potato-storage', 'garak-auctioneer'] },
+      { id: 'us', name: '미국', weight: 1, head: ['us-fries-plant'] },
     ],
     // 근거: 국립국어원「새국어생활」19-3(2009), 표준국어대사전 '감자'·'고구마'
     quiz: {
@@ -520,12 +520,12 @@ const list: Material[] = [
   {
     id: 'radish', name: '무', aliases: ['무', '단무지', '깍두기', '무생채', '동치미', '총각김치', '무말랭이', '무국', '뭇국'],
     stages: ['radish-farmer', 'warehouse'],
-    // 가중치: 가을무 54는 KREI 현안분석 제11호(2016)의 가을무 비중. 고랭지무·월동무 23은 임시값
+    // 실제로는 가을무가 생산의 약 54%(KREI 2016). 가중치는 게임용
     originHead: 1,
     origins: [
-      { id: 'autumn', name: '가을무', weight: 54, head: ['radish-farmer'] },
-      { id: 'highland', name: '고랭지무', weight: 23, head: ['highland-radish-farmer', 'garak-auctioneer'] }, // 임시값
-      { id: 'jeju', name: '제주 월동무', weight: 23, head: ['jeju-radish-farmer'] }, // 임시값
+      { id: 'autumn', name: '가을무', weight: 1, head: ['radish-farmer'] },
+      { id: 'highland', name: '고랭지무', weight: 1, head: ['highland-radish-farmer', 'garak-auctioneer'] },
+      { id: 'jeju', name: '제주 월동무', weight: 1, head: ['jeju-radish-farmer'] },
     ],
     // 근거: KREI 현안분석 제11호(2016, 7월 고랭지로 산지 교체·10월 가을무로 교체), 농업인신문 2023-08-04(평창 진부·정선 임계 등)
     quiz: {
@@ -538,11 +538,11 @@ const list: Material[] = [
   {
     id: 'apple', name: '사과', aliases: ['사과', '사과주스', '애플파이', '사과잼', '사과즙', '풋사과', '부사', '홍로'],
     stages: ['apple-farmer', 'apple-apc', 'ca-storage', 'garak-auctioneer', 'warehouse'],
-    // 가중치: 2024년 재배면적 영남 23,422ha, 강원 1,748ha(KREI 농업전망 2025). 천 ha 단위. 충청·호남 등은 빠져 있다
+    // 실제 재배면적은 영남 23,422ha, 강원 1,748ha(2024). 가중치는 게임용
     originHead: 1,
     origins: [
-      { id: 'yn', name: '경상도', weight: 23, head: ['apple-farmer'] },
-      { id: 'gw', name: '강원', weight: 2, head: ['gw-apple-farmer'] },
+      { id: 'yn', name: '경상도', weight: 1, head: ['apple-farmer'] },
+      { id: 'gw', name: '강원', weight: 1, head: ['gw-apple-farmer'] },
     ],
     // 근거: 농림축산식품부 설명자료 2024-03-15(수입을 요청한 11개국 모두 허용 전), 식물방역법(생과실 원칙적 수입 금지)
     quiz: {
@@ -555,11 +555,11 @@ const list: Material[] = [
   {
     id: 'grape', name: '포도', aliases: ['포도', '청포도', '샤인머스캣', '거봉', '캠벨', '캠벨얼리', '건포도', '포도주스', '와인', '포도주'],
     stages: ['grape-farmer', 'garak-auctioneer', 'warehouse'],
-    // 가중치: 2024년 국내 생산 약 19만 9천 톤, 칠레산 생포도 수입 약 1만 3천 톤(2023년산 30,178톤 × 평년 칠레 비중 44.7%). 천 톤 단위
+    // 실제로는 국내 생산(약 19만 9천 톤)이 칠레산 수입(약 1만 3천 톤)보다 훨씬 많다. 가중치는 게임용
     originHead: 2,
     origins: [
-      { id: 'kr', name: '국산', weight: 199, head: ['grape-farmer', 'garak-auctioneer'] },
-      { id: 'cl', name: '칠레', weight: 13, head: ['cl-grape-farmer'] },
+      { id: 'kr', name: '국산', weight: 1, head: ['grape-farmer', 'garak-auctioneer'] },
+      { id: 'cl', name: '칠레', weight: 1, head: ['cl-grape-farmer'] },
     ],
     // 근거: 시마네현 농업기술센터·오카야마현 자료(1988년 교배, 2006년 품종 등록)
     quiz: {
@@ -572,11 +572,11 @@ const list: Material[] = [
   {
     id: 'tomato', name: '토마토', aliases: ['토마토', '방울토마토', '대추방울토마토', '케첩', '케찹', '토마토소스', '토마토주스', '토마토파스타'],
     stages: ['tomato-farmer', 'garak-auctioneer', 'warehouse'],
-    // 가중치는 임시값. 생토마토 생산량과 페이스트(농축) 수입량은 단위가 달라 바로 비교할 수 없다
+    // 가중치는 게임용
     originHead: 2,
     origins: [
-      { id: 'kr', name: '국산', weight: 3, head: ['tomato-farmer', 'garak-auctioneer'] }, // 임시값
-      { id: 'cn', name: '중국 페이스트', weight: 1, head: ['cn-tomato-paste', 'ketchup-maker'] }, // 임시값
+      { id: 'kr', name: '국산', weight: 1, head: ['tomato-farmer', 'garak-auctioneer'] },
+      { id: 'cn', name: '중국 페이스트', weight: 1, head: ['cn-tomato-paste', 'ketchup-maker'] },
     ],
     // 근거: KREI「농업전망 2025」표7-27(관세청 인용)
     quiz: {
@@ -589,11 +589,11 @@ const list: Material[] = [
   {
     id: 'barley', name: '보리', aliases: ['보리', '보리차', '보리밥', '보리쌀', '맥아', '엿기름', '맥주'],
     stages: ['barley-farmer', 'warehouse'],
-    // 가중치는 임시값. 국내 보리 생산량과 맥아 수입량을 같은 기준으로 비교한 자료를 찾지 못했다
+    // 가중치는 게임용
     originHead: 1,
     origins: [
-      { id: 'kr', name: '국산 보리', weight: 3, head: ['barley-farmer'] }, // 임시값
-      { id: 'au', name: '호주 맥아', weight: 1, head: ['au-malt'] }, // 임시값
+      { id: 'kr', name: '국산 보리', weight: 1, head: ['barley-farmer'] },
+      { id: 'au', name: '호주 맥아', weight: 1, head: ['au-malt'] },
     ],
     // 근거: 농사로 일반보리 농작업일정, 한국민족문화대백과「보리」
     quiz: {
@@ -606,11 +606,11 @@ const list: Material[] = [
   {
     id: 'squid', name: '오징어', aliases: ['오징어', '오징어채', '진미채', '오징어볶음', '마른오징어', '오징어순대', '오징어젓'],
     stages: ['distant-squid-fisher', 'warehouse'],
-    // 가중치: 2024년 원양 63,156톤, 연근해 13,545톤(해양수산부 2025-02-21). 천 톤 단위. 수입 오징어는 근거 확인이 부족해 넣지 않았다
+    // 실제 어획은 2024년 원양 63,156톤, 연근해 13,545톤. 수입 오징어는 근거 확인이 부족해 넣지 않았다. 가중치는 게임용
     originHead: 1,
     origins: [
-      { id: 'dw', name: '원양', weight: 63, head: ['distant-squid-fisher'] },
-      { id: 'ul', name: '울릉도', weight: 14, head: ['ulleung-squid-fisher', 'squid-dryer'] },
+      { id: 'dw', name: '원양', weight: 1, head: ['distant-squid-fisher'] },
+      { id: 'ul', name: '울릉도', weight: 1, head: ['ulleung-squid-fisher', 'squid-dryer'] },
     ],
     // 근거: 한국민족문화대백과「울릉도 오징어」(추광성, 집어등)
     quiz: {
@@ -657,6 +657,18 @@ export const PRODUCTS: Product[] = [
   { id: 'soju', name: '소주 한 병', aliases: ['소주'], materialIds: ['glass'] },
   { id: 'green-tea', name: '녹차', aliases: ['녹차', '녹차티백'], materialIds: ['tea', 'pulp'] },
   { id: 'omurice', name: '오므라이스', aliases: ['오므라이스'], materialIds: ['egg', 'rice'] },
+  { id: 'bungeoppang', name: '붕어빵', aliases: ['붕어빵', '잉어빵'], materialIds: ['red-bean', 'wheat', 'sugar'] },
+  { id: 'makguksu', name: '막국수', aliases: ['막국수', '메밀국수'], materialIds: ['buckwheat', 'radish', 'chili'] },
+  { id: 'potato-chips', name: '감자칩', aliases: ['감자칩', '포테이토칩'], materialIds: ['potato', 'palm-oil', 'plastic'] },
+  { id: 'roast-sweet-potato', name: '군고구마', aliases: ['군고구마'], materialIds: ['sweet-potato'] },
+  { id: 'kkakdugi', name: '깍두기', aliases: ['깍두기'], materialIds: ['radish', 'chili'] },
+  { id: 'apple', name: '사과', aliases: ['사과'], materialIds: ['apple'] },
+  { id: 'grape', name: '포도', aliases: ['포도', '샤인머스캣'], materialIds: ['grape'] },
+  { id: 'ketchup', name: '케첩', aliases: ['케첩', '케찹'], materialIds: ['tomato', 'sugar', 'plastic'] },
+  { id: 'barley-tea', name: '보리차', aliases: ['보리차'], materialIds: ['barley', 'plastic'] },
+  { id: 'soba', name: '메밀소바', aliases: ['소바', '메밀소바', '판메밀'], materialIds: ['buckwheat', 'radish'] },
+  { id: 'beer', name: '캔맥주', aliases: ['캔맥주', '맥주'], materialIds: ['barley', 'aluminum'] },
+  { id: 'squid-stir-fry', name: '오징어볶음', aliases: ['오징어볶음'], materialIds: ['squid', 'chili', 'cabbage'] },
 ]
 
 /** 하루 여정에서 이 사람이 서로 다른 재료 2개 이상에 나오면 연결 카드 획득 */

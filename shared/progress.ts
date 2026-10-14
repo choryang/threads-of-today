@@ -7,7 +7,9 @@
  *    같은 날의 여정은 id로 짝짓고, 더 많이 진행한 쪽을 남긴다.
  *  - 연속 기록: 마지막 날이 더 최근인 쪽. 같으면 큰 값.
  *  - 닉네임: updatedAt이 더 최근인 쪽.
+ *  - 본 감사 장면(seenScenes): 합집합. 한 기기에서 본 장면은 다른 기기에서 다시 띄우지 않는다.
  */
+import { SETS } from './data/materials'
 import { PEOPLE } from './data/people'
 import { normalizeNickname } from './nickname'
 
@@ -57,6 +59,8 @@ export interface Save {
   items: Record<string, string>
   /** 고마움을 전한 카드 id → 전한 날. 만난 사람(cards)에게만, 한 사람에게 한 번 */
   thanks: Record<string, string>
+  /** 이미 보여 준 감사 장면: 세트 id 또는 'ending'. 다른 기기와 합쳐져 세트가 완성되면 도감을 열 때 못 본 장면을 띄운다 */
+  seenScenes: string[]
   nickname?: Nickname
 }
 
@@ -65,7 +69,7 @@ const LIMITS = { items: 2000, journeysPerDay: 12, name: 40, voice: 80, guesses: 
 const DATE = /^\d{4}-\d{2}-\d{2}$/
 
 export function emptySave(): Save {
-  return { v: 1, cards: {}, days: {}, streak: { last: '', count: 0 }, mystery: {}, items: {}, thanks: {} }
+  return { v: 1, cards: {}, days: {}, streak: { last: '', count: 0 }, mystery: {}, items: {}, thanks: {}, seenScenes: [] }
 }
 
 /** todayKey를 포함해 최근 days일의 날짜 키인지 */
@@ -139,6 +143,7 @@ export function mergeSaves(a: Save, b: Save, todayKey: string): Save {
     items: mergeRecordOfDates(a.items, b.items),
     // 예전 기록에는 thanks가 없을 수 있다
     thanks: mergeRecordOfDates(a.thanks ?? {}, b.thanks ?? {}),
+    seenScenes: union(a.seenScenes ?? [], b.seenScenes ?? []),
     days: pickRecent(days, todayKey),
     mystery: pickRecent(mystery, todayKey),
     streak,
@@ -181,6 +186,7 @@ export function sanitizeSave(raw: unknown, todayKey: string): Save {
   if (isObj(raw.thanks)) {
     for (const [id, d] of Object.entries(raw.thanks)) if (s.cards[id] && typeof d === 'string' && DATE.test(d)) s.thanks[id] = d
   }
+  s.seenScenes = strList(raw.seenScenes, SETS.length + 1).filter((id) => id === 'ending' || SETS.some((set) => set.id === id))
   if (isObj(raw.items)) {
     for (const [name, d] of Object.entries(raw.items).slice(0, LIMITS.items)) {
       if (typeof d === 'string' && DATE.test(d) && name.length <= LIMITS.name) s.items[name] = d

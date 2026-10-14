@@ -33,12 +33,14 @@ export function everyoneThanked(thanked: Set<string>): boolean {
 
 export type ThanksScene = { type: 'set'; setId: string } | { type: 'ending' }
 
-/** 고마움을 하나 더 전했을 때 새로 열리는 장면 */
-export function newScenes(before: Set<string>, after: Set<string>): ThanksScene[] {
-  const was = new Set(thankedSets(before).map((s) => s.id))
-  const scenes: ThanksScene[] = thankedSets(after).filter((s) => !was.has(s.id)).map((s) => ({ type: 'set', setId: s.id }))
-  if (!everyoneThanked(before) && everyoneThanked(after)) scenes.push({ type: 'ending' })
-  return scenes
+/** Save.seenScenes에 남기는 장면 id: 세트 id 또는 'ending' */
+export const sceneKey = (scene: ThanksScene) => (scene.type === 'set' ? scene.setId : 'ending')
+
+/** 열렸지만 아직 보여 주지 않은 장면. 고마움을 전한 순간에도, 다른 기기와 합쳐진 뒤 도감을 열 때도 이걸로 고른다 */
+export function unseenScenes(thanked: Set<string>, seen: string[]): ThanksScene[] {
+  const scenes: ThanksScene[] = thankedSets(thanked).map((s) => ({ type: 'set', setId: s.id }))
+  if (everyoneThanked(thanked)) scenes.push({ type: 'ending' })
+  return scenes.filter((scene) => !seen.includes(sceneKey(scene)))
 }
 
 export function setSceneLines(setId: string): string[] {

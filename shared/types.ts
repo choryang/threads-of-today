@@ -52,7 +52,7 @@ export interface Origin {
   id: string
   /** 화면에 보일 출발지 이름 */
   name: string
-  /** 뽑힐 가중치. 지금은 대략값 (scripts/update-origins.ts로 나중에 갱신) */
+  /** 뽑힐 가중치. 게임용이라 실제 수입 비중이 아니다 (가장 드문 출발지도 25% 이상) */
   weight: number
   head: string[]
 }

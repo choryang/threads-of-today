@@ -35,9 +35,9 @@ const FARM = ['coffee', 'cacao', 'banana', 'orange', 'chili', 'cotton', 'wood']
 
 /** 숨은 만남. 확률은 그 사람을 지날 때마다 따로 굴리고, 한 여정에서 많아야 한 명만 만난다. */
 export const HIDDEN_RULES: HiddenRule[] = [
-  { cardId: 'ship-cook', afterPersonIds: ['sea-crew', 'bulk-crew', 'tanker-crew'], chance: 0.015 },
-  { cardId: 'reefer-tech', afterPersonIds: ['sea-crew'], materialIds: CHILLED, chance: 0.02 },
-  { cardId: 'lashing-worker', afterPersonIds: ['busan-crane'], chance: 0.012 },
-  { cardId: 'plant-quarantine', afterPersonIds: ['busan-crane', 'incheon-port'], materialIds: FARM, chance: 0.015 },
-  { cardId: 'customs-officer', afterPersonIds: ['air-cargo', 'busan-crane'], chance: 0.012 },
+  { cardId: 'ship-cook', afterPersonIds: ['sea-crew', 'bulk-crew', 'tanker-crew'], chance: 0.03 },
+  { cardId: 'reefer-tech', afterPersonIds: ['sea-crew'], materialIds: CHILLED, chance: 0.05 },
+  { cardId: 'lashing-worker', afterPersonIds: ['busan-crane'], chance: 0.025 },
+  { cardId: 'plant-quarantine', afterPersonIds: ['busan-crane', 'incheon-port'], materialIds: FARM, chance: 0.03 },
+  { cardId: 'customs-officer', afterPersonIds: ['air-cargo', 'busan-crane'], chance: 0.025 },
 ]

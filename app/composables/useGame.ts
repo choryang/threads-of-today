@@ -7,7 +7,7 @@ import {
 } from '../../shared/logic'
 import { normalizeNickname, randomNickname } from '../../shared/nickname'
 import { buildTimeline, quizFor } from '../../shared/journey'
-import { everyoneThanked, newScenes, thanksReply, type ThanksScene } from '../../shared/thanks'
+import { everyoneThanked, sceneKey, thanksReply, unseenScenes, type ThanksScene } from '../../shared/thanks'
 import { emptySave, type DayLog, type Journey, type JourneySource, type MysteryLog, type Save } from '../../shared/progress'
 
 export type { DayLog, Journey, JourneySource, MysteryLog, Save } from '../../shared/progress'
@@ -62,6 +62,7 @@ export function replaceSave(next: Save) {
   s.mystery = next.mystery
   s.items = next.items
   s.thanks = next.thanks ?? {}
+  s.seenScenes = next.seenScenes ?? []
   if (next.nickname) s.nickname = next.nickname
 }
 
@@ -246,12 +247,19 @@ export function useGame() {
   const thanked = (cardId: string) => !!s.thanks[cardId]
   const allThanked = computed(() => everyoneThanked(new Set(Object.keys(s.thanks))))
 
+  /** 열렸지만 아직 못 본 감사 장면(세트·엔딩)을 띄우고 본 것으로 기록한다. 다른 기기와 합쳐져 완성된 세트도 여기서 나온다 */
+  function showUnseenScenes() {
+    if (!s.seenScenes) s.seenScenes = []
+    const scenes = unseenScenes(new Set(Object.keys(s.thanks)), s.seenScenes)
+    s.seenScenes.push(...scenes.map(sceneKey))
+    sceneQueue.value.push(...scenes)
+  }
+
   /** 만난 사람에게 고마움을 전한다. 이미 전했거나 아직 못 만났으면 아무것도 하지 않는다. 답을 돌려준다 */
   function thank(cardId: string): string | null {
     if (!s.cards[cardId] || s.thanks[cardId]) return null
-    const before = new Set(Object.keys(s.thanks))
     s.thanks[cardId] = todayKey
-    sceneQueue.value.push(...newScenes(before, new Set(Object.keys(s.thanks))))
+    showUnseenScenes()
     return thanksReply(cardId)
   }
 
@@ -297,5 +305,6 @@ export function useGame() {
     thank,
     allThanked,
     replayEnding,
+    showUnseenScenes,
   }
 }

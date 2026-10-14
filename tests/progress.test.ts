@@ -63,6 +63,13 @@ test('고마움: 합집합으로 합치고 먼저 전한 날을 남긴다. 예�
   assert.deepEqual(mergeSaves(old as Save, a, TODAY).thanks, { [p1!]: '2026-10-12' })
 })
 
+test('본 감사 장면: 합집합, 모르는 장면 id는 버린다', () => {
+  const a: Save = { ...emptySave(), seenScenes: ['set-sea'] }
+  const b: Save = { ...emptySave(), seenScenes: ['set-soil', 'set-sea'] }
+  assert.deepEqual(mergeSaves(a, b, TODAY).seenScenes.sort(), ['set-sea', 'set-soil'])
+  assert.deepEqual(sanitizeSave({ seenScenes: ['set-sea', 'ending', 'nope', 3] }, TODAY).seenScenes, ['set-sea', 'ending'])
+})
+
 test('검사: 고마움은 만난 카드에만, 날짜 형식이 맞을 때만 남긴다', () => {
   const [p1, p2] = PEOPLE_LIST.map((p) => p.id)
   const s = sanitizeSave({ cards: { [p1!]: TODAY }, thanks: { [p1!]: TODAY, [p2!]: TODAY, nobody: TODAY, [`${p1}x`]: 'bad' } }, TODAY)

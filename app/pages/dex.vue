@@ -33,6 +33,8 @@ const itemNames = computed(() =>
 const GUIDE_KEY = 'my-day-people:rarity-guide'
 const guideOpen = ref(true)
 onMounted(() => {
+  // 다른 기기와 합쳐져 완성된 세트의 감사 장면을 여기서 한 번 보여 준다
+  game.showUnseenScenes()
   try {
     guideOpen.value = window.localStorage.getItem(GUIDE_KEY) !== 'closed'
   } catch {
