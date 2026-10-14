@@ -9,16 +9,20 @@
     "postinstall": "nuxt prepare",
     "check:data": "tsx scripts/check-data.ts",
     "test": "node --import tsx --test tests/*.test.ts",
-    "dict:build": "tsx scripts/build-dictionary.ts"
+    "dict:build": "tsx scripts/build-dictionary.ts",
+    "cache:export": "tsx scripts/export-cache.ts"
   },
   "dependencies": {
+    "@upstash/redis": "^1.39.0",
     "html-to-image": "^1.11.11",
     "nuxt": "^4.1.0",
+    "unstorage": "^1.17.5",
     "vue": "^3.5.0",
     "vue-router": "^4.5.0"
   },
   "devDependencies": {
     "@anthropic-ai/sdk": "^0.133.0",
+    "@types/node": "^22.20.5",
     "tsx": "^4.19.0",
     "typescript": "^5.6.0"
   }

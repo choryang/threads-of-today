@@ -5,55 +5,16 @@ import {
   DAILY_LIMIT, completedSets, dateKey, findLinkCards, mysteryHints, mysteryProduct, previousDateKey,
   type Decomposed,
 } from '../../shared/logic'
+import { normalizeNickname, randomNickname } from '../../shared/nickname'
+import { emptySave, type DayLog, type Journey, type JourneySource, type MysteryLog, type Save } from '../../shared/progress'
 
-export type JourneySource = 'text' | 'photo' | 'pick' | 'mystery'
+export type { DayLog, Journey, JourneySource, MysteryLog, Save } from '../../shared/progress'
 
 export type TimelineItem =
   | { type: 'stage'; materialId: string; personId: string }
   | { type: 'quiz'; materialId: string }
 
-export interface Journey {
-  id: string
-  name: string
-  twist?: string
-  voice?: string
-  source: JourneySource
-  materialIds: string[]
-  /** 지금까지 펼친 타임라인 칸 수 */
-  step: number
-  /** 재료 id → 고른 보기 번호 */
-  quiz: Record<string, number>
-  newCards: string[]
-  done: boolean
-}
-
-export interface DayLog {
-  journeys: Journey[]
-  linkCards: string[]
-}
-
-export interface MysteryLog {
-  revealed: number
-  guesses: string[]
-  solved: boolean
-  finished: boolean
-}
-
-interface Save {
-  v: 1
-  cards: Record<string, string>
-  days: Record<string, DayLog>
-  streak: { last: string; count: number }
-  mystery: Record<string, MysteryLog>
-  /** 분해해 본 물건 이름 → 처음 분해한 날 */
-  items: Record<string, string>
-}
-
 const KEY = 'my-day-people:v1'
-
-function emptySave(): Save {
-  return { v: 1, cards: {}, days: {}, streak: { last: '', count: 0 }, mystery: {}, items: {} }
-}
 
 function load(): Save {
   if (typeof window === 'undefined') return emptySave()
@@ -71,7 +32,10 @@ let state: Save | null = null
 
 function getState(): Save {
   if (state) return state
-  state = reactive(load()) as Save
+  const loaded = load()
+  // 첫 방문에는 기본 닉네임을 준다. updatedAt 0이라 다른 기기에서 직접 정한 닉네임이 있으면 그쪽이 이긴다
+  if (!loaded.nickname) loaded.nickname = { value: randomNickname(), updatedAt: 0 }
+  state = reactive(loaded) as Save
   // 페이지가 바뀌어도 저장이 멈추지 않도록 컴포넌트와 분리된 범위에서 감시한다
   effectScope(true).run(() => {
     watch(
@@ -87,6 +51,29 @@ function getState(): Save {
     )
   })
   return state
+}
+
+/** 서버와 합친 진행 상황으로 바꾼다. 반응형 객체는 그대로 두고 내용만 바꿔 화면이 따라 바뀌게 한다 */
+export function replaceSave(next: Save) {
+  const s = getState()
+  s.cards = next.cards
+  s.days = next.days
+  s.streak = next.streak
+  s.mystery = next.mystery
+  s.items = next.items
+  if (next.nickname) s.nickname = next.nickname
+}
+
+/** 지금 진행 상황의 복사본 (서버로 보낼 때) */
+export function snapshotSave(): Save {
+  return JSON.parse(JSON.stringify(getState()))
+}
+
+const finishListeners = new Set<() => void>()
+/** 여정을 마칠 때 불린다 (동기화용) */
+export function onJourneyFinish(listener: () => void) {
+  finishListeners.add(listener)
+  return () => finishListeners.delete(listener)
 }
 
 export function buildTimeline(materialIds: string[]): TimelineItem[] {
@@ -146,7 +133,8 @@ export function useGame() {
     const day = ensureToday()
     if (source !== 'mystery' && regularCount.value >= DAILY_LIMIT) return null
     const journey: Journey = {
-      id: `${todayKey}-${day.journeys.length + 1}`,
+      // 여러 기기의 기록을 합칠 때 겹치지 않게 무작위 꼬리를 붙인다 (앞 10글자는 날짜)
+      id: `${todayKey}-${day.journeys.length + 1}${Math.random().toString(36).slice(2, 6)}`,
       name: item.name,
       twist: item.twist,
       voice: item.voice,
@@ -219,6 +207,7 @@ export function useGame() {
       s.streak.count = s.streak.last === previousDateKey(todayKey) ? s.streak.count + 1 : 1
       s.streak.last = todayKey
     }
+    for (const listener of finishListeners) listener()
     return gained
   }
 
@@ -252,8 +241,19 @@ export function useGame() {
     }))
   }
 
+  const nickname = computed(() => s.nickname?.value ?? '')
+  /** 닉네임을 바꾼다. 1~12자가 아니면 false */
+  function setNickname(input: string): boolean {
+    const value = normalizeNickname(input)
+    if (!value) return false
+    s.nickname = { value, updatedAt: Date.now() }
+    return true
+  }
+
   return {
     state: s,
+    nickname,
+    setNickname,
     todayKey,
     today,
     remaining,

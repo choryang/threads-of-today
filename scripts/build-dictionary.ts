@@ -146,7 +146,7 @@ function toEntry(seed: Seed, input: any): DictEntry | string {
   const materialIds = sanitizeMaterialIds(input.material_ids)
   if (!materialIds.length) return '재료 0개'
   const rawVoices: unknown[] = Array.isArray(input.voices) ? input.voices : []
-  const voices = [...new Set(rawVoices.map((v) => cleanFlavor(v, 50)).filter(Boolean))]
+  const voices = [...new Set(rawVoices.map((v) => cleanFlavor(v, 50, { allowName: true })).filter(Boolean))]
   const name = clean(input.item_name, 20) || seed.text
   const key = compact(seed.text)
   const twist = seed.kind === 'word' ? cleanFlavor(input.twist, 60) : ''

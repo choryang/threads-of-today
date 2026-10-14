@@ -10,19 +10,110 @@ npm install
 npm run dev        # http://localhost:3000
 ```
 
-API 키 없이도 동작한다. 이때는 대표 물건 30개와 재료 35개의 키워드로만 분해하고, 사진 인식과 '아무 말이나 잇기'는 꺼진다.
+API 키 없이도 동작한다. 이때는 로컬 매칭(대표 물건·물건 사전·동의어·오타·합성어·재료 별칭)과 공유 캐시로만 분해하고, 사진 인식과 '아무 말이나 잇기'는 꺼진다.
+Upstash 없이 `npm run dev`로 띄우면 캐시·요청 제한·진행 상황 저장은 `.data/kv` 파일에 저장된다.
+
+```bash
+npm test               # 매칭·병합·닉네임·복구 코드 단위 테스트
+npm run check:data     # 데이터 무결성 검사
+npm run dict:build -- --dry-run   # 물건 사전 만들기 (요청 예시와 예상 비용만)
+npm run cache:export   # AI 캐시를 조회 수 순으로 data/review/cache.csv에 (커밋하지 않음)
+```
 
 ## Vercel 배포
 
 1. 이 폴더를 GitHub 저장소로 올린다.
 2. Vercel에서 저장소를 Import 한다. 프레임워크는 Nuxt로 자동 인식된다. 빌드 설정은 기본값 그대로 둔다.
-3. Settings → Environment Variables에 추가한다.
-   - `NUXT_ANTHROPIC_API_KEY` = Claude API 키 (자유 입력·사진 인식에 필요)
-   - `NUXT_ANTHROPIC_MODEL` = `claude-haiku-5-5` (선택, 기본값)
-4. Deploy.
+3. 프로젝트의 Storage(또는 Marketplace) 탭에서 **Upstash Redis**를 만들어 이 프로젝트에 연결한다.
+   연결하면 `KV_REST_API_URL`, `KV_REST_API_TOKEN`이 환경 변수에 자동으로 들어간다.
+   (Upstash 콘솔에서 직접 만든 DB라면 `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`을 넣어도 된다.)
+4. Settings → Environment Variables에 추가한다.
 
-입력이 대표 물건 이름과 완전히 같으면 API를 부르지 않는다. 자유 입력이나 사진일 때만 Claude를 한 번 호출한다.
+   | 변수 | 필수 | 설명 |
+   | --- | --- | --- |
+   | `NUXT_ANTHROPIC_API_KEY` | 선택 | Claude API 키. 없으면 로컬 매칭과 캐시만 쓴다 |
+   | `NUXT_ANTHROPIC_MODEL` | 선택 | 기본 `claude-haiku-5-5` |
+   | `KV_REST_API_URL` / `KV_REST_API_TOKEN` | 권장 | Upstash 연결 시 자동. 없으면 캐시·요청 제한이 인스턴스 메모리로만 동작하고, 진행 상황 서버 저장(다른 기기에서 이어 하기)은 꺼진다 |
+   | `NUXT_AI_DAILY_LIMIT` | 선택 | IP별 하루 AI 호출 한도. 기본 20 |
+   | `NUXT_IP_SALT` | 권장 | 요청 제한 키에 쓰는 IP 해시의 소금값. 아무 긴 문자열 |
+5. Deploy. 로컬에서 운영 저장소에 붙여 보려면 `vercel env pull .env`로 변수를 받아 온다.
+
 요청 하나에 출력 토큰은 최대 500개로 제한돼 있다.
+
+## AI 호출 줄이기
+
+텍스트 입력은 아래 순서로 찾고, 앞에서 잡히면 거기서 끝난다.
+
+1. **로컬 매칭** (`shared/match`): 정규화 → 대표 물건·물건 사전 정확 일치 → 동의어 → 오타(자모 편집 거리) → 합성어 분해 → 재료 별칭 부분 일치
+2. **공유 캐시** (Upstash): 예전에 누군가 AI로 분해한 입력이면 그 결과를 쓴다. 정규화한 입력이 키
+3. **Claude**: IP별 하루 한도(`NUXT_AI_DAILY_LIMIT`) 안에서만. 결과는 캐시에 저장
+
+사진은 입력 자체를 캐시할 수 없어서 Claude를 먼저 부르고, 알아본 물건 이름으로 사전과 캐시를 다시 찾는다. 없으면 이름을 키로 캐시에 저장한다.
+캐시 항목에는 조회 수(`hits`), `firstSeen`, `source: 'ai'`가 남는다. `npm run cache:export`로 뽑아 검토하고 좋은 것은 사전으로 옮긴다.
+
+물건의 한마디(voice)에는 닉네임이 들어가지 않는다. 사전과 캐시를 모든 사용자가 같이 쓰므로 AI에는 닉네임을 보내지 않고,
+대사에는 `{name}` 자리표시자만 쓰게 한 뒤 화면에서 닉네임을 끼워 넣는다. `{name}`은 부르는 말("{name}, …")로만 허용한다.
+
+## 진행 상황 저장과 다른 기기에서 이어 하기
+
+- 진행 상황의 원본은 그대로 브라우저 localStorage(`my-day-people:v1`)다.
+- 첫 방문에 서버가 익명 id, 기기 비밀값, 복구 코드(예: `바다-연필-4827`)를 발급한다. 이 기기 정보는 `my-day-people:profile`에 따로 저장한다.
+  - 복구 코드는 두 글자 낱말 2개와 숫자 4개. 헷갈리는 0과 1은 쓰지 않는다. 띄어쓰기·하이픈은 있어도 없어도 된다.
+  - 복구 시도는 IP별 시간당 10번으로 제한한다.
+- **앱을 열 때**와 **여정을 마칠 때**만 서버와 동기화한다. 충돌하면 `shared/progress.ts`의 `mergeSaves`로 합친다.
+  - 카드·분해한 물건: 합집합 (먼저 얻은 날을 남김)
+  - 날짜별 기록(여정·미스터리): 합친 뒤 최근 30일만. 같은 여정은 더 많이 진행한 쪽
+  - 닉네임: 더 최근에 바꾼 쪽. 연속 기록: 마지막 날이 더 최근인 쪽
+- 도감의 "다른 기기에서 이어 하기"에서 코드를 보거나 입력한다. 코드를 입력한 기기에는 새 기기 비밀값이 발급되고(사용자당 최대 5대), 두 기기의 기록이 합쳐진다.
+- 진행 기록이 없는 익명 사용자는 30일, 기록이 있으면 마지막 동기화부터 400일 동안 보관한다.
+
+### 닉네임
+
+- 첫 방문에 "새벽의 커피 체리"처럼 `{때·곳}의 {물건 조각}` 조합을 무작위로 준다 (`shared/nickname.ts`).
+- 홈 상단과 도감에서 바로 바꿀 수 있다. 중복 허용, 앞뒤 공백 제거, 1~12자. 진행 상황과 함께 동기화한다.
+- 결과 카드는 "오늘 {닉네임}의 하루에는 …", 도감 제목은 "{닉네임}의 사람 도감". 조사는 `withJosa`로 고른다.
+
+### 저장 키와 데이터 크기
+
+| 키 | 값 | 보관 |
+| --- | --- | --- |
+| `mdp:user:{id}` | 메타(복구 코드, 기기 비밀값 해시, 연결 계정) + 진행 상황 | 30일(기록 없음) / 400일 |
+| `mdp:code:{코드}` | id | 사용자와 같게 |
+| `mdp:cache:text:{정규화한 입력}` | AI 분해 결과 + hits | 마지막 조회부터 180일 |
+| `mdp:rate:…` | 요청 제한 카운터 (IP는 해시로만) | 1~2일 |
+
+사용자 한 명의 값 크기 (실측, JSON):
+
+| 경우 | 크기 |
+| --- | --- |
+| 새 사용자 | 약 0.5KB |
+| 보통 (카드 60장, 물건 80개, 15일 × 하루 3번) | 약 20KB |
+| 많이 (카드 전부, 물건 500개, 30일 × 하루 4번) | 약 59KB |
+
+서버는 200KB가 넘는 요청을 받지 않고, 하루 여정 12개·물건 2,000개를 넘는 기록은 버린다.
+
+### 요청당 Redis 명령 수
+
+| 요청 | 명령 | 내용 |
+| --- | --- | --- |
+| 분해: 로컬 매칭으로 잡힘 | 0 | |
+| 분해: 캐시에 있음 | 2 | GET + SET(조회 수) |
+| 분해: 캐시에 없음 → Claude | 4 | GET + INCR·EXPIRE(한 번에 보냄) + SET |
+| 분해: 하루 한도 초과 | 3 | GET + INCR·EXPIRE |
+| 분해: 사진 | 2~4 | INCR·EXPIRE + (사전에 있으면 끝) GET + SET |
+| 첫 방문 (`POST /api/profile`) | 4~5 | INCR·EXPIRE + SET NX(코드) + SET(사용자) (+ 코드 보관 기간 SET) |
+| 동기화 (`/api/profile/sync`) | 2~3 | GET + SET (+ 한 달에 한 번 코드 보관 기간 SET) |
+| 이어 하기 (`/api/profile/restore`) | 5~6 | INCR·EXPIRE + GET(코드) + GET(사용자) + SET (+ 코드 SET) |
+
+하루 세 번 여정을 하고 앱을 세 번 여는 사용자는 동기화만으로 하루 약 12~15개 명령을 쓴다. Upstash 요금제의 명령 수·용량 한도는 연결 전에 요금 페이지에서 확인할 것.
+
+### 나중에 카카오·구글 로그인 붙이기 (아직 구현하지 않음)
+
+익명 id는 그대로 두고, 로그인은 "id를 찾는 또 하나의 방법"으로 붙인다 (`server/utils/users.ts` 주석 참고).
+
+- `mdp:account:{provider}:{subject}` → id 키를 추가하고, 연결한 계정을 사용자 값의 `accounts`에 적는다.
+- 로그인한 계정 키가 없으면 지금 기기의 익명 id에 연결한다(진행 상황 그대로).
+- 이미 다른 id에 연결돼 있으면 그 id로 갈아타고 두 진행 상황을 `mergeSaves`로 합친다.
 
 ## 게임 구조
 
@@ -41,23 +132,30 @@ API 키 없이도 동작한다. 이때는 대표 물건 30개와 재료 35개의
   - 전설: 세트(바다·땅·광산·밥상·공장)를 모두 모으면 만남
 - AI는 **어떤 재료로 나눌지만** 정한다. 여정의 사실 정보는 모두 `shared/data`에 직접 작성한 데이터에서만 나온다.
 - 처음 분해한 물건에는 FIRST 표시가 붙고, 도감에 '분해해 본 물건' 목록이 쌓인다.
-- 진행 상황은 브라우저 localStorage에 저장된다. 로그인과 DB는 없다.
+- 진행 상황은 브라우저 localStorage에 저장되고, 앱을 열 때와 여정을 마칠 때 서버(Upstash)와 합쳐진다. 로그인은 없다(익명 id + 복구 코드).
 
 ## 폴더
 
 ```
 app/
   pages/          index(입력) · journey/[id](여정) · mystery · dex(도감) · result(공유 카드)
-  components/     Character(SVG 캐릭터) · PersonCard · MiniCard · BottomNav
-  composables/    useGame.ts  게임 상태와 규칙
+  components/     Character · PersonCard · MiniCard · BottomNav · NicknameEditor · DeviceTransfer
+  composables/    useGame.ts 게임 상태와 규칙 · useSync.ts 서버 동기화
+  plugins/        sync.client.ts 앱을 열 때·여정을 마칠 때 동기화
   utils/          character.ts  모자·소품 파츠 조합 캐릭터
 server/
-  api/decompose.post.ts   텍스트/사진 → 재료 id
-  utils/decompose.ts      Claude 호출 (tool use로 재료 id enum 강제)
+  api/decompose.post.ts   텍스트/사진 → 재료 id (로컬 매칭 → 캐시 → Claude)
+  api/profile/            index(첫 방문 발급) · sync(동기화) · restore(복구 코드로 이어 하기)
+  plugins/kv.ts           useStorage('kv')에 Upstash / 파일 / 메모리 드라이버 연결
+  utils/                  decompose(Claude 호출) · matcher(서버 매처) · ai-cache · kv · users · profile-api
 shared/
-  data/           places · people · materials(재료 여정, 퀴즈, 대표 물건, 연결 규칙, 세트)
-  logic.ts        분해·통계·연결·미스터리 순수 함수
-scripts/check-data.ts     데이터 무결성 검사
+  data/           places · people · materials · synonyms · dictionary.json(물건 사전)
+  match/          AI 없는 매칭
+  progress.ts     진행 상황 모양·병합·검사
+  nickname.ts · recovery.ts · voice.ts · safety.ts · logic.ts
+scripts/          check-data · build-dictionary · export-cache · import-foodsafety(보류)
+data/seeds/       물건·단어 시드 (사전 만들기 입력)
+tests/            node:test 단위 테스트
 ```
 
 ## 재료·사람 추가하기
@@ -77,4 +175,4 @@ scripts/check-data.ts     데이터 무결성 검사
 ## 출시 전에 확인할 것
 
 - 여정은 "대표 경로 예시"로 표기돼 있다. 재료 데이터의 사실관계를 한 번 더 검토하고, 출처 메모를 남기는 걸 권장한다.
-- `/api/decompose`에는 인스턴스 단위의 간단한 요청 제한만 있다. 트래픽이 늘면 Vercel KV 등으로 IP별 제한을 붙이자.
+- Upstash를 연결하지 않으면 AI 요청 제한이 서버 인스턴스마다 따로 세어져 느슨해지고, 다른 기기에서 이어 하기가 꺼진다.

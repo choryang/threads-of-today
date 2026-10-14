@@ -65,7 +65,7 @@ async function save(share: boolean) {
     if (!blob) throw new Error('capture failed')
     const file = new File([blob], `my-day-people-${game.todayKey}.png`, { type: 'image/png' })
     if (share && navigator.canShare?.({ files: [file] })) {
-      await navigator.share({ files: [file], text: `오늘 내 하루에는 ${stats.value.countries.length}개 나라, ${stats.value.people.length}명의 사람이 닿아 있었어요.` })
+      await navigator.share({ files: [file], text: `오늘 ${game.nickname.value}의 하루에는 ${stats.value.countries.length}개 나라, ${stats.value.people.length}명의 사람이 닿아 있었어요.` })
     } else {
       download(blob, file.name)
       if (share) message.value = '이 기기에서는 바로 공유가 안 돼서 이미지로 저장했어요.'
@@ -102,7 +102,7 @@ async function save(share: boolean) {
         <article class="share">
           <p class="mono s-date">{{ dateLabel }} · 내 하루에 닿은 사람들</p>
           <h2 class="s-title">
-            오늘 내 하루에는<br>
+            오늘 {{ game.nickname.value }}의 하루에는<br>
             <em>{{ stats.countries.length }}개 나라 {{ stats.people.length }}명</em>이<br>
             닿아 있었다
           </h2>

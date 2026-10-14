@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { PEOPLE, PEOPLE_LIST } from '../../shared/data/people'
+import { withJosa } from '../../shared/logic'
 import type { Rarity } from '../../shared/types'
 import { RARITY_HOW, RARITY_LABEL } from '../utils/labels'
 
@@ -25,15 +26,20 @@ const itemNames = computed(() =>
   Object.entries(game.state.items).sort((a, b) => b[1].localeCompare(a[1])).map(([name]) => name),
 )
 const openPerson = computed(() => (open.value ? PEOPLE[open.value] : undefined))
+/** '커피 체리가 만난 사람', '노을의 찻잎이 만난 사람' */
+const metLabel = computed(() => `${withJosa(game.nickname.value, '이', '가')} 만난 사람`)
 </script>
 
 <template>
   <main class="page">
     <header class="head">
-      <h1 class="display title">사람 도감</h1>
-      <p class="muted small"><span class="mono">{{ game.ownedCount.value }}/{{ total }}</span>명을 만났어요</p>
+      <h1 class="display title">{{ game.nickname.value }}의 사람 도감</h1>
+      <p class="muted small">{{ metLabel }} <span class="mono">{{ game.ownedCount.value }}/{{ total }}</span>명</p>
       <div class="bar" aria-hidden="true"><span :style="{ width: `${percent}%` }" /></div>
+      <NicknameEditor />
     </header>
+
+    <DeviceTransfer />
 
     <section v-if="game.itemCount.value" aria-label="분해한 물건">
       <h2 class="h2">분해해 본 물건 <span class="mono muted">{{ game.itemCount.value }}</span></h2>

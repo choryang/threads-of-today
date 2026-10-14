@@ -6,9 +6,9 @@
 ## 스택과 명령
 
 - Nuxt 4 (Vue 3.5, TypeScript), `ssr: false` SPA + Nitro 서버 API. 배포는 Vercel.
-- 진행 상황은 브라우저 localStorage(`my-day-people:v1`). 로그인·DB 없음.
+- 진행 상황 원본은 브라우저 localStorage(`my-day-people:v1`). 앱을 열 때·여정을 마칠 때만 Upstash와 합친다(익명 id + 복구 코드, 로그인 없음).
 - `npm run dev` / `npm run build` / `npm run check:data`(데이터 무결성 + 스모크 테스트) / `npm test`(node:test, 매칭 사례)
-- 환경 변수: `NUXT_ANTHROPIC_API_KEY`, `NUXT_ANTHROPIC_MODEL`(기본 `claude-haiku-5-5`)
+- 환경 변수: `NUXT_ANTHROPIC_API_KEY`, `NUXT_ANTHROPIC_MODEL`(기본 `claude-haiku-5-5`), `KV_REST_API_URL`/`KV_REST_API_TOKEN`(Upstash), `NUXT_AI_DAILY_LIMIT`, `NUXT_IP_SALT`. 자세한 건 README
 
 ## 구조
 
@@ -21,19 +21,31 @@ shared/                 앱과 서버가 상대 경로로 함께 import (Nuxt �
   data/synonyms.ts      동의어 묶음 (첫 단어가 대표 표기)
   data/dictionary.json  미리 만든 물건 사전 (scripts/build-dictionary.ts가 생성). 서버에서만 import
   safety.ts             looksFactual: AI 문구에 숫자·나라 이름이 섞였는지 검사
+  progress.ts           Save 타입, mergeSaves(카드·물건 합집합, 날짜 기록 30일), sanitizeSave(서버 입력 검사)
+  nickname.ts           기본 닉네임 조합·normalizeNickname(1~12자)
+  recovery.ts           복구 코드 '낱말-낱말-숫자4' 생성·정규화
+  voice.ts              voice의 {name} 자리표시자 검사·renderVoice (AI에 닉네임을 보내지 않는다)
   match/                AI 없는 매칭. normalize → exact → synonym → typo(자모 편집 거리) → compound → partial, 결과에 via
   logic.ts              sanitizeMaterialIds / dayStats / findLinkCards / 미스터리 등 순수 함수
 server/
-  api/decompose.post.ts 텍스트·사진 → 재료 id. utils/matcher로 잡히면 끝, 아니면 Claude (키 없으면 안내 문구)
+  api/decompose.post.ts 텍스트·사진 → 재료 id. 로컬 매칭 → 공유 캐시 → (IP별 하루 한도 안에서) Claude → 캐시 저장
+  api/profile/          index(익명 id·복구 코드 발급) · sync · restore
+  plugins/kv.ts         useStorage('kv'): Upstash(env 있을 때) / 개발 .data/kv 파일 / 그 밖 메모리
+  utils/kv.ts           incrementCounter(INCR+EXPIRE), setIfAbsent, hashIp. 키는 Redis에서 mdp: 아래
+  utils/ai-cache.ts     캐시 읽기·쓰기(hits, firstSeen), allowAiCall
+  utils/users.ts        user:{id}(메타+진행 상황 한 값), code:{code}→id. 나중 로그인 연결 구조 주석
   utils/matcher.ts      대표 물건 + 물건 사전으로 만든 서버 매처 (사전을 클라이언트 번들에 넣지 않으려고 서버에 둔다)
   utils/decompose.ts    Claude Messages API 호출. SYSTEM·buildTool을 사전 스크립트와 공유. voice/twist는 looksFactual로 거름
 app/
-  composables/useGame.ts  게임 상태·규칙 (effectScope로 저장 watch, 하루 여정 3번, 미스터리 보너스)
+  composables/useGame.ts  게임 상태·규칙 (effectScope로 저장 watch, 하루 여정 3번, 미스터리 보너스, 닉네임)
+  composables/useSync.ts  서버 동기화·복구 코드로 이어 하기 (plugins/sync.client.ts가 호출)
+  components/             NicknameEditor(홈·도감) · DeviceTransfer(도감 "다른 기기에서 이어 하기")
   pages/                  index(입력 3방식) · journey/[id] · mystery · dex · result(html-to-image 공유)
   utils/character.ts      모자(hat)·소품(prop) 파츠를 조합한 SVG 콩 캐릭터
 scripts/check-data.ts     데이터 검사. 모든 변경 후 반드시 통과시킬 것
 scripts/build-dictionary.ts  data/seeds/*.txt → Message Batches API → dictionary.json + data/review/dictionary.csv (--dry-run, --limit, --resume)
 scripts/import-foodsafety.ts (선택, 실행 보류) 식품안전나라 원재료 → 재료 규칙 연결 뼈대
+scripts/export-cache.ts   AI 캐시를 조회 수 순으로 data/review/cache.csv (사용자 입력이 들어 있어 커밋하지 않음)
 tests/                    node:test + tsx 단위 테스트
 ```
 
@@ -46,6 +58,8 @@ tests/                    node:test + tsx 단위 테스트
 5. 한 글자 별칭('김', '면', '차')은 다른 단어에 섞여 오매칭된다. 부분 일치 매칭에는 2글자 이상만 쓴다.
 6. API 키 없이도 앱이 동작해야 한다(로컬 매칭으로 폴백).
 7. 사람 카드를 추가하면 어떤 경로로든 얻을 수 있어야 한다(check:data가 검사).
+8. AI에는 닉네임 같은 사용자 정보를 보내지 않는다. 사전·캐시는 모든 사용자가 같이 쓴다.
+9. Save 모양을 바꾸면 `shared/progress.ts`의 mergeSaves·sanitizeSave와 tests/progress.test.ts도 함께 고친다.
 
 ## 알려진 상태
 

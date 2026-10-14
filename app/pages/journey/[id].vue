@@ -5,12 +5,14 @@ import { PEOPLE } from '../../../shared/data/people'
 import { PLACES } from '../../../shared/data/places'
 import { dayStats } from '../../../shared/logic'
 import { buildTimeline } from '../../composables/useGame'
+import { renderVoice } from '../../../shared/voice'
 
 const route = useRoute()
 const game = useGame()
 const journey = computed(() => game.findJourney(String(route.params.id)))
 const timeline = computed(() => (journey.value ? buildTimeline(journey.value.materialIds) : []))
 const current = computed(() => (journey.value ? timeline.value[journey.value.step] : undefined))
+const voice = computed(() => renderVoice(journey.value?.voice, game.nickname.value))
 const isLast = computed(() => !!journey.value && journey.value.step >= timeline.value.length - 1)
 
 /** 방금 얻은 카드 알림 */
@@ -85,7 +87,7 @@ const metPeople = computed(() => summary.value.people)
       <header class="head">
         <p class="mono muted kicker">JOURNEY COMPLETE</p>
         <h1 class="display title">{{ journey.name }}에<br>닿은 사람들</h1>
-        <p v-if="journey.voice" class="voice">“{{ journey.voice }}”</p>
+        <p v-if="voice" class="voice">“{{ voice }}”</p>
         <p class="big">
           <strong class="mono">{{ summary.countries.length }}</strong>개 나라,
           <strong class="mono">{{ metPeople.length }}</strong>명의 사람

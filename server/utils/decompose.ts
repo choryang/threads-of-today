@@ -1,6 +1,7 @@
 import { MATERIAL_LIST } from '../../shared/data/materials'
 import { MAX_MATERIALS, sanitizeMaterialIds, type Decomposed } from '../../shared/logic'
 import { looksFactual } from '../../shared/safety'
+import { isValidVoiceTemplate } from '../../shared/voice'
 
 export interface DecomposeInput {
   text?: string
@@ -8,7 +9,7 @@ export interface DecomposeInput {
 }
 
 export type DecomposeResult =
-  | ({ ok: true; source: 'ai' | 'local' } & Decomposed)
+  | ({ ok: true; source: 'ai' | 'local'; via?: string } & Decomposed)
   | { ok: false; message: string }
 
 const MATERIAL_GUIDE = MATERIAL_LIST.map((m) => `- ${m.id}: ${m.name}`).join('\n')
@@ -36,6 +37,10 @@ ${MATERIAL_GUIDE}
 voice
 - 그 물건이 사용자에게 건네는 한마디. 해요체, 40자 이내, 귀엽고 다정하게.
 - 국가명, 숫자, 통계 같은 사실 정보는 넣지 않는다. 여정의 사실은 게임이 따로 보여 준다.
+- 사용자 이름은 모른다. 이름을 부르고 싶으면 {name}이라는 자리표시자를 문장 맨 앞에서 부르는 말로만 쓴다.
+  예) "{name}, 오늘도 한 모금씩 천천히요" / "{name}님, 손이 시리진 않아요?"
+  {name} 뒤에 조사(은, 는, 이, 가, 을, 를, 의 등)를 바로 붙이지 않는다. 지어낸 이름이나 다른 중괄호는 쓰지 않는다.
+- 매번 이름을 부르면 어색하니 {name}이 없는 대사가 더 많아야 한다.
 
 recognized
 - 혐오·성적·폭력적이거나 남을 해치려는 입력, 또는 의미를 알 수 없는 글자 나열이면 false.
@@ -54,8 +59,8 @@ export function buildTool(opts: { voices?: boolean } = {}) {
   return {
     name: TOOL_NAME,
     description: opts.voices
-      ? '입력을 이은 물건의 이름, 재료 id 목록, 연결 한 줄, 물건이 건네는 서로 다른 한마디 3~5개를 보고한다.'
-      : '입력을 이은 물건의 이름, 재료 id 목록, 연결 한 줄, 물건의 한마디를 보고한다.',
+      ? '입력을 이은 물건의 이름, 재료 id 목록, 연결 한 줄, 물건이 건네는 서로 다른 한마디 3~5개를 보고한다. 한마디 중 {name}을 쓰는 건 1~2개뿐이다.'
+      : '입력을 이은 물건의 이름, 재료 id 목록, 연결 한 줄, 물건의 한마디를 보고한다. 한마디에 {name}을 쓰는 건 셋 중 하나 정도로만.',
     input_schema: {
       type: 'object' as const,
       properties: {
@@ -86,10 +91,12 @@ export function textPrompt(text: string) {
 export const clean = (v: unknown, max: number) =>
   typeof v === 'string' ? v.replace(/[\r\n]+/g, ' ').trim().slice(0, max) : ''
 
-/** 재미 문구를 다듬고, 사실 정보처럼 보이면 버린다 */
-export const cleanFlavor = (v: unknown, max: number) => {
+/** 재미 문구를 다듬고, 사실 정보처럼 보이거나 자리표시자를 잘못 쓰면 버린다 */
+export const cleanFlavor = (v: unknown, max: number, opts: { allowName?: boolean } = {}) => {
   const text = clean(v, max)
-  return text && !looksFactual(text) ? text : ''
+  if (!text || looksFactual(text)) return ''
+  if (opts.allowName ? !isValidVoiceTemplate(text) : /[{}]/.test(text)) return ''
+  return text
 }
 
 export function parseToolResponse(json: any): DecomposeResult {
@@ -108,7 +115,7 @@ export function parseToolResponse(json: any): DecomposeResult {
     name: clean(input.item_name, 20) || '오늘의 물건',
     materialIds: ids,
     twist: cleanFlavor(input.twist, 60) || undefined,
-    voice: cleanFlavor(input.voice, 50) || undefined,
+    voice: cleanFlavor(input.voice, 50, { allowName: true }) || undefined,
   }
 }
 

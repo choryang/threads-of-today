@@ -8,6 +8,8 @@ export default defineNuxtConfig({
     // NUXT_ANTHROPIC_API_KEY, NUXT_ANTHROPIC_MODEL 환경 변수로 덮어쓴다.
     anthropicApiKey: '',
     anthropicModel: 'claude-haiku-5-5',
+    // NUXT_AI_DAILY_LIMIT: IP별 하루 AI 호출 한도
+    aiDailyLimit: 20,
   },
   app: {
     head: {

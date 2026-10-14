@@ -5,6 +5,8 @@ import { PLACES } from '../shared/data/places'
 import dictionary from '../shared/data/dictionary.json'
 import { SYNONYM_GROUPS } from '../shared/data/synonyms'
 import { looksFactual } from '../shared/safety'
+import { CODE_WORDS } from '../shared/recovery'
+import { NICKNAME_MAX, NICKNAME_PARTS } from '../shared/nickname'
 import { dayStats, findLinkCards, mysteryHints, mysteryOptions, mysteryProduct } from '../shared/logic'
 import { createMatcher, match, productEntries, type DictEntry } from '../shared/match'
 
@@ -52,6 +54,15 @@ for (const e of dictionary as DictEntry[]) {
   if (!e.materialIds.length) errors.push(`사전 ${e.key}: 재료 0개`)
   for (const id of e.materialIds) if (!MATERIAL_LIST.find((m) => m.id === id)) errors.push(`사전 ${e.key}: 재료 ${id} 없음`)
   for (const v of [...(e.voices ?? []), e.twist ?? '']) if (v && looksFactual(v)) errors.push(`사전 ${e.key}: 사실처럼 보이는 문구 "${v}"`)
+}
+
+// 복구 코드 낱말: 두 글자, 중복 없음, 경우의 수 확보
+if (CODE_WORDS.length < 100) errors.push(`복구 코드 낱말이 ${CODE_WORDS.length}개뿐이에요 (100개 이상)`)
+if (new Set(CODE_WORDS).size !== CODE_WORDS.length) errors.push('복구 코드 낱말 중복')
+for (const w of CODE_WORDS) if (!/^[가-힣]{2}$/.test(w)) errors.push(`복구 코드 낱말 '${w}'가 두 글자 한글이 아님`)
+// 기본 닉네임: 모든 앞말에 12자 안으로 붙는 뒷말이 있어야 한다
+for (const a of NICKNAME_PARTS.WHEN_WHERE) {
+  if (!NICKNAME_PARTS.LITTLE_THINGS.some((b) => Array.from(`${a}의 ${b}`).length <= NICKNAME_MAX)) errors.push(`닉네임 앞말 '${a}'는 너무 길어요`)
 }
 
 // 동의어의 대표 표기는 사전에 있는 단어여야 한다

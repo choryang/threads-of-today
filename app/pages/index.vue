@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { MATERIALS, PRODUCTS } from '../../shared/data/materials'
 import { PEOPLE_LIST } from '../../shared/data/people'
 import { DAILY_LIMIT, type Decomposed } from '../../shared/logic'
 import { buildTimeline, type JourneySource } from '../composables/useGame'
 import { shrinkImage } from '../utils/image'
+import { renderVoice } from '../../shared/voice'
 
 type Tab = 'text' | 'photo' | 'pick'
 type ApiResult = ({ ok: true; source: 'ai' | 'local' } & Decomposed) | { ok: false; message: string }
@@ -24,6 +25,7 @@ const dateLabel = `${now.getMonth() + 1}월 ${now.getDate()}일 ${'일월화수�
 const total = PEOPLE_LIST.length
 
 const quickPicks = PRODUCTS
+const previewVoice = computed(() => renderVoice(preview.value?.voice, game.nickname.value))
 
 function materialNames(ids: string[]) {
   return ids.map((id) => MATERIALS[id]?.name).join(' · ')
@@ -92,7 +94,10 @@ function journeyProgress(materialIds: string[], step: number) {
 <template>
   <main class="page">
     <header class="head">
-      <p class="mono muted date">{{ dateLabel }}</p>
+      <div class="head-top">
+        <p class="mono muted date">{{ dateLabel }}</p>
+        <NicknameEditor />
+      </div>
       <h1 class="display title">오늘 내 손에<br>닿은 물건은?</h1>
       <p class="muted lead">물건 하나를 고르면 그 물건이 여기까지 오며 거쳐 온 사람들을 만나요.</p>
     </header>
@@ -166,7 +171,7 @@ function journeyProgress(materialIds: string[], step: number) {
           <p class="p-name">{{ preview.name }}</p>
           <span v-if="!game.knowsItem(preview.name)" class="first mono">FIRST</span>
         </div>
-        <p v-if="preview.voice" class="voice">“{{ preview.voice }}”</p>
+        <p v-if="previewVoice" class="voice">“{{ previewVoice }}”</p>
         <p class="muted small">이렇게 나뉘어요</p>
         <div class="mats">
           <template v-for="(id, i) in preview.materialIds" :key="id">
@@ -191,6 +196,8 @@ function journeyProgress(materialIds: string[], step: number) {
 <style scoped>
 .head { display: flex; flex-direction: column; gap: 8px; }
 .date { margin: 0; font-size: 13px; }
+.head-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-width: 0; }
+.head-top > .nick { min-width: 0; }
 .title { font-size: 32px; line-height: 1.22; }
 .lead { margin: 0; font-size: 14px; line-height: 1.55; }
 

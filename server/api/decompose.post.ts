@@ -1,22 +1,16 @@
-import { matchText } from '../utils/matcher'
+import { allowAiCall, readCache, toDecomposed, writeCache } from '../utils/ai-cache'
 import { decomposeWithClaude, type DecomposeInput, type DecomposeResult } from '../utils/decompose'
+import { matchText } from '../utils/matcher'
 
 const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp']
 const MAX_IMAGE_BASE64 = 1_500_000 // 약 1.1MB. 클라이언트에서 줄여서 보낸다.
 
-// 서버리스 인스턴스 단위의 가벼운 남용 방지 (정확한 제한은 아님)
-const hits = new Map<string, { count: number; reset: number }>()
-function allow(ip: string, limit = 30, windowMs = 10 * 60_000) {
-  const now = Date.now()
-  const entry = hits.get(ip)
-  if (!entry || entry.reset < now) {
-    hits.set(ip, { count: 1, reset: now + windowMs })
-    return true
-  }
-  entry.count++
-  return entry.count <= limit
-}
+const LIMIT_MESSAGE = '오늘은 새 물건을 정말 많이 알아봤어요. 내일 다시 적어 주거나, "골라 보기"에서 골라 볼까요?'
 
+/**
+ * 텍스트: 로컬 매칭(대표 물건·물건 사전·동의어·오타·합성어·재료 별칭) → 공유 캐시 → (하루 한도 안에서) Claude → 캐시에 저장
+ * 사진:   (하루 한도 안에서) Claude → 알아본 물건 이름으로 사전·캐시를 다시 조회 → 없으면 이름 키로 캐시에 저장
+ */
 export default defineEventHandler(async (event): Promise<DecomposeResult> => {
   const body = await readBody<Partial<DecomposeInput>>(event).catch(() => null)
   const text = typeof body?.text === 'string' ? body.text.trim().slice(0, 60) : ''
@@ -30,10 +24,11 @@ export default defineEventHandler(async (event): Promise<DecomposeResult> => {
     return { ok: false, message: '물건 이름을 적어 주세요.' }
   }
 
-  // 로컬 매칭(대표 물건·물건 사전·동의어·오타·합성어·재료 별칭)으로 잡히면 API를 부르지 않는다
   if (!image) {
     const local = matchText(text)
     if (local) return { ok: true, source: 'local', ...local }
+    const cached = await readCache(text).catch(() => null)
+    if (cached) return { ok: true, source: 'ai', via: 'cache', ...toDecomposed(cached) }
   }
 
   const config = useRuntimeConfig(event)
@@ -43,13 +38,27 @@ export default defineEventHandler(async (event): Promise<DecomposeResult> => {
   }
 
   const ip = getRequestIP(event, { xForwardedFor: true }) ?? 'unknown'
-  if (!allow(ip)) return { ok: false, message: '요청이 너무 많아요. 잠시 후 다시 시도해 주세요.' }
+  const allowed = await allowAiCall(ip, Number(config.aiDailyLimit) || 20).catch(() => true)
+  if (!allowed) return { ok: false, message: LIMIT_MESSAGE }
 
   try {
     const result = await decomposeWithClaude(image ? { image } : { text }, {
       apiKey: config.anthropicApiKey,
       model: config.anthropicModel,
     })
+    if (!result.ok) return result
+
+    if (image) {
+      // 사진은 입력 자체를 캐시할 수 없으니, 알아본 물건 이름으로 사전과 캐시를 한 번 더 찾는다
+      const known = matchText(result.name)
+      if (known && known.via === 'exact') return { ok: true, source: 'local', ...known }
+      const cached = await readCache(result.name).catch(() => null)
+      if (cached) return { ok: true, source: 'ai', via: 'cache', ...toDecomposed(cached) }
+      await writeCache(result.name, result).catch((err) => console.error('[decompose] cache write', err))
+      return result
+    }
+
+    await writeCache(text, result).catch((err) => console.error('[decompose] cache write', err))
     return result
   } catch (err) {
     console.error('[decompose] failed', err)
