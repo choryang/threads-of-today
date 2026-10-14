@@ -17,6 +17,10 @@ const isLast = computed(() => !!journey.value && journey.value.step >= timeline.
 const toast = shallowRef<string[]>([])
 const linkGained = ref<string[]>([])
 
+function jobNames(ids: string[]) {
+  return ids.map((id) => PEOPLE[id]?.job).join(', ')
+}
+
 const materialIndex = computed(() => {
   const mid = current.value?.materialId
   return mid ? journey.value!.materialIds.indexOf(mid) : -1
@@ -81,6 +85,7 @@ const metPeople = computed(() => summary.value.people)
       <header class="head">
         <p class="mono muted kicker">JOURNEY COMPLETE</p>
         <h1 class="display title">{{ journey.name }}에<br>닿은 사람들</h1>
+        <p v-if="journey.voice" class="voice">“{{ journey.voice }}”</p>
         <p class="big">
           <strong class="mono">{{ summary.countries.length }}</strong>개 나라,
           <strong class="mono">{{ metPeople.length }}</strong>명의 사람
@@ -187,7 +192,7 @@ const metPeople = computed(() => summary.value.people)
 
     <Transition name="toast">
       <div v-if="toast.length" class="toast" role="status">
-        <span class="mono">+{{ toast.length }}</span> 새 카드: {{ toast.map((id) => PEOPLE[id]?.job).join(', ') }}
+        <span class="mono">+{{ toast.length }}</span> 새 카드: {{ jobNames(toast) }}
       </div>
     </Transition>
   </main>
@@ -198,6 +203,10 @@ const metPeople = computed(() => summary.value.people)
 .kicker { margin: 0; font-size: 11px; letter-spacing: 1.5px; }
 .gold { color: var(--accent); }
 .title { font-size: 30px; line-height: 1.25; }
+.voice {
+  margin: 4px 0; padding: 10px 14px; border-radius: 14px 14px 14px 4px;
+  background: var(--paper); color: var(--ink); font-size: 14px; line-height: 1.5; align-self: flex-start;
+}
 .big { margin: 4px 0 0; font-size: 18px; }
 .big strong { color: var(--accent); font-size: 26px; font-weight: 500; }
 .small { margin: 0; font-size: 13px; }

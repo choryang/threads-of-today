@@ -41,8 +41,15 @@ for (const person of PEOPLE_LIST) {
 }
 
 // 로직 스모크 테스트
-const samgak = matchLocal('편의점 참치마요 삼각김밥')
+const samgak = matchLocal('삼각김밥')
 if (samgak?.name !== '참치마요 삼각김밥') errors.push(`matchLocal 삼각김밥 실패: ${JSON.stringify(samgak)}`)
+const tkg = matchLocal('참치김치김밥')
+for (const id of ['tuna', 'chili', 'cabbage', 'rice']) if (!tkg?.materialIds.includes(id)) errors.push(`참치김치김밥에 ${id} 없음: ${JSON.stringify(tkg)}`)
+if (tkg?.name !== '참치김치김밥') errors.push(`참치김치김밥이 대표 물건으로 잘못 매칭: ${tkg?.name}`)
+const kimchi = matchLocal('김치')
+if (kimchi?.materialIds.includes('laver')) errors.push('김치가 김(laver)으로 오매칭')
+if (matchLocal('라면')?.materialIds.includes('cotton')) errors.push('라면이 면(cotton)으로 오매칭')
+if (matchLocal('지하철')) errors.push('지하철이 철강으로 오매칭')
 const phone = matchLocal('갤럭시 휴대폰')
 if (!phone?.materialIds.includes('cobalt')) errors.push('matchLocal 휴대폰 실패')
 if (matchLocal('ㅁㄴㅇㄹ') !== null) errors.push('matchLocal 무의미 입력이 매칭됨')

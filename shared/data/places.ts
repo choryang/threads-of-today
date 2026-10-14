@@ -14,10 +14,17 @@ const list: Place[] = [
   { id: 'kr-jeonbuk', name: '전북특별자치도', country: '대한민국', continent: 'korea' },
   { id: 'kr-jeonnam', name: '전라남도 바닷가', country: '대한민국', continent: 'korea' },
   { id: 'kr-gyeongnam', name: '경상남도', country: '대한민국', continent: 'korea' },
+  { id: 'kr-gangwon', name: '강원도 고랭지', country: '대한민국', continent: 'korea' },
+  { id: 'kr-incheon-port', name: '인천항', country: '대한민국', continent: 'korea' },
+  { id: 'kr-boseong', name: '전남 보성', country: '대한민국', continent: 'korea' },
+  { id: 'kr-gwangju', name: '광주', country: '대한민국', continent: 'korea' },
 
   // 아시아
   { id: 'cn', name: '중국', country: '중국', continent: 'asia' },
   { id: 'cn-zhejiang', name: '저장성', country: '중국', continent: 'asia' },
+  { id: 'cn-shandong', name: '중국 산둥성', country: '중국', continent: 'asia' },
+  { id: 'cn-qingdao', name: '칭다오 항구', country: '중국', continent: 'asia' },
+  { id: 'vn-mekong', name: '메콩강 삼각주', country: '베트남', continent: 'asia' },
   { id: 'vn', name: '베트남 공장 지대', country: '베트남', continent: 'asia' },
   { id: 'vn-hcm', name: '호찌민 항구', country: '베트남', continent: 'asia' },
   { id: 'vn-hanoi', name: '하노이 노이바이 공항', country: '베트남', continent: 'asia' },
@@ -46,16 +53,23 @@ const list: Place[] = [
   { id: 'nl-veldhoven', name: '펠트호번', country: '네덜란드', continent: 'europe' },
   { id: 'no', name: '노르웨이 피오르', country: '노르웨이', continent: 'europe' },
   { id: 'no-oslo', name: '오슬로 공항', country: '노르웨이', continent: 'europe' },
+  { id: 'es', name: '스페인 양돈 농장', country: '스페인', continent: 'europe' },
+  { id: 'es-valencia', name: '발렌시아 항구', country: '스페인', continent: 'europe' },
   { id: 'no-svalbard', name: '스발바르 제도', country: '노르웨이', continent: 'europe' },
 
   // 오세아니아
   { id: 'au-qld', name: '호주 퀸즐랜드', country: '호주', continent: 'oceania' },
   { id: 'au-wa', name: '서호주', country: '호주', continent: 'oceania' },
+  { id: 'nz', name: '뉴질랜드 조림지', country: '뉴질랜드', continent: 'oceania' },
+  { id: 'nz-tauranga', name: '타우랑가 항구', country: '뉴질랜드', continent: 'oceania' },
   { id: 'au-hedland', name: '포트헤들랜드 항구', country: '호주', continent: 'oceania' },
 
   // 아메리카
   { id: 'us-plains', name: '미국 대평원', country: '미국', continent: 'americas' },
   { id: 'us-pnw', name: '미국 북서부 곡물항', country: '미국', continent: 'americas' },
+  { id: 'us-midwest', name: '미국 중서부 옥수수 지대', country: '미국', continent: 'americas' },
+  { id: 'us-mississippi', name: '미시시피강', country: '미국', continent: 'americas' },
+  { id: 'us-nola', name: '뉴올리언스 곡물항', country: '미국', continent: 'americas' },
   { id: 'br', name: '브라질 조림지', country: '브라질', continent: 'americas' },
   { id: 'br-sp', name: '브라질 상파울루주', country: '브라질', continent: 'americas' },
   { id: 'br-mt', name: '브라질 마투그로수', country: '브라질', continent: 'americas' },

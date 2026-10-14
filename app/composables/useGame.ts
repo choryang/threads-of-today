@@ -15,6 +15,8 @@ export type TimelineItem =
 export interface Journey {
   id: string
   name: string
+  twist?: string
+  voice?: string
   source: JourneySource
   materialIds: string[]
   /** 지금까지 펼친 타임라인 칸 수 */
@@ -43,12 +45,14 @@ interface Save {
   days: Record<string, DayLog>
   streak: { last: string; count: number }
   mystery: Record<string, MysteryLog>
+  /** 분해해 본 물건 이름 → 처음 분해한 날 */
+  items: Record<string, string>
 }
 
 const KEY = 'my-day-people:v1'
 
 function emptySave(): Save {
-  return { v: 1, cards: {}, days: {}, streak: { last: '', count: 0 }, mystery: {} }
+  return { v: 1, cards: {}, days: {}, streak: { last: '', count: 0 }, mystery: {}, items: {} }
 }
 
 function load(): Save {
@@ -114,6 +118,11 @@ export function useGame() {
     return s.days[todayKey]!
   }
 
+  const itemCount = computed(() => Object.keys(s.items).length)
+  function knowsItem(name: string) {
+    return !!s.items[name]
+  }
+
   function owns(cardId: string) {
     return !!s.cards[cardId]
   }
@@ -139,6 +148,8 @@ export function useGame() {
     const journey: Journey = {
       id: `${todayKey}-${day.journeys.length + 1}`,
       name: item.name,
+      twist: item.twist,
+      voice: item.voice,
       source,
       materialIds: item.materialIds,
       step: 0,
@@ -147,6 +158,7 @@ export function useGame() {
       done: false,
     }
     day.journeys.push(journey)
+    if (!s.items[item.name]) s.items[item.name] = todayKey
     const saved = day.journeys[day.journeys.length - 1]!
     // 첫 번째 사람은 여정을 시작하자마자 만난다
     const first = buildTimeline(item.materialIds)[0]
@@ -247,6 +259,8 @@ export function useGame() {
     remaining,
     regularCount,
     ownedCount,
+    itemCount,
+    knowsItem,
     streak,
     owns,
     startJourney,

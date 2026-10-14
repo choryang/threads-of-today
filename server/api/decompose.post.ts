@@ -42,7 +42,7 @@ export default defineEventHandler(async (event): Promise<DecomposeResult> => {
     const local = matchLocal(text)
     return local
       ? { ok: true, source: 'local', ...local }
-      : { ok: false, message: '아직 여정을 준비하지 못한 물건이에요. 다른 물건으로 해 볼까요?' }
+      : { ok: false, message: '아직 모르는 물건이에요. "골라 보기"에서 비슷한 물건을 골라 볼까요?' }
   }
 
   const ip = getRequestIP(event, { xForwardedFor: true }) ?? 'unknown'

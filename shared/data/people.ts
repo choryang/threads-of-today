@@ -167,6 +167,70 @@ const list: Person[] = [
   p('dairy-plant', '유가공 공장 작업자', 'kr-gyeonggi', '우유를 살균하고 팩에 담아요.', 'chef', 'cup'),
   p('cow-vet', '젖소 수의사', 'kr-gyeonggi', '농장을 돌며 젖소들의 건강을 살펴요.', 'none', 'flask', 'rare', 'quiz'),
 
+  // ── 고춧가루 ──
+  p('chili-farmer', '고추 농부', 'cn-shandong', '붉게 익은 고추를 따서 햇볕에 펼쳐 말려요.', 'straw', 'basket'),
+  p('chili-mill', '고추 분쇄 공장 작업자', 'cn-shandong', '마른 고추의 꼭지를 따고 곱게 빻아 고춧가루로 만들어요.', 'cap', 'gear'),
+  p('qingdao-port', '칭다오 항만 노동자', 'cn-qingdao', '한국으로 가는 배에 고춧가루 포대를 실어요. 칭다오에서 인천까지는 배로 금방이에요.', 'safetyHelmet', 'box'),
+  p('incheon-port', '인천항 하역 노동자', 'kr-incheon-port', '중국과 가까운 서해의 관문. 곡물과 목재, 식품이 이 부두로 들어와요.', 'safetyHelmet', 'crane'),
+  p('chili-breeder', '고추 품종 연구원', 'kr', '병에 강하고 맛있는 고추를 만들려고 수많은 고추를 교배하고 길러 봐요.', 'none', 'seed', 'rare', 'quiz'),
+
+  // ── 배추·김치 ──
+  p('cabbage-farmer', '고랭지 배추 농부', 'kr-gangwon', '여름에도 서늘한 높은 산 밭에서 배추를 길러요. 한여름 김치는 이 밭에서 와요.', 'straw', 'leaf'),
+  p('cabbage-trader', '산지 유통인', 'kr-gangwon', '밭에서 거둔 배추를 모아 트럭에 가득 싣고 공장과 시장으로 날라요.', 'cap', 'box'),
+  p('kimchi-maker', '김치 공장 작업자', 'kr', '배추를 소금물에 절이고 씻어 양념에 버무려요. 하루에 수천 포기씩.', 'chef', 'leaf'),
+  p('kimchi-scientist', '김치 연구원', 'kr-gwangju', '김치가 익어 가는 동안 유산균이 어떻게 변하는지 연구해요.', 'hood', 'flask', 'rare', 'quiz'),
+
+  // ── 유리 ──
+  p('glass-furnace', '유리 용해로 운전원', 'kr', '모래(규사)와 소다회, 석회석을 1,500도 가까운 불에 녹여요.', 'helmet', 'flask'),
+  p('glass-bottle', '유리병 성형 작업자', 'kr', '녹은 유리 방울을 틀에 넣고 공기를 불어 병 모양을 만들어요.', 'cap', 'cup'),
+  p('glass-recycler', '유리병 재활용 선별원', 'kr', '색깔별로 유리병을 나눠요. 깨진 유리는 다시 녹여 새 병이 돼요.', 'cap', 'recycle', 'rare', 'quiz'),
+
+  // ── 목재 ──
+  p('nz-logger', '벌목 작업자', 'nz', '수십 년 키운 소나무를 베어 통나무로 잘라요.', 'safetyHelmet', 'leaf'),
+  p('tauranga-port', '타우랑가 항만 노동자', 'nz-tauranga', '뉴질랜드에서 가장 큰 수출항에서 통나무를 배에 쌓아 올려요.', 'safetyHelmet', 'crane'),
+  p('sawmill', '제재소 작업자', 'kr-incheon-port', '통나무를 판자와 각목으로 켜고 말려요.', 'cap', 'gear'),
+  p('furniture-maker', '가구 공장 작업자', 'kr', '나무를 자르고 다듬고 조립해 책상과 의자를 만들어요.', 'cap', 'wrench'),
+  p('nz-forester', '조림지 산림 관리인', 'nz', '베어 낸 자리에 다시 어린 나무를 심고 숲을 가꿔요.', 'straw', 'seed', 'rare', 'quiz'),
+
+  // ── 소고기 ──
+  p('cattle-rancher', '소 목장 주인', 'au-qld', '끝없는 초원에 소를 풀어 키워요. 말이나 오토바이를 타고 소 떼를 몰아요.', 'straw', 'leaf'),
+  p('meatworks', '소고기 가공장 작업자', 'au-qld', '고기를 부위별로 나눠 진공 포장하고 차갑게 보관해요.', 'chef', 'box'),
+  p('beef-grader', '소고기 등급 판정사', 'au-qld', '고기의 마블링과 색, 지방을 보고 등급을 매겨요.', 'none', 'magnifier', 'rare', 'quiz'),
+
+  // ── 돼지고기 ──
+  p('pig-farmer', '양돈 농장 직원', 'es', '돼지들이 먹고 자는 축사를 돌보고 건강을 살펴요.', 'cap', 'basket'),
+  p('pork-plant', '돼지고기 가공장 작업자', 'es', '고기를 부위별로 나눠 냉동 컨테이너에 실을 준비를 해요.', 'chef', 'box'),
+  p('valencia-port', '발렌시아 항만 노동자', 'es-valencia', '지중해의 큰 항구에서 냉동 컨테이너를 아시아행 배에 실어요.', 'safetyHelmet', 'box'),
+  p('butcher', '정육 기술자', 'kr-seoul', '큰 덩어리 고기를 삼겹살, 목살처럼 우리가 아는 모양으로 손질해요.', 'chef', 'box', 'rare', 'quiz'),
+
+  // ── 닭 ──
+  p('broiler-farmer', '육계 농장주', 'kr-jeonbuk', '병아리를 한 달 남짓 키워요. 온도와 환기에 하루 종일 신경 써요.', 'cap', 'seed'),
+  p('chicken-plant', '닭고기 가공장 작업자', 'kr-jeonbuk', '닭을 손질하고 부위별로 나눠 차갑게 포장해요.', 'chef', 'box'),
+  p('chicken-shop', '치킨집 사장님', 'kr-seoul', '반죽을 입혀 바삭하게 튀기고, 배달 기사님께 건네요.', 'chef', 'cup'),
+  p('poultry-officer', '가축 방역관', 'kr-jeonbuk', '조류인플루엔자 같은 병이 퍼지지 않도록 농장을 살피고 소독해요.', 'hood', 'clipboard', 'rare', 'quiz'),
+
+  // ── 달걀 ──
+  p('egg-farmer', '산란계 농장 직원', 'kr-gyeonggi', '닭들이 낳은 달걀을 매일 아침 모아요.', 'cap', 'basket'),
+  p('egg-gp', '달걀 선별포장 작업자', 'kr-gyeonggi', '달걀을 씻고 금 간 것을 골라내고, 껍데기에 번호를 찍어 포장해요.', 'hood', 'box'),
+  p('egg-inspector', '달걀 품질 검사원', 'kr-gyeonggi', '빛을 비춰 달걀 속을 들여다보고 신선도를 확인해요.', 'none', 'magnifier', 'rare', 'quiz'),
+
+  // ── 옥수수 ──
+  p('corn-farmer', '옥수수 농부', 'us-midwest', '사람 키보다 큰 옥수수밭을 콤바인으로 거둬요.', 'cap', 'wheat'),
+  p('barge-crew', '바지선 선원', 'us-mississippi', '곡물을 실은 바지선 수십 척을 줄줄이 묶어 미시시피강을 따라 내려가요.', 'beanie', 'anchor'),
+  p('nola-port', '곡물 수출항 작업자', 'us-nola', '강을 따라 내려온 옥수수를 바다를 건널 큰 배에 옮겨 담아요.', 'safetyHelmet', 'wheat'),
+  p('starch-plant', '전분당 공장 작업자', 'kr', '옥수수에서 전분을 뽑아 물엿이나 과자 원료로 만들어요.', 'helmet', 'flask'),
+  p('grain-trader', '곡물 무역 트레이더', 'kr-seoul', '어느 나라 곡물을 언제 사서 배에 실을지 하루 종일 시세를 보며 정해요.', 'none', 'phone', 'rare', 'quiz'),
+
+  // ── 새우 ──
+  p('shrimp-farmer', '새우 양식 농부', 'vn-mekong', '강과 바다가 만나는 연못에서 새우를 키워요.', 'straw', 'fish'),
+  p('shrimp-processor', '새우 가공 공장 작업자', 'vn-mekong', '새우 껍질을 벗기고 손질해 얼려요. 섬세한 손이 필요한 일이에요.', 'chef', 'fish'),
+  p('water-keeper', '양식장 수질 관리사', 'vn-mekong', '연못 물의 소금기와 산소를 재며 새우가 살기 좋은지 확인해요.', 'none', 'flask', 'rare', 'quiz'),
+
+  // ── 녹차 ──
+  p('tea-farmer', '차 농부', 'kr-boseong', '봄에 막 돋은 여린 찻잎을 손으로 따요.', 'straw', 'leaf'),
+  p('tea-roaster', '녹차 덖음 장인', 'kr-boseong', '뜨거운 솥에 찻잎을 넣고 손으로 뒤적이며 볶고 비벼요.', 'none', 'cup'),
+  p('tea-taster', '차 품질 감별사', 'kr-boseong', '찻잎의 모양과 향, 우린 물의 색을 보고 차의 등급을 매겨요.', 'none', 'cup', 'rare', 'quiz'),
+
   // ── 연결 발견 카드 (에픽) ──
   p('link-sea-crew', '두 물건을 한 배로 나른 선원', 'sea', '오늘 고른 물건 두 개가 어쩌면 같은 배를 타고 왔을지도 몰라요. 바다는 서로 다른 여정이 만나는 곳이에요.', 'beanie', 'anchor', 'epic', 'link'),
   p('link-bulk-crew', '곡물과 광석을 함께 아는 선원', 'sea', '밀을 실었던 배가 다음 항해에는 철광석을 싣기도 해요. 같은 바다, 다른 화물.', 'beanie', 'wheat', 'epic', 'link'),
@@ -176,12 +240,14 @@ const list: Person[] = [
   p('link-vn-factory', '두 물건을 만든 손', 'vn', '오늘 쓴 물건 두 개가 같은 나라의 같은 공장 지대에서 만들어졌어요.', 'cap', 'spool', 'epic', 'link'),
   p('link-cn-refinery', '배터리 금속의 교차로', 'cn', '콩고의 코발트와 호주의 리튬이 이곳에서 함께 정련돼 배터리가 돼요.', 'helmet', 'chip', 'epic', 'link'),
   p('link-kr-battery', '두 금속을 하나로', 'kr-chungbuk', '서로 다른 대륙에서 온 금속이 이곳에서 만나 하나의 배터리가 돼요.', 'hood', 'chip', 'epic', 'link'),
+  p('link-incheon-port', '서해 관문의 교차로', 'kr-incheon-port', '바다 건너 가까운 나라와 먼 나라의 화물이 같은 부두에 내려요.', 'safetyHelmet', 'crane', 'epic', 'link'),
   p('link-santos-port', '남미의 관문', 'br-santos', '종이가 될 펄프, 주스가 될 오렌지, 두부가 될 콩이 같은 항구에서 배에 올라요.', 'safetyHelmet', 'orange', 'epic', 'link'),
 
   // ── 세트 완성 카드 (전설) ──
   p('harbor-pilot', '항만 도선사', 'kr-busan', '거대한 배가 항구에 안전하게 들어오도록 직접 배에 올라 길을 안내해요. 바다를 건넌 모든 여정의 마지막 길잡이.', 'beanie', 'anchor', 'legendary', 'set'),
   p('seed-vault', '종자 저장고 관리자', 'no-svalbard', '북극의 얼음 산속 저장고에 세계의 씨앗을 보관해요. 땅을 일구는 모든 사람의 내일을 지키는 곳이에요.', 'beanie', 'seed', 'legendary', 'set'),
   p('mine-rescue', '광산 구조대원', 'au-wa', '땅속에서 사고가 나면 가장 먼저 들어가는 사람이에요. 땅속에서 일하는 모든 사람의 든든한 뒷배.', 'minerLamp', 'clipboard', 'legendary', 'set'),
+  p('table-setter', '급식실 영양사', 'kr', '수많은 사람의 한 끼를 위해 세계 곳곳에서 온 재료로 매일 식단을 짜요. 오늘의 밥상을 차리는 사람.', 'chef', 'clipboard', 'legendary', 'set'),
   p('safety-inspector', '산업안전 감독관', 'kr', '공장에서 일하는 사람들이 다치지 않도록 현장을 살피고 바꿔 나가요.', 'safetyHelmet', 'clipboard', 'legendary', 'set'),
 ]
 

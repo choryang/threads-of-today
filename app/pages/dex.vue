@@ -21,6 +21,9 @@ const total = PEOPLE_LIST.length
 const percent = computed(() => Math.round((game.ownedCount.value / total) * 100))
 const sets = computed(() => game.setProgress())
 const numberOf = (id: string) => PEOPLE_LIST.findIndex((p) => p.id === id) + 1
+const itemNames = computed(() =>
+  Object.entries(game.state.items).sort((a, b) => b[1].localeCompare(a[1])).map(([name]) => name),
+)
 const openPerson = computed(() => (open.value ? PEOPLE[open.value] : undefined))
 </script>
 
@@ -31,6 +34,13 @@ const openPerson = computed(() => (open.value ? PEOPLE[open.value] : undefined))
       <p class="muted small"><span class="mono">{{ game.ownedCount.value }}/{{ total }}</span>명을 만났어요</p>
       <div class="bar" aria-hidden="true"><span :style="{ width: `${percent}%` }" /></div>
     </header>
+
+    <section v-if="game.itemCount.value" aria-label="분해한 물건">
+      <h2 class="h2">분해해 본 물건 <span class="mono muted">{{ game.itemCount.value }}</span></h2>
+      <div class="items">
+        <span v-for="name in itemNames" :key="name" class="chip">{{ name }}</span>
+      </div>
+    </section>
 
     <section aria-label="세트">
       <h2 class="h2">세트 모으기</h2>
@@ -93,6 +103,7 @@ const openPerson = computed(() => (open.value ? PEOPLE[open.value] : undefined))
 .bar { height: 8px; border-radius: 4px; background: var(--line); overflow: hidden; }
 .bar span { display: block; height: 100%; background: var(--accent); }
 
+.items { display: flex; flex-wrap: wrap; gap: 6px; }
 .sets { display: flex; flex-direction: column; gap: 8px; }
 .set { display: flex; flex-direction: column; gap: 6px; }
 .set.complete { border-color: var(--r-legendary); }

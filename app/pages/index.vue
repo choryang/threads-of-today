@@ -25,13 +25,17 @@ const total = PEOPLE_LIST.length
 
 const quickPicks = PRODUCTS
 
+function materialNames(ids: string[]) {
+  return ids.map((id) => MATERIALS[id]?.name).join(' · ')
+}
+
 async function ask(body: Record<string, unknown>, source: JourneySource) {
   loading.value = true
   error.value = ''
   preview.value = null
   try {
     const res = await $fetch<ApiResult>('/api/decompose', { method: 'POST', body })
-    if (res.ok) preview.value = { name: res.name, materialIds: res.materialIds, source }
+    if (res.ok) preview.value = { name: res.name, materialIds: res.materialIds, twist: res.twist, voice: res.voice, source }
     else error.value = res.message
   } catch {
     error.value = '연결이 불안정해요. 잠시 후 다시 시도해 주세요.'
@@ -98,6 +102,7 @@ function journeyProgress(materialIds: string[], step: number) {
       <div><strong class="mono">{{ game.streak.value }}일</strong><span>연속 기록</span></div>
       <div><strong class="mono">{{ game.remaining.value }}/{{ DAILY_LIMIT }}</strong><span>남은 여정</span></div>
     </section>
+    <p v-if="game.itemCount.value" class="muted small items-line">지금까지 분해해 본 물건 <span class="mono">{{ game.itemCount.value }}</span>개</p>
 
     <NuxtLink to="/mystery" class="mystery">
       <div>
@@ -117,7 +122,7 @@ function journeyProgress(materialIds: string[], step: number) {
       <NuxtLink v-for="j in game.today.value.journeys" :key="j.id" :to="`/journey/${j.id}`" class="j-row panel">
         <div class="j-main">
           <span class="j-name">{{ j.name }}</span>
-          <span class="j-mats">{{ j.materialIds.map((id) => MATERIALS[id]?.name).join(' · ') }}</span>
+          <span class="j-mats">{{ materialNames(j.materialIds) }}</span>
         </div>
         <span v-if="j.done" class="chip done">완료</span>
         <span v-else class="chip mono">{{ journeyProgress(j.materialIds, j.step) }}%</span>
@@ -132,8 +137,8 @@ function journeyProgress(materialIds: string[], step: number) {
       </div>
 
       <form v-if="tab === 'text'" class="text-form" @submit.prevent="submitText">
-        <label for="item" class="sr-only">오늘 쓴 물건</label>
-        <input id="item" v-model="text" maxlength="40" placeholder="예: 편의점 삼각김밥, 무선 이어폰" autocomplete="off">
+        <label for="item" class="sr-only">오늘 나에게 닿은 것</label>
+        <input id="item" v-model="text" maxlength="40" placeholder="물건, 음식, 고양이, 월요일… 뭐든지" autocomplete="off">
         <button class="btn btn-primary" :disabled="!text.trim() || loading">{{ loading ? '분해 중…' : '분해하기' }}</button>
       </form>
 
@@ -156,8 +161,13 @@ function journeyProgress(materialIds: string[], step: number) {
       <p v-if="error" class="error" role="alert">{{ error }}</p>
 
       <div v-if="preview" class="preview">
-        <p class="muted small">이 물건은 이렇게 나뉘어요</p>
-        <p class="p-name">{{ preview.name }}</p>
+        <p v-if="preview.twist" class="twist">{{ preview.twist }}</p>
+        <div class="p-top">
+          <p class="p-name">{{ preview.name }}</p>
+          <span v-if="!game.knowsItem(preview.name)" class="first mono">FIRST</span>
+        </div>
+        <p v-if="preview.voice" class="voice">“{{ preview.voice }}”</p>
+        <p class="muted small">이렇게 나뉘어요</p>
         <div class="mats">
           <template v-for="(id, i) in preview.materialIds" :key="id">
             <span v-if="i" class="plus" aria-hidden="true">+</span>
@@ -254,6 +264,16 @@ function journeyProgress(materialIds: string[], step: number) {
 .mats { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .mat { padding: 6px 12px; border-radius: 999px; background: var(--surface-2); font-size: 14px; }
 .plus { color: var(--accent); font-family: var(--font-mono); }
+
+.items-line { margin: -8px 0 0; text-align: center; }
+.twist { margin: 0; font-size: 13px; color: var(--accent); }
+.p-top { display: flex; align-items: center; gap: 8px; }
+.first { font-size: 11px; padding: 3px 7px; border-radius: 6px; background: var(--r-epic); color: var(--ink); }
+.voice {
+  margin: 0; padding: 10px 14px; border-radius: 14px 14px 14px 4px;
+  background: var(--paper); color: var(--ink); font-size: 14px; line-height: 1.5;
+  align-self: flex-start; max-width: 100%;
+}
 
 .done-panel { display: flex; flex-direction: column; gap: 10px; }
 .foot { font-size: 12px; line-height: 1.5; margin: 0; }

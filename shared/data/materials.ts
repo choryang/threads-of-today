@@ -228,7 +228,7 @@ const list: Material[] = [
     },
   },
   {
-    id: 'steel', name: '철강', aliases: ['철', '강철', '자전거', '참치캔', '통조림', '숟가락', '냄비', '못', '자동차'],
+    id: 'steel', name: '철강', aliases: ['강철', '철강', '자전거', '참치캔', '통조림', '숟가락', '냄비', '자동차', '프라이팬'],
     stages: ['iron-miner', 'hedland-port', 'bulk-crew', 'steel-mill', 'warehouse'],
     quiz: {
       q: '철광석을 녹여 쇳물을 만드는 거대한 설비는?',
@@ -245,6 +245,116 @@ const list: Material[] = [
       options: ['저온 살균', '초고온 멸균(UHT)', '냉동 살균'], answer: 1,
       explain: '초고온 멸균(UHT) 우유는 냉장하지 않아도 오래 보관할 수 있어요.',
       rewardId: 'cow-vet',
+    },
+  },
+  {
+    id: 'chili', name: '고춧가루', aliases: ['고춧가루', '고추', '김치', '고추장', '떡볶이', '짬뽕', '김치찌개', '라볶이', '김치볶음밥', '깍두기', '육개장'],
+    stages: ['chili-farmer', 'chili-mill', 'qingdao-port', 'sea-crew', 'incheon-port', 'warehouse'],
+    quiz: {
+      q: '수입 고춧가루는 주로 어느 나라에서 올까요?',
+      options: ['중국', '인도', '멕시코'], answer: 0,
+      explain: '수입 고춧가루와 건고추는 대부분 가까운 중국에서 와요.',
+      rewardId: 'chili-breeder',
+    },
+  },
+  {
+    id: 'cabbage', name: '배추', aliases: ['배추', '김치', '김치찌개', '김치볶음밥', '겉절이', '보쌈김치', '배추전'],
+    stages: ['cabbage-farmer', 'cabbage-trader', 'kimchi-maker', 'warehouse'],
+    quiz: {
+      q: '더운 여름에 배추는 주로 어디에서 기를까요?',
+      options: ['강원도 높은 산의 고랭지', '제주도 해안가', '도시의 비닐하우스'], answer: 0,
+      explain: '배추는 더위에 약해서 여름에는 서늘한 강원도 고랭지 밭에서 길러요.',
+      rewardId: 'kimchi-scientist',
+    },
+  },
+  {
+    id: 'glass', name: '유리', aliases: ['유리', '유리컵', '유리병', '맥주병', '소주병', '소주', '맥주', '안경', '거울', '창문', '향수'],
+    stages: ['glass-furnace', 'glass-bottle', 'warehouse'],
+    quiz: {
+      q: '유리의 주원료는?',
+      options: ['모래', '소금', '석유'], answer: 0,
+      explain: '유리는 규사라고 부르는 고운 모래에 소다회와 석회석을 섞어 녹여 만들어요.',
+      rewardId: 'glass-recycler',
+    },
+  },
+  {
+    id: 'wood', name: '목재', aliases: ['나무', '목재', '원목', '책상', '의자', '나무젓가락', '젓가락', '연필', '가구', '침대', '선반', '도마'],
+    stages: ['nz-logger', 'tauranga-port', 'bulk-crew', 'incheon-port', 'sawmill', 'furniture-maker'],
+    quiz: {
+      q: '한국이 통나무(원목)를 가장 많이 수입하는 나라는?',
+      options: ['뉴질랜드', '캐나다', '러시아'], answer: 0,
+      explain: '한국에 들어오는 원목의 상당 부분은 뉴질랜드에서 키운 라디아타 소나무예요.',
+      rewardId: 'nz-forester',
+    },
+  },
+  {
+    id: 'beef', name: '소고기', aliases: ['소고기', '쇠고기', '불고기', '햄버거', '스테이크', '육회', '갈비', '차돌박이', '규동', '소불고기', '버거'],
+    stages: ['cattle-rancher', 'meatworks', 'sea-crew', 'busan-crane', 'warehouse'],
+    quiz: {
+      q: '넓은 초원에 소를 풀어 놓고 풀을 먹이며 키우는 방식은?',
+      options: ['방목', '양식', '수경'], answer: 0,
+      explain: '호주의 많은 목장은 넓은 초원에 소를 풀어 키우는 방목 방식이에요.',
+      rewardId: 'beef-grader',
+    },
+  },
+  {
+    id: 'pork', name: '돼지고기', aliases: ['돼지고기', '삼겹살', '목살', '돈가스', '돈까스', '제육', '제육볶음', '소시지', '족발', '보쌈', '김치찌개', '탕수육', '순대국'],
+    stages: ['pig-farmer', 'pork-plant', 'valencia-port', 'sea-crew', 'busan-crane', 'warehouse'],
+    quiz: {
+      q: '삼겹살은 돼지의 어느 부위일까요?',
+      options: ['뱃살', '어깨', '다리'], answer: 0,
+      explain: '삼겹살은 살과 지방이 세 겹으로 보이는 돼지의 뱃살 부위예요.',
+      rewardId: 'butcher',
+    },
+  },
+  {
+    id: 'chicken', name: '닭고기', aliases: ['닭고기', '치킨', '닭가슴살', '닭갈비', '삼계탕', '닭강정', '찜닭', '후라이드', '양념치킨', '닭볶음탕', '치킨너겟'],
+    stages: ['broiler-farmer', 'chicken-plant', 'warehouse', 'chicken-shop'],
+    quiz: {
+      q: '치킨용 닭은 병아리 때부터 얼마나 키울까요?',
+      options: ['한 달 남짓', '반년', '2년'], answer: 0,
+      explain: '고기용 닭(육계)은 보통 한 달 남짓 키워서 출하해요.',
+      rewardId: 'poultry-officer',
+    },
+  },
+  {
+    id: 'egg', name: '달걀', aliases: ['달걀', '계란', '계란말이', '계란후라이', '오므라이스', '마요네즈', '카스테라', '에그타르트', '계란빵', '토스트'],
+    stages: ['egg-farmer', 'egg-gp', 'warehouse'],
+    quiz: {
+      q: '달걀 껍데기에 찍힌 번호의 마지막 숫자는 무엇을 알려 줄까요?',
+      options: ['닭을 키운 환경', '닭의 나이', '달걀의 무게'], answer: 0,
+      explain: '마지막 숫자는 사육 환경이에요. 1은 방사, 2는 평사, 3·4는 케이지 사육이에요.',
+      rewardId: 'egg-inspector',
+    },
+  },
+  {
+    id: 'corn', name: '옥수수', aliases: ['옥수수', '팝콘', '물엿', '시리얼', '콘칩', '콘플레이크', '콘버터', '옥수수수염차', '나초'],
+    stages: ['corn-farmer', 'barge-crew', 'nola-port', 'bulk-crew', 'starch-plant', 'warehouse'],
+    quiz: {
+      q: '미국 중서부의 옥수수가 바다로 나가려고 따라 내려가는 강은?',
+      options: ['미시시피강', '아마존강', '라인강'], answer: 0,
+      explain: '중서부 곡물은 미시시피강 바지선을 타고 멕시코만의 항구까지 내려가요.',
+      rewardId: 'grain-trader',
+    },
+  },
+  {
+    id: 'shrimp', name: '새우', aliases: ['새우', '새우깡', '새우튀김', '감바스', '새우버거', '칵테일새우', '쉬림프', '새우볶음밥'],
+    stages: ['shrimp-farmer', 'shrimp-processor', 'vn-port', 'sea-crew', 'busan-crane', 'warehouse'],
+    quiz: {
+      q: '베트남에서 새우 양식이 활발한, 큰 강이 바다와 만나는 지역은?',
+      options: ['메콩강 삼각주', '나일강 삼각주', '양쯔강 상류'], answer: 0,
+      explain: '베트남 남부 메콩강 삼각주는 강물과 바닷물이 섞여 새우를 키우기 좋아요.',
+      rewardId: 'water-keeper',
+    },
+  },
+  {
+    id: 'tea', name: '녹차', aliases: ['녹차', '말차', '녹차라떼', '티백', '말차라떼', '녹차아이스크림'],
+    stages: ['tea-farmer', 'tea-roaster', 'warehouse'],
+    quiz: {
+      q: '찻잎을 뜨거운 솥에 넣고 볶듯이 뒤적이는 일을 뭐라고 할까요?',
+      options: ['덖음', '숙성', '훈연'], answer: 0,
+      explain: '덖음은 찻잎을 솥에서 볶아 풀내를 없애고 향을 살리는 과정이에요.',
+      rewardId: 'tea-taster',
     },
   },
 ]
@@ -272,6 +382,18 @@ export const PRODUCTS: Product[] = [
   { id: 'tuna-can', name: '참치캔', aliases: ['참치캔', '참치'], materialIds: ['tuna', 'steel'] },
   { id: 'banana-milk', name: '바나나우유', aliases: ['바나나우유'], materialIds: ['milk', 'sugar', 'plastic'] },
   { id: 'earbuds', name: '무선 이어폰', aliases: ['이어폰', '에어팟', '버즈'], materialIds: ['lithium', 'cobalt', 'chip', 'assembly', 'plastic'] },
+  { id: 'kimchi', name: '배추김치', aliases: ['김치', '배추김치', '포기김치'], materialIds: ['cabbage', 'chili'] },
+  { id: 'kimchi-stew', name: '김치찌개', aliases: ['김치찌개'], materialIds: ['cabbage', 'chili', 'pork'] },
+  { id: 'fried-chicken', name: '후라이드 치킨', aliases: ['치킨', '후라이드', '후라이드치킨'], materialIds: ['chicken', 'wheat', 'soybean'] },
+  { id: 'samgyeopsal', name: '삼겹살', aliases: ['삼겹살'], materialIds: ['pork'] },
+  { id: 'burger', name: '햄버거', aliases: ['햄버거', '버거'], materialIds: ['beef', 'wheat', 'egg'] },
+  { id: 'shrimp-snack', name: '새우 과자', aliases: ['새우깡', '새우과자'], materialIds: ['shrimp', 'wheat', 'palm-oil'] },
+  { id: 'popcorn', name: '팝콘', aliases: ['팝콘'], materialIds: ['corn', 'palm-oil', 'pulp'] },
+  { id: 'desk', name: '나무 책상', aliases: ['책상', '나무책상'], materialIds: ['wood', 'steel'] },
+  { id: 'chopsticks', name: '나무젓가락', aliases: ['나무젓가락'], materialIds: ['wood'] },
+  { id: 'soju', name: '소주 한 병', aliases: ['소주'], materialIds: ['glass'] },
+  { id: 'green-tea', name: '녹차', aliases: ['녹차', '녹차티백'], materialIds: ['tea', 'pulp'] },
+  { id: 'omurice', name: '오므라이스', aliases: ['오므라이스'], materialIds: ['egg', 'rice'] },
 ]
 
 /** 하루 여정에서 이 사람이 서로 다른 재료 2개 이상에 나오면 연결 카드 획득 */
@@ -285,6 +407,7 @@ export const LINK_RULES: LinkRule[] = [
   { personId: 'cn-refinery', cardId: 'link-cn-refinery' },
   { personId: 'kr-battery', cardId: 'link-kr-battery' },
   { personId: 'santos-port', cardId: 'link-santos-port' },
+  { personId: 'incheon-port', cardId: 'link-incheon-port' },
 ]
 
 export const SETS: CardSet[] = [
@@ -293,13 +416,17 @@ export const SETS: CardSet[] = [
     memberIds: ['sea-crew', 'bulk-crew', 'tanker-crew', 'reefer-crew', 'tuna-fisher'], rewardId: 'harbor-pilot',
   },
   {
-    id: 'set-soil', name: '땅을 일구는 사람들', desc: '세계 곳곳의 농부 여덟 명을 모두 만나 보세요.',
-    memberIds: ['coffee-picker', 'cacao-farmer', 'wheat-farmer', 'rice-farmer', 'cotton-farmer', 'banana-farmer', 'soy-farmer', 'orange-picker'],
+    id: 'set-soil', name: '땅을 일구는 사람들', desc: '세계 곳곳의 농부 열 명을 모두 만나 보세요.',
+    memberIds: ['coffee-picker', 'cacao-farmer', 'wheat-farmer', 'rice-farmer', 'cotton-farmer', 'banana-farmer', 'soy-farmer', 'orange-picker', 'cabbage-farmer', 'tea-farmer'],
     rewardId: 'seed-vault',
   },
   {
     id: 'set-underground', name: '땅속에서 온 것들', desc: '광물을 캐는 사람 다섯 명을 모두 만나 보세요.',
     memberIds: ['oil-worker', 'cobalt-miner', 'lithium-miner', 'bauxite-miner', 'iron-miner'], rewardId: 'mine-rescue',
+  },
+  {
+    id: 'set-table', name: '오늘의 밥상', desc: '밥상에 오르는 것들을 키우는 사람 다섯 명을 만나 보세요.',
+    memberIds: ['cattle-rancher', 'pig-farmer', 'broiler-farmer', 'egg-farmer', 'shrimp-farmer'], rewardId: 'table-setter',
   },
   {
     id: 'set-factory', name: '공장의 손', desc: '물건을 만드는 공장 사람 여섯 명을 모두 만나 보세요.',
