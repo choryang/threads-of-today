@@ -22,6 +22,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import { MATERIALS } from '../shared/data/materials'
 import { compact, createMatcher, productEntries, type DictEntry } from '../shared/match'
 import { SYSTEM, TOOL_NAME, buildTool, canonicalMissing, clean, cleanFlavor, resolveMaterials, textPrompt } from '../server/utils/decompose'
+import { writeClientDictionary } from './build-client-dictionary'
 
 const ROOT = process.cwd()
 const SEED_FILES = { item: 'data/seeds/items.txt', word: 'data/seeds/words.txt' } as const
@@ -325,8 +326,11 @@ async function main() {
   await collect(client, batch.id)
 }
 
-main().catch((err) => {
-  if (err instanceof Anthropic.APIError) console.error(`API 오류 ${err.status}: ${err.message}`)
-  else console.error(err instanceof Error ? err.message : err)
-  process.exit(1)
-})
+main()
+  // 사전이 바뀌었을 수 있으니 앱용 사전도 다시 쓴다
+  .then(() => writeClientDictionary())
+  .catch((err) => {
+    if (err instanceof Anthropic.APIError) console.error(`API 오류 ${err.status}: ${err.message}`)
+    else console.error(err instanceof Error ? err.message : err)
+    process.exit(1)
+  })

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { MOTION } from '../utils/motion'
 
 const { status, sync, restore } = useSync()
 const mode = ref<'closed' | 'show' | 'enter'>('closed')
@@ -22,7 +23,7 @@ async function copy() {
   try {
     await navigator.clipboard.writeText(myCode.value)
     copied.value = true
-    setTimeout(() => (copied.value = false), 1500)
+    setTimeout(() => (copied.value = false), MOTION.noticeMs)
   } catch {
     // 복사가 막힌 브라우저: 화면의 코드를 보고 적으면 된다
   }

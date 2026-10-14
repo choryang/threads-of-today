@@ -41,11 +41,11 @@ const svg = computed(() => {
 
 <style scoped>
 svg { display: block; overflow: visible; }
-.bob { animation: bob 2.4s ease-in-out infinite; }
+.bob { animation: bob var(--motion-bob) ease-in-out infinite; }
 /* body-wave는 왼팔이 rotate(100 196 388)만큼 올라가 있다. 옷의 왼쪽 소매도 같이 돌린다 */
 .wave :deep(.sleeve-l) { transform: rotate(100deg); transform-origin: 196px 388px; }
-.wave { animation: hop 0.5s ease-out; }
-.bob.wave { animation: hop 0.5s ease-out, bob 2.4s ease-in-out infinite; }
+.wave { animation: hop var(--motion-wave) ease-out; }
+.bob.wave { animation: hop var(--motion-wave) ease-out, bob var(--motion-bob) ease-in-out infinite; }
 @keyframes hop {
   0%, 100% { translate: 0 0; }
   40% { translate: 0 -8%; }

@@ -156,7 +156,7 @@ const ariaLabel = computed(() => `나의 실타래: 실 ${props.layout.threads.l
 .paper .me-dot { fill: #b8462f; }
 .paper .me-name { fill: #1b1b1b; }
 
-.people { display: flex; flex-direction: column; gap: 10px; animation: rise 0.2s ease-out; }
+.people { display: flex; flex-direction: column; gap: 10px; animation: rise var(--motion-enter) var(--motion-ease); }
 .people-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .people-title { margin: 0; font-weight: 700; }
 .close { min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; border: 0; background: none; color: inherit; }
@@ -164,9 +164,9 @@ const ariaLabel = computed(() => `나의 실타래: 실 ${props.layout.threads.l
 .cell { padding: 0; border: 0; background: none; text-align: inherit; min-height: 44px; }
 
 /* 처음 열 때 실이 바깥 나라에서 '나' 쪽으로 천천히 그려진다 */
-.animate .seg { stroke-dasharray: 1; stroke-dashoffset: 1; animation: draw 1.6s ease-out 0.2s forwards; }
-.animate .knot { opacity: 0; animation: knot-in 0.6s ease-out 0.1s forwards; }
-.animate .ring, .animate .me { opacity: 0; animation: knot-in 0.6s ease-out 1.5s forwards; }
+.animate .seg { stroke-dasharray: 1; stroke-dashoffset: 1; animation: draw var(--motion-draw) var(--motion-ease) forwards; }
+.animate .knot { opacity: 0; animation: knot-in var(--motion-enter) var(--motion-ease) forwards; }
+.animate .ring, .animate .me { opacity: 0; animation: knot-in var(--motion-enter) var(--motion-ease) var(--motion-draw) forwards; }
 @keyframes draw { to { stroke-dashoffset: 0; } }
 @keyframes knot-in { to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) {

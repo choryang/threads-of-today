@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { SETS } from '../../shared/data/materials'
 import { endingLines, setSceneLines } from '../../shared/thanks'
+import { MOTION } from '../utils/motion'
 
 /** 세트 감사 장면과 엔딩. 고마움을 전해 새로 열리면 한 번 뜨고, 엔딩은 도감에서 다시 볼 수 있다 */
 const { current, dismiss } = useThanksScenes()
@@ -35,7 +36,7 @@ const lines = computed(() => {
       </template>
 
       <div class="lines">
-        <p v-for="(line, i) in lines" :key="i" :style="{ animationDelay: `${0.3 + i * 0.9}s` }">{{ line }}</p>
+        <p v-for="(line, i) in lines" :key="i" :style="{ animationDelay: `${MOTION.enterMs + i * MOTION.lineStaggerMs}ms` }">{{ line }}</p>
       </div>
       <button class="btn btn-primary btn-block" @click="dismiss()">{{ current.type === 'ending' ? '닫기' : '계속하기' }}</button>
     </div>
@@ -47,7 +48,7 @@ const lines = computed(() => {
   position: fixed; inset: 0; z-index: 60;
   display: flex; align-items: center; justify-content: center; padding: 24px 20px;
   background: rgba(5, 10, 20, 0.88); backdrop-filter: blur(6px);
-  animation: rise 0.3s ease-out;
+  animation: rise var(--motion-enter) var(--motion-ease);
 }
 .scene.ending { background: radial-gradient(circle at 50% 30%, #1c2e4a 0, #070c16 75%); }
 .inner { width: 100%; max-width: 380px; max-height: 100%; overflow-y: auto; display: flex; flex-direction: column; gap: 18px; text-align: center; }
@@ -58,7 +59,7 @@ const lines = computed(() => {
 .ending-bg > * { width: min(140vw, 140vh); flex-shrink: 0; }
 .inner { position: relative; }
 .lines { display: flex; flex-direction: column; gap: 10px; }
-.lines p { margin: 0; font-size: 17px; line-height: 1.7; opacity: 0; animation: fade-in 0.8s ease-out forwards; }
+.lines p { margin: 0; font-size: 17px; line-height: 1.7; opacity: 0; animation: fade-in var(--motion-enter) var(--motion-ease) forwards; }
 .ending .lines p { font-size: 18px; }
 @keyframes fade-in { to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .lines p { animation: none; opacity: 1; } }

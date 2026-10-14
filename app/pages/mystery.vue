@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { mysteryOptions } from '../../shared/logic'
+import { MOTION } from '../utils/motion'
 
 const game = useGame()
 const router = useRouter()
@@ -41,7 +42,7 @@ async function share() {
     }
     await navigator.clipboard.writeText(shareText.value)
     copied.value = true
-    setTimeout(() => (copied.value = false), 2000)
+    setTimeout(() => (copied.value = false), MOTION.noticeMs)
   } catch {
     // 사용자가 공유를 취소한 경우
   }
@@ -103,7 +104,7 @@ async function share() {
 .h2 { margin: 0 0 10px; font-size: 15px; }
 
 .hints { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
-.hint { display: flex; flex-direction: column; gap: 4px; font-size: 15px; line-height: 1.5; animation: rise 0.25s ease-out; }
+.hint { display: flex; flex-direction: column; gap: 4px; font-size: 15px; line-height: 1.5; animation: rise var(--motion-enter) var(--motion-ease); }
 .hint .n { font-size: 11px; color: var(--accent); }
 .hint.locked { padding: 14px 16px; border-radius: 18px; border: 1px dashed var(--line); color: var(--faint); font-size: 14px; }
 .hint.locked .n { color: var(--faint); }
@@ -112,7 +113,7 @@ async function share() {
 .opt { min-height: 56px; padding: 8px 12px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); font-size: 15px; }
 .opt.wrong { background: #3a1f22; border-color: var(--bad); color: var(--muted); text-decoration: line-through; cursor: default; }
 
-.result { display: flex; flex-direction: column; gap: 10px; animation: pop-in 0.4s ease-out; }
+.result { display: flex; flex-direction: column; gap: 10px; animation: pop-in var(--motion-enter) var(--motion-ease); }
 .result.solved { border-color: var(--ok); }
 .ok { color: var(--ok); }
 .bad { color: var(--bad); }

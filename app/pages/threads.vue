@@ -44,7 +44,7 @@ const hasThreads = computed(() => tapestry.value.threads.length > 0)
   position: fixed; inset: 0; z-index: 40;
   background: rgba(5, 10, 20, 0.7); backdrop-filter: blur(4px);
   display: flex; align-items: center; justify-content: center; padding: 24px 20px;
-  animation: rise 0.2s ease-out;
+  animation: rise var(--motion-enter) var(--motion-ease);
 }
 .sheet { width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 12px; max-height: 100%; overflow-y: auto; }
 </style>
