@@ -19,6 +19,9 @@ const met = computed(() => game.owns(props.personId))
 const thanked = computed(() => game.thanked(props.personId))
 const reply = computed(() => (thanked.value ? thanksReply(props.personId) : ''))
 
+/** 일의 크기 한 줄을 누르면 출처를 펼친다 */
+const showSource = ref(false)
+
 // 고마워요를 누르면 잠깐 손을 흔들며 반가워한다
 const waving = ref(false)
 let waveTimer: ReturnType<typeof setTimeout> | undefined
@@ -46,6 +49,16 @@ onBeforeUnmount(() => clearTimeout(waveTimer))
         <template v-if="person.name"><span class="name">{{ person.name }}</span> · </template>{{ person.job }}<span class="place"> · {{ placeLabel }}</span>
       </h3>
       <p class="story">{{ person.story }}</p>
+      <div v-if="person.workFact" class="fact">
+        <button class="fact-btn" :aria-expanded="showSource" @click="showSource = !showSource">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /></svg>
+          <span>{{ person.workFact }}</span>
+        </button>
+        <p v-if="showSource && person.workFactSource" class="fact-source">
+          출처: {{ person.workFactSource.name }} ({{ person.workFactSource.year }})
+          <a :href="person.workFactSource.url" target="_blank" rel="noopener noreferrer">자료 보기</a>
+        </p>
+      </div>
       <div v-if="met" class="thanks" aria-live="polite">
         <button v-if="!thanked" class="thank-btn" @click="thank">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z" /></svg>
@@ -112,6 +125,15 @@ onBeforeUnmount(() => clearTimeout(waveTimer))
 .who { margin: 0; font-size: 20px; line-height: 1.35; word-break: keep-all; }
 .who .place { font-size: 13px; font-weight: 400; color: #4a4a4a; }
 .story { margin: 8px 0 0; font-size: 14px; line-height: 1.6; color: #2a2a2a; }
+.fact { margin-top: 8px; display: flex; flex-direction: column; gap: 4px; }
+.fact-btn {
+  display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 8px 12px;
+  border: 1px dashed #b9b2a0; border-radius: 12px; background: var(--paper-2);
+  color: var(--ink); font: inherit; font-size: 14px; font-weight: 600; text-align: left; cursor: pointer;
+}
+.fact-btn svg { flex-shrink: 0; }
+.fact-source { margin: 0; padding: 0 4px; font-size: 12px; line-height: 1.5; color: #4a4a4a; word-break: keep-all; }
+.fact-source a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 4px; color: #6b4e00; font-weight: 700; }
 .thanks { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
 .thank-btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 6px;

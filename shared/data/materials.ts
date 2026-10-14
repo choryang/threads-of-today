@@ -1,4 +1,5 @@
 import type { CardSet, LinkRule, Material, Product } from '../types'
+import { WORK_QUIZZES } from './work-quizzes'
 
 /**
  * 재료별 대표 여정.
@@ -621,6 +622,12 @@ const list: Material[] = [
     },
   },
 ]
+
+// 일의 크기를 짐작하는 퀴즈를 재료마다 extraQuizzes 끝에 붙인다 (출처는 work-quizzes.ts)
+for (const m of list) {
+  const w = WORK_QUIZZES[m.id]
+  if (w && m.quiz) m.extraQuizzes = [...(m.extraQuizzes ?? []), { ...w, rewardId: m.quiz.rewardId }]
+}
 
 export const MATERIALS: Record<string, Material> = Object.fromEntries(list.map((m) => [m.id, m]))
 export const MATERIAL_LIST = list

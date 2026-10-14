@@ -17,6 +17,7 @@ import { dayStats, findLinkCards, journeyMaterialIds, mysteryOptions, mysteryPro
 import { MYSTERY_HINT_COUNT, middleCandidates, mysteryHints } from '../shared/mystery'
 import { MYSTERY_INFO } from '../shared/data/mystery'
 import { createMatcher, match, productEntries, type DictEntry } from '../shared/match'
+import { WORK_QUIZZES } from '../shared/data/work-quizzes'
 import { NAME_GROUPS } from '../shared/data/names'
 
 const errors: string[] = []
@@ -224,6 +225,30 @@ for (let i = 0; i < 120; i++) {
   const answer = mysteryProduct(key)
   checkHints(answer, mysteryHints(answer, mysteryOptions(key).filter((o) => o.id !== answer.id)), ` (${key})`)
 }
+// 일의 크기 한 줄: 40자 이내 해요체, 숫자 앞에 '약'·'보통', 출처(이름·연도·URL) 필수, 임금·사고 같은 이야기는 넣지 않는다
+const FORBIDDEN_FACT = ['임금', '월급', '시급', '연봉', '소득', '빈곤', '가난', '사고', '부상', '사망', '다쳐', '힘들']
+for (const person of PEOPLE_LIST) {
+  const fact = person.workFact
+  if (!fact) {
+    if (person.workFactSource) errors.push(`${person.id}: 출처만 있고 workFact가 없음`)
+    continue
+  }
+  if (fact.length > 40) errors.push(`${person.id}: workFact가 40자를 넘음 (${fact.length}자)`)
+  if (!/요[.!]?$/.test(fact)) errors.push(`${person.id}: workFact는 해요체로 — ${fact}`)
+  if (!/[0-9]/.test(fact) || !/(약|보통)/.test(fact)) errors.push(`${person.id}: workFact에 숫자와 '약'·'보통'이 필요함 — ${fact}`)
+  for (const w of FORBIDDEN_FACT) if (fact.includes(w)) errors.push(`${person.id}: workFact에 '${w}' — ${fact}`)
+  const src = person.workFactSource
+  if (!src?.name || !Number.isInteger(src.year) || !/^https?:\/\//.test(src.url ?? '')) errors.push(`${person.id}: workFactSource(이름·연도·URL)가 없거나 잘못됨`)
+}
+
+// 일의 크기 퀴즈: 아는 재료, 보기 3개(서로 다름), 해설에 숫자
+for (const [id, q] of Object.entries(WORK_QUIZZES)) {
+  if (!MATERIAL_LIST.some((m) => m.id === id)) errors.push(`일의 크기 퀴즈 ${id}: 재료 없음`)
+  if (q.options.length !== 3 || new Set(q.options).size !== 3) errors.push(`일의 크기 퀴즈 ${id}: 보기는 서로 다른 3개`)
+  if (!/[0-9]/.test(q.explain)) errors.push(`일의 크기 퀴즈 ${id}: 해설에 정답 숫자가 없음`)
+}
+console.log('일의 크기: 카드', PEOPLE_LIST.filter((p) => p.workFact).length, '명 · 퀴즈', Object.keys(WORK_QUIZZES).length, '개 / 재료', MATERIAL_LIST.length, '개')
+
 // 이름: 한글 1~6자, 일하는 나라 묶음에 넣고, 같은 나라 안에서 겹치지 않는다. 바다 위 이름은 가져온 나라의 이름과도 겹치지 않는다
 const namesByCountry = new Map<string, Map<string, string>>()
 const claim = (country: string, name: string, id: string) => {

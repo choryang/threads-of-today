@@ -40,6 +40,14 @@ export interface Look {
   tint?: string
 }
 
+/** 실제 자료에서 가져온 숫자의 출처 */
+export interface FactSource {
+  /** 기관·문서 이름 */
+  name: string
+  year: number
+  url: string
+}
+
 export interface Person {
   id: string
   /** 그 나라에서 흔한 이름(성 없이). 출처는 data/names.ts. 확인이 안 된 나라는 없다 */
@@ -51,6 +59,9 @@ export interface Person {
   rarity: Rarity
   /** stage: 여정 단계 / quiz: 퀴즈 보상 / link: 연결 발견 / set: 세트 완성 보상 / hidden: 여정 중 아주 가끔 만나는 숨은 만남 */
   kind: 'stage' | 'quiz' | 'link' | 'set' | 'hidden'
+  /** 일의 크기를 보여 주는 숫자 한 줄 (해요체, 40자 이내, 숫자 앞에 '약'·'보통'). 출처를 확인한 것만 */
+  workFact?: string
+  workFactSource?: FactSource
 }
 
 export interface Quiz {
