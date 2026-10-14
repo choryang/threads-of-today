@@ -1,0 +1,68 @@
+import assert from 'node:assert/strict'
+import { test } from 'node:test'
+import { match, normalize } from '../shared/match'
+
+const ids = (text: string) => match(text)?.materialIds ?? []
+
+test('합성어: 참치김치김밥은 재료를 합치고 참치캔으로 잡히지 않는다', () => {
+  const r = match('참치김치김밥')
+  assert.ok(r)
+  for (const id of ['tuna', 'chili', 'cabbage', 'rice']) assert.ok(r.materialIds.includes(id), id)
+  assert.notEqual(r.name, '참치캔')
+  assert.ok(!r.materialIds.includes('steel'))
+  assert.equal(r.via, 'compound')
+  assert.ok(r.materialIds.length <= 5)
+})
+
+test('한 글자 별칭 오매칭 방지', () => {
+  assert.ok(!ids('김치').includes('laver'))
+  assert.ok(!ids('라면').includes('cotton'))
+  assert.equal(match('지하철'), null)
+})
+
+test('오타 허용', () => {
+  const r = match('아메리까노')
+  assert.equal(r?.name, '아이스 아메리카노')
+  assert.equal(r?.via, 'typo')
+})
+
+test('동의어와 브랜드: 갤럭시 핸드폰은 스마트폰 계열', () => {
+  const r = match('갤럭시 핸드폰')
+  assert.ok(r)
+  for (const id of ['cobalt', 'lithium', 'chip']) assert.ok(r.materialIds.includes(id), id)
+})
+
+test('무의미한 입력은 매칭하지 않는다', () => {
+  assert.equal(match('ㅁㄴㅇㄹ'), null)
+  assert.equal(match('   '), null)
+  assert.equal(match('!!!'), null)
+})
+
+test('정확 일치는 대표 물건 이름으로 돌려준다', () => {
+  assert.equal(match('삼각김밥')?.name, '참치마요 삼각김밥')
+  assert.equal(match('카페라떼')?.name, '카페라떼')
+  assert.equal(match('삼각김밥')?.via, 'exact')
+})
+
+test('수식어를 지운다', () => {
+  assert.equal(normalize('편의점 삼각김밥 하나'), '삼각김밥')
+  assert.equal(normalize('오늘 아메리카노 한 잔'), '아메리카노')
+  assert.equal(match('오늘 마신 아메리카노 한잔')?.name, '아이스 아메리카노')
+  assert.equal(match('편의점삼각김밥')?.name, '참치마요 삼각김밥')
+  // 한 글자 수식어는 붙여 쓰면 지우지 않는다
+  assert.equal(normalize('새우깡'), '새우깡')
+})
+
+test('동의어 치환', () => {
+  assert.equal(match('쇠고기')?.materialIds[0], 'beef')
+  assert.equal(match('폰')?.name, '스마트폰')
+  assert.equal(match('돈까스')?.materialIds[0], 'pork')
+  // '이어폰'이 '이어스마트폰'이 되지 않는다
+  assert.equal(match('이어폰')?.name, '무선 이어폰')
+})
+
+test('재료 별칭 부분 일치', () => {
+  const r = match('치즈케이크')
+  assert.ok(r)
+  assert.ok(r.materialIds.includes('milk'))
+})

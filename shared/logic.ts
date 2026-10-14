@@ -1,4 +1,4 @@
-import { LINK_RULES, MATERIALS, MATERIAL_LIST, PRODUCTS, SETS } from './data/materials'
+import { LINK_RULES, MATERIALS, PRODUCTS, SETS } from './data/materials'
 import { PEOPLE } from './data/people'
 import { PLACES } from './data/places'
 import type { CardSet, Product } from './types'
@@ -23,8 +23,6 @@ export function withJosa(word: string, withBatchim: string, withoutBatchim: stri
   return word + ((last - 0xac00) % 28 ? withBatchim : withoutBatchim)
 }
 
-const norm = (s: string) => s.toLowerCase().replace(/\s+/g, '')
-
 export function sanitizeMaterialIds(ids: unknown): string[] {
   if (!Array.isArray(ids)) return []
   const out: string[] = []
@@ -32,36 +30,6 @@ export function sanitizeMaterialIds(ids: unknown): string[] {
     if (typeof id === 'string' && MATERIALS[id] && !out.includes(id)) out.push(id)
   }
   return out.slice(0, MAX_MATERIALS)
-}
-
-/**
- * 입력이 대표 물건 이름과 "완전히 같을 때만" 그 물건의 재료를 돌려준다.
- * ('참치김치김밥'처럼 일부만 겹치는 입력은 AI나 재료 매칭으로 넘긴다)
- */
-export function matchProduct(text: string): Decomposed | null {
-  const t = norm(text)
-  if (!t) return null
-  const product = PRODUCTS.find((p) => [p.name, ...p.aliases].some((a) => norm(a) === t))
-  return product ? { name: product.name, materialIds: [...product.materialIds] } : null
-}
-
-/** API 없이 동작하는 키워드 매칭. 대표 물건 → 재료 별칭 순서로 찾는다. */
-export function matchLocal(text: string): Decomposed | null {
-  const product = matchProduct(text)
-  if (product) return product
-  const t = norm(text)
-  if (!t) return null
-  const ids: string[] = []
-  // 한 글자 이름('김', '면')은 '김치', '라면'처럼 다른 단어에 섞여 오매칭되므로 완전히 같을 때만 인정
-  const hit = (alias: string) => {
-    const a = norm(alias)
-    return a.length < 2 ? t === a : t.includes(a)
-  }
-  for (const m of MATERIAL_LIST) {
-    if ([m.name, ...m.aliases].some(hit)) ids.push(m.id)
-  }
-  if (!ids.length) return null
-  return { name: text.trim().slice(0, 20), materialIds: ids.slice(0, MAX_MATERIALS) }
 }
 
 export interface StageRef {

@@ -1,4 +1,4 @@
-import { matchLocal, matchProduct } from '../../shared/logic'
+import { match } from '../../shared/match'
 import { decomposeWithClaude, type DecomposeInput, type DecomposeResult } from '../utils/decompose'
 
 const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp']
@@ -30,19 +30,16 @@ export default defineEventHandler(async (event): Promise<DecomposeResult> => {
     return { ok: false, message: '물건 이름을 적어 주세요.' }
   }
 
-  // 대표 물건은 API 없이 바로 처리 (비용 절약)
+  // 로컬 매칭(사전·동의어·오타·합성어·재료 별칭)으로 잡히면 API를 부르지 않는다
   if (!image) {
-    const product = matchProduct(text)
-    if (product) return { ok: true, source: 'local', ...product }
+    const local = match(text)
+    if (local) return { ok: true, source: 'local', ...local }
   }
 
   const config = useRuntimeConfig(event)
   if (!config.anthropicApiKey) {
     if (image) return { ok: false, message: '사진 인식은 아직 준비 중이에요. 물건 이름으로 적어 주세요.' }
-    const local = matchLocal(text)
-    return local
-      ? { ok: true, source: 'local', ...local }
-      : { ok: false, message: '아직 모르는 물건이에요. "골라 보기"에서 비슷한 물건을 골라 볼까요?' }
+    return { ok: false, message: '아직 모르는 물건이에요. "골라 보기"에서 비슷한 물건을 골라 볼까요?' }
   }
 
   const ip = getRequestIP(event, { xForwardedFor: true }) ?? 'unknown'
@@ -53,10 +50,6 @@ export default defineEventHandler(async (event): Promise<DecomposeResult> => {
       apiKey: config.anthropicApiKey,
       model: config.anthropicModel,
     })
-    if (!result.ok && !image) {
-      const local = matchLocal(text)
-      if (local) return { ok: true, source: 'local', ...local }
-    }
     return result
   } catch (err) {
     console.error('[decompose] failed', err)

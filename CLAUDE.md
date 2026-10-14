@@ -7,7 +7,7 @@
 
 - Nuxt 4 (Vue 3.5, TypeScript), `ssr: false` SPA + Nitro 서버 API. 배포는 Vercel.
 - 진행 상황은 브라우저 localStorage(`my-day-people:v1`). 로그인·DB 없음.
-- `npm run dev` / `npm run build` / `npm run check:data`(데이터 무결성 + 매칭 스모크 테스트)
+- `npm run dev` / `npm run build` / `npm run check:data`(데이터 무결성 + 스모크 테스트) / `npm test`(node:test, 매칭 사례)
 - 환경 변수: `NUXT_ANTHROPIC_API_KEY`, `NUXT_ANTHROPIC_MODEL`(기본 `claude-haiku-5-5`)
 
 ## 구조
@@ -18,15 +18,18 @@ shared/                 앱과 서버가 상대 경로로 함께 import (Nuxt �
   data/places.ts        장소 (country, continent → 캐릭터 몸 색)
   data/people.ts        사람 카드. kind: stage | quiz | link | set, rarity: common | rare | epic | legendary
   data/materials.ts     재료 여정(stages = 사람 id 순서), 퀴즈, 대표 물건(PRODUCTS), 연결 규칙, 세트
-  logic.ts              matchProduct / matchLocal / dayStats / findLinkCards / 미스터리 등 순수 함수
+  data/synonyms.ts      동의어 묶음 (첫 단어가 대표 표기)
+  match/                AI 없는 매칭. normalize → exact → synonym → typo(자모 편집 거리) → compound → partial, 결과에 via
+  logic.ts              sanitizeMaterialIds / dayStats / findLinkCards / 미스터리 등 순수 함수
 server/
-  api/decompose.post.ts 텍스트·사진 → 재료 id. 대표 물건 정확 일치 → (키 없으면 matchLocal) → Claude
+  api/decompose.post.ts 텍스트·사진 → 재료 id. shared/match로 잡히면 끝, 아니면 Claude (키 없으면 안내 문구)
   utils/decompose.ts    Claude Messages API 호출. tool_choice로 report_materials 강제, material_ids는 enum
 app/
   composables/useGame.ts  게임 상태·규칙 (effectScope로 저장 watch, 하루 여정 3번, 미스터리 보너스)
   pages/                  index(입력 3방식) · journey/[id] · mystery · dex · result(html-to-image 공유)
   utils/character.ts      모자(hat)·소품(prop) 파츠를 조합한 SVG 콩 캐릭터
 scripts/check-data.ts     데이터 검사. 모든 변경 후 반드시 통과시킬 것
+tests/                    node:test + tsx 단위 테스트
 ```
 
 ## 꼭 지킬 원칙
