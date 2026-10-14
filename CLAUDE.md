@@ -22,6 +22,7 @@ shared/                 앱과 서버가 상대 경로로 함께 import (Nuxt �
   data/journey-extras.ts 여정 이벤트(EVENTS, '이야기')·숨은 만남 규칙(HIDDEN_RULES)
   data/shops.ts         여정 마지막 장면의 가게·사무실 사람. closingKind(물건 이름, 재료)로 종류를 정한다
   data/thanks.ts        고마워요 답·세트 감사 장면·엔딩 문구
+  data/durations.ts     사람마다 머무는 날수(장소 종류별 기본값 + PERSON_DAYS). 여정 길이는 30~58일로 맞춘다
   data/mystery.ts       미스터리 힌트 1·2번(대표 물건별 쓰임새 한 줄·분류). 대표 물건을 추가하면 여기도 채운다(check:data)
   data/dictionary.json  미리 만든 물건 사전 (scripts/build-dictionary.ts가 생성). 서버에서만 import
   safety.ts             looksFactual: AI 문구에 숫자·나라 이름이 섞였는지 검사
@@ -30,6 +31,7 @@ shared/                 앱과 서버가 상대 경로로 함께 import (Nuxt �
   recovery.ts           복구 코드 '낱말-낱말-숫자4' 생성·정규화
   voice.ts              voice의 {name} 자리표시자 검사·renderVoice (AI에 닉네임을 보내지 않는다)
   match/                AI 없는 매칭. normalize → exact → synonym → typo(자모 편집 거리) → compound → partial, 결과에 via
+  timing.ts             여정 시계: MS_PER_DAY(1배 게임 하루), 배속 1·3·6, anchorAt+anchorDays로 지금 날수 계산, 퀴즈에서 멈춤, 배속 바꿀 때 reanchor
   journey.ts            buildTimeline(materialIds, journeyId): 여정 id 시드로 출발지·이야기·숨은 만남·퀴즈 변형. '-꼬리' 없는 예전 id는 기본 경로
   random.ts             hash / mix32 / seeded
   logic.ts              sanitizeMaterialIds / dayStats(여정별 실제 경로) / findLinkCards / 미스터리 등 순수 함수

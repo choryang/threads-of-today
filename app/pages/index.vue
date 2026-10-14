@@ -2,7 +2,9 @@
 import { computed, nextTick, ref } from 'vue'
 import { MATERIALS, PRODUCTS } from '../../shared/data/materials'
 import type { Decomposed } from '../../shared/logic'
-import type { JourneySource } from '../composables/useGame'
+import type { Journey, JourneySource } from '../composables/useGame'
+import { journeySchedule, locationAt, remainingMs } from '../../shared/timing'
+import { remainingLabel } from '../utils/labels'
 import { shrinkImage } from '../utils/image'
 import { productIconSvg } from '../utils/product-icon'
 import { renderVoice } from '../../shared/voice'
@@ -26,8 +28,22 @@ const photoUrl = ref('')
 
 const tiles = computed(() => (showAll.value ? PRODUCTS : PRODUCTS.slice(0, FIRST_TILES)))
 const previewVoice = computed(() => renderVoice(preview.value?.voice, game.nickname.value))
-/** 진행 중인 여정 하나 (가장 최근) */
-const ongoing = computed(() => [...game.today.value.journeys].reverse().find((j) => !j.done))
+/** 오늘 떠난 여정 + 어제 이전에 떠나 아직 가는 중인 여정 */
+const trips = computed(() => {
+  const earlier = Object.entries(game.state.days)
+    .filter(([key]) => key !== game.todayKey)
+    .flatMap(([, day]) => day.journeys.filter((j) => !j.done))
+  return [...earlier, ...game.today.value.journeys]
+})
+
+/** 여정마다 지금 위치와 남은 시간 */
+function tripStatus(j: Journey): { where: string; left: string; state: 'arrived' | 'quiz' | 'moving' } {
+  if (j.done) return { where: '', left: '도착했어요', state: 'arrived' }
+  const clock = game.clockOf(j, game.now.value)
+  if (clock.arrived) return { where: '', left: '도착했어요', state: 'arrived' }
+  if (clock.waitingQuiz) return { where: '', left: '퀴즈가 기다리고 있어요', state: 'quiz' }
+  return { where: locationAt(journeySchedule(j).timeline, clock.index), left: remainingLabel(remainingMs(clock, game.speed.value)), state: 'moving' }
+}
 
 /** "망고·딸기의 여정은 아직 준비 중이에요" */
 const missingNotice = computed(() => {
@@ -110,10 +126,19 @@ function start() {
 
 <template>
   <main class="page home">
-    <NuxtLink v-if="ongoing" :to="`/journey/${ongoing.id}`" class="resume">
-      <span class="resume-name">{{ ongoing.name }} 여정</span>
-      <span class="resume-go">이어 하기 →</span>
-    </NuxtLink>
+    <section v-if="trips.length" class="trips" aria-labelledby="trips-title">
+      <div class="trips-head">
+        <h2 id="trips-title" class="trips-title">오늘 떠난 여정</h2>
+        <SpeedToggle />
+      </div>
+      <NuxtLink v-for="j in trips" :key="j.id" :to="`/journey/${j.id}`" class="trip" :class="`trip-${tripStatus(j).state}`">
+        <span class="trip-name">{{ j.name }}</span>
+        <span class="trip-status">
+          <span v-if="tripStatus(j).where" class="trip-where">{{ tripStatus(j).where }}</span>
+          <span class="trip-left">{{ tripStatus(j).left }}</span>
+        </span>
+      </NuxtLink>
+    </section>
 
     <header class="head">
       <h1 class="display title">오늘 손에 닿은 물건은?</h1>
@@ -190,14 +215,20 @@ function start() {
 
 <style scoped>
 .home { gap: 16px; }
-.resume {
+.trips { display: flex; flex-direction: column; gap: 6px; }
+.trips-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.trips-title { margin: 0; font-size: 15px; }
+.trip {
   display: flex; justify-content: space-between; align-items: center; gap: 12px;
-  min-height: 44px; padding: 0 14px; margin-bottom: -4px;
+  min-height: 52px; padding: 8px 14px;
   border-radius: 12px; background: var(--surface); border: 1px solid var(--line);
   color: var(--text); text-decoration: none; font-size: 14px;
 }
-.resume-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); }
-.resume-go { flex-shrink: 0; color: var(--accent); font-weight: 700; }
+.trip-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
+.trip-status { flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; font-size: 12px; }
+.trip-where { color: var(--muted); }
+.trip-left { color: var(--muted); }
+.trip-quiz .trip-left, .trip-arrived .trip-left { color: var(--accent); font-weight: 700; font-size: 13px; }
 
 .head { display: flex; flex-direction: column; gap: 6px; }
 .title { font-size: 28px; line-height: 1.25; }

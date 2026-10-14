@@ -8,6 +8,9 @@ import {
 import { mysteryHints } from '../../shared/mystery'
 import { normalizeNickname, randomNickname } from '../../shared/nickname'
 import { buildTimeline, quizFor } from '../../shared/journey'
+import {
+  DEFAULT_SPEED, MS_PER_DAY, anchorAtQuiz, ensureAnchor, journeyClock, journeySchedule, reanchor, type JourneyClock, type Speed,
+} from '../../shared/timing'
 import { addJourneyToThreads, backfillThreads } from '../../shared/threads'
 import { everyoneThanked, sceneKey, thanksReply, unseenScenes, type ThanksScene } from '../../shared/thanks'
 import { emptySave, type DayLog, type Journey, type JourneySource, type MysteryLog, type Save } from '../../shared/progress'
@@ -17,6 +20,10 @@ export type { DayLog, Journey, JourneySource, MysteryLog, Save } from '../../sha
 export type { TimelineItem } from '../../shared/journey'
 
 const KEY = 'my-day-people:v1'
+/** 이 기기에서 여정 화면을 마지막으로 본 칸과 게임 날수. "자리를 비운 사이" 요약에 쓴다 (기기마다 따로, 동기화하지 않음) */
+const SEEN_KEY = 'my-day-people:seen'
+/** 여정 시계를 다시 계산하는 간격 */
+const TICK_MS = Math.min(1000, MS_PER_DAY / 24)
 
 function load(): Save {
   if (typeof window === 'undefined') return emptySave()
@@ -71,6 +78,7 @@ export function replaceSave(next: Save) {
   s.seenScenes = next.seenScenes ?? []
   s.threads = next.threads ?? {}
   if (next.nickname) s.nickname = next.nickname
+  if (next.speed) s.speed = next.speed
 }
 
 /** 지금 진행 상황의 복사본 (서버로 보낼 때) */
@@ -86,6 +94,61 @@ export function onJourneyFinish(listener: () => void) {
 }
 
 export { buildTimeline }
+
+/** 화면이 따라 바뀌는 지금 시각. startClock이 TICK_MS마다 갱신한다 */
+const now = ref(Date.now())
+
+interface Seen { step: number; day: number }
+
+function loadSeen(): Record<string, Seen> {
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(SEEN_KEY) ?? '{}')
+    return parsed && typeof parsed === 'object' ? parsed : {}
+  } catch {
+    return {}
+  }
+}
+
+let seenCache: Record<string, Seen> | null = null
+function seenMap(): Record<string, Seen> {
+  if (!seenCache) seenCache = typeof window === 'undefined' ? {} : loadSeen()
+  return seenCache
+}
+
+function writeSeen(id: string, value: Seen) {
+  const map = seenMap()
+  const old = map[id]
+  if (old && old.step === value.step && Math.floor(old.day) === Math.floor(value.day)) return
+  map[id] = value
+  // 30일이 지난 여정은 지운다 (id 앞 10글자가 날짜)
+  const cutoff = new Date(Date.now() - 31 * 86_400_000).toISOString().slice(0, 10)
+  for (const k of Object.keys(map)) if (k.slice(0, 10) < cutoff) delete map[k]
+  try {
+    window.localStorage.setItem(SEEN_KEY, JSON.stringify(map))
+  } catch {
+    // 저장 공간이 막힌 환경에서는 이번 방문 동안만 유지
+  }
+}
+
+let clockTimer: ReturnType<typeof setInterval> | null = null
+
+/**
+ * 여정 시계를 돌린다. 앱을 열 때 그사이 지난 칸을 한꺼번에 처리하고, 그 뒤로는 TICK_MS마다 처리한다.
+ * 다른 탭에 있다가 돌아오면 바로 한 번 더 처리한다.
+ */
+export function startClock() {
+  if (clockTimer || typeof window === 'undefined') return
+  const game = useGame()
+  const tick = () => {
+    now.value = Date.now()
+    game.advanceAll(now.value)
+  }
+  tick()
+  clockTimer = setInterval(tick, TICK_MS)
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') tick()
+  })
+}
 
 /** 보여 줄 감사 장면(세트 감사·엔딩). 화면 어디서 고마움을 전해도 app.vue의 ThanksScene이 띄운다 */
 const sceneQueue = ref<ThanksScene[]>([])
@@ -105,6 +168,7 @@ export function useGame() {
   const regularCount = computed(() => today.value.journeys.filter((j) => j.source !== 'mystery').length)
   const remaining = computed(() => Math.max(0, DAILY_LIMIT - regularCount.value))
   const ownedCount = computed(() => Object.keys(s.cards).length)
+  const speed = computed<Speed>(() => s.speed?.value ?? DEFAULT_SPEED)
   const streak = computed(() => {
     if (s.streak.last === todayKey || s.streak.last === previousDateKey(todayKey)) return s.streak.count
     return 0
@@ -154,13 +218,21 @@ export function useGame() {
       quiz: {},
       newCards: [],
       done: false,
+      anchorAt: Date.now(),
+      anchorDays: 0,
     }
     day.journeys.push(journey)
+    // 연속 기록은 여정을 떠날 때 올라간다 (밤에 떠나 다음 날 도착해도 떠난 날 기준)
+    if (s.streak.last !== todayKey) {
+      s.streak.count = s.streak.last === previousDateKey(todayKey) ? s.streak.count + 1 : 1
+      s.streak.last = todayKey
+    }
     if (!s.items[item.name]) s.items[item.name] = todayKey
     const saved = day.journeys[day.journeys.length - 1]!
     // 첫 번째 사람은 여정을 시작하자마자 만난다
     const first = buildTimeline(saved.materialIds, saved.id, saved.name)[0]
     if (first?.type === 'stage') saved.newCards.push(...collect(first.personId))
+    writeSeen(saved.id, { step: 0, day: 0 })
     return saved
   }
 
@@ -172,26 +244,71 @@ export function useGame() {
     return undefined
   }
 
-  /** 타임라인 다음 칸을 펼친다. 사람 칸이면 카드를 얻는다. */
-  function revealNext(journey: Journey): string[] {
-    const timeline = buildTimeline(journey.materialIds, journey.id, journey.name)
-    const item = timeline[journey.step]
-    if (!item) return []
-    if (item.type === 'quiz' && journey.quiz[item.materialId] === undefined) return []
-    journey.step++
-    const next = timeline[journey.step]
-    if (next?.type === 'stage' || next?.type === 'hidden') {
-      const gained = collect(next.personId)
-      journey.newCards.push(...gained)
-      return gained
+  /** 진행 중인 모든 여정 (떠난 날과 상관없이) */
+  function ongoingJourneys(): Journey[] {
+    return Object.values(s.days).flatMap((day) => day.journeys.filter((j) => !j.done))
+  }
+
+  function clockOf(journey: Journey, at = now.value): JourneyClock {
+    return journeyClock(journey, at, speed.value)
+  }
+
+  /**
+   * 여정 시계가 가리키는 칸까지 펼친다. 그사이 지난 사람 칸의 카드를 한꺼번에 주고, 마지막 칸을 지나면 여정을 마친다.
+   * 답하지 않은 퀴즈가 있으면 그 칸에서 멈춘다.
+   */
+  function advanceJourney(journey: Journey, at = Date.now()) {
+    if (journey.done) return
+    ensureAnchor(journey, at)
+    const { timeline } = journeySchedule(journey)
+    const clock = clockOf(journey, at)
+    while (journey.step < clock.index) {
+      journey.step++
+      const item = timeline[journey.step]
+      if (item?.type === 'stage' || item?.type === 'hidden') journey.newCards.push(...collect(item.personId))
     }
-    return []
+    if (clock.arrived) finishJourney(journey)
+  }
+
+  function advanceAll(at = Date.now()) {
+    for (const j of ongoingJourneys()) advanceJourney(j, at)
+  }
+
+  /** 배속을 바꾼다. 바꾸는 순간 진행 중인 모든 여정의 기준점을 새로 찍어 진행이 튀지 않게 한다 */
+  function setSpeed(value: Speed) {
+    if (value === speed.value) return
+    const at = Date.now()
+    for (const j of ongoingJourneys()) {
+      ensureAnchor(j, at)
+      reanchor(j, at, speed.value)
+    }
+    s.speed = { value, updatedAt: at }
+    now.value = at
+  }
+
+  /** 여정 화면을 마지막으로 본 뒤 흐른 날수와 새로 만난 사람. 처음 보는 여정(다른 기기에서 떠난 여정)은 null */
+  function awaySummary(journey: Journey): { days: number; people: string[] } | null {
+    const seen = seenMap()[journey.id]
+    if (!seen) return null
+    const { timeline } = journeySchedule(journey)
+    const people = timeline
+      .slice(seen.step + 1, journey.step + 1)
+      .flatMap((t) => (t.type === 'stage' || t.type === 'hidden' ? [t.personId] : []))
+    return { days: Math.max(0, Math.floor(clockOf(journey).day - seen.day)), people }
+  }
+
+  /** 여정 화면에서 지금 칸을 본 것으로 기록한다 */
+  function markSeen(journey: Journey) {
+    writeSeen(journey.id, { step: journey.step, day: clockOf(journey).day })
   }
 
   function answerQuiz(journey: Journey, materialId: string, choice: number): { correct: boolean; gained: string[] } {
     const quiz = quizFor(journey.materialIds, journey.id, materialId)
     if (!quiz || journey.quiz[materialId] !== undefined) return { correct: false, gained: [] }
     journey.quiz[materialId] = choice
+    // 퀴즈에서 멈춰 있던 시간이 답하는 순간부터 다시 흐른다
+    anchorAtQuiz(journey, materialId, Date.now())
+    now.value = Date.now()
     const correct = choice === quiz.answer
     const gained = correct ? collect(quiz.rewardId) : []
     journey.newCards.push(...gained)
@@ -213,11 +330,6 @@ export function useGame() {
     journey.newCards.push(...gained)
     if (!s.threads) s.threads = {}
     addJourneyToThreads(s.threads, journey.materialIds, dayKey)
-
-    if (s.streak.last !== todayKey) {
-      s.streak.count = s.streak.last === previousDateKey(todayKey) ? s.streak.count + 1 : 1
-      s.streak.last = todayKey
-    }
     for (const listener of finishListeners) listener()
     return gained
   }
@@ -301,7 +413,14 @@ export function useGame() {
     owns,
     startJourney,
     findJourney,
-    revealNext,
+    now,
+    speed,
+    setSpeed,
+    clockOf,
+    advanceJourney,
+    advanceAll,
+    awaySummary,
+    markSeen,
     answerQuiz,
     finishJourney,
     mysteryAnswer,
