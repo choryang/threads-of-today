@@ -21,7 +21,7 @@ test('같은 재료는 대표 표기로 합치고, 재료가 아닌 것은 빼�
 })
 
 test('주재료가 준비 중인데 포장재만 남으면 여정을 떠날 수 없다', () => {
-  assert.deepEqual(resolveMaterials(['plastic', 'glass'], ['보리']).materialIds, [])
+  assert.deepEqual(resolveMaterials(['plastic', 'glass'], ['둥굴레']).materialIds, [])
   assert.deepEqual(resolveMaterials(['plastic', 'sugar'], ['망고']).materialIds, ['plastic', 'sugar'])
   // 준비 중 재료가 없는 포장재 물건(생수)은 그대로
   assert.deepEqual(resolveMaterials(['plastic'], []).materialIds, ['plastic'])

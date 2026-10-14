@@ -18,6 +18,13 @@ const list: Place[] = [
   { id: 'kr-incheon-port', name: '인천항', country: '대한민국', continent: 'korea' },
   { id: 'kr-boseong', name: '전남 보성', country: '대한민국', continent: 'korea' },
   { id: 'kr-gwangju', name: '광주', country: '대한민국', continent: 'korea' },
+  { id: 'kr-jeju', name: '제주', country: '대한민국', continent: 'korea' },
+  { id: 'kr-yeongnam', name: '경상도', country: '대한민국', continent: 'korea' },
+  { id: 'kr-honam', name: '전라도', country: '대한민국', continent: 'korea' },
+  { id: 'kr-gangwon-land', name: '강원도', country: '대한민국', continent: 'korea' },
+  { id: 'kr-garak', name: '서울 가락시장', country: '대한민국', continent: 'korea' },
+  { id: 'kr-daejeo', name: '부산 대저', country: '대한민국', continent: 'korea' },
+  { id: 'kr-ulleung', name: '울릉도', country: '대한민국', continent: 'korea' },
 
   // 아시아
   { id: 'cn', name: '중국', country: '중국', continent: 'asia' },
@@ -61,6 +68,7 @@ const list: Place[] = [
   { id: 'no-svalbard', name: '스발바르 제도', country: '노르웨이', continent: 'europe' },
 
   // 오세아니아
+  { id: 'au', name: '호주', country: '호주', continent: 'oceania' },
   { id: 'au-qld', name: '호주 퀸즐랜드', country: '호주', continent: 'oceania' },
   { id: 'au-wa', name: '서호주', country: '호주', continent: 'oceania' },
   { id: 'nz', name: '뉴질랜드 조림지', country: '뉴질랜드', continent: 'oceania' },
@@ -68,6 +76,7 @@ const list: Place[] = [
   { id: 'au-hedland', name: '포트헤들랜드 항구', country: '호주', continent: 'oceania' },
 
   // 아메리카
+  { id: 'us', name: '미국', country: '미국', continent: 'americas' },
   { id: 'us-plains', name: '미국 대평원', country: '미국', continent: 'americas' },
   { id: 'us-pnw', name: '미국 북서부 곡물항', country: '미국', continent: 'americas' },
   { id: 'us-midwest', name: '미국 중서부 옥수수 지대', country: '미국', continent: 'americas' },
@@ -80,11 +89,13 @@ const list: Place[] = [
   { id: 'br-mg', name: '브라질 미나스제라이스', country: '브라질', continent: 'americas' },
   { id: 'co-huila', name: '콜롬비아 우일라', country: '콜롬비아', continent: 'americas' },
   { id: 'co-buenaventura', name: '부에나벤투라 항구', country: '콜롬비아', continent: 'americas' },
+  { id: 'cl', name: '칠레', country: '칠레', continent: 'americas' },
   { id: 'cl-atacama', name: '칠레 아타카마 사막', country: '칠레', continent: 'americas' },
 
   // 바다
   { id: 'sea', name: '바다 위', country: '', continent: 'sea' },
   { id: 'pacific', name: '태평양', country: '', continent: 'sea' },
+  { id: 'sw-atlantic', name: '남서대서양', country: '', continent: 'sea' },
 ]
 
 export const PLACES: Record<string, Place> = Object.fromEntries(list.map((p) => [p.id, p]))

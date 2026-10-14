@@ -209,6 +209,8 @@ tests/            node:test 단위 테스트
   관세청 품목별·국가별 수출입실적(`scripts/update-origins.ts`, 생두 HS 0901·카카오 콩 HS 1801)으로 한국의 실제 수입 비중을 확인해 고친 뒤 `임시값` 표시를 지운다.
   그 전까지는 화면이나 홍보 문구에서 "많이 들어오는 나라 순" 같은 표현을 쓰지 않는다.
 - 브라질 커피 카드(`br-coffee-farmer`, `br-santos-coffee`)의 근거는 `shared/data/people.ts` 주석의 Conab·Cecafé 인용 기사다. 원 자료(Conab 작황 조사, Cecafé 월간 보고서)로 한 번 더 확인하면 좋다.
+- 팥·감자·무·사과·보리·오징어·토마토·포도·고구마·메밀 10개 재료의 사실과 출처는 `shared/data/people.ts` 주석에 있다. 출발지 가중치 중 무(고랭지·월동)·토마토·보리는 `// 임시값`이고,
+  나머지는 주석에 적은 생산·수입 통계에서 나온 값이다. 수입 경로의 항구·배 종류는 확인하지 못해 넣지 않았다.
 - 물건 사전(`shared/data/dictionary.json`)은 AI가 만든 결과다. `data/review/dictionary.csv`를 훑어보고 재료가 어색한 항목은 고치거나 지운다.
   새 재료를 추가하면 `npm run dict:build -- --redo-missing 팥,감자`로 그 재료가 `missing`에 들어 있는 항목만 다시 만든다.
 - Upstash를 연결하지 않으면 AI 요청 제한이 서버 인스턴스마다 따로 세어져 느슨해지고, 다른 기기에서 이어 하기가 꺼진다.

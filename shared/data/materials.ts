@@ -453,6 +453,173 @@ const list: Material[] = [
       { q: '녹차와 홍차는 같은 차나무 잎으로 만들 수 있을까요?', options: ['네, 만드는 방법이 달라요', '아니요, 다른 나무예요', '홍차는 꽃잎으로 만들어요'], answer: 0, explain: '같은 차나무 잎이라도 바로 덖으면 녹차, 잎을 산화시키면 홍차가 돼요.', rewardId: 'tea-taster' },
     ],
   },
+  // ── 아래 10개 재료의 사실 근거는 people.ts의 같은 재료 주석에 있다. 수입 경로의 항구·배 종류는 확인하지 못해 넣지 않았다. ──
+  {
+    id: 'red-bean', name: '팥', aliases: ['팥', '단팥', '팥앙금', '팥빙수', '단팥빵', '붕어빵', '팥죽', '양갱', '시루떡'],
+    stages: ['redbean-farmer', 'anko-maker', 'warehouse'],
+    // 가중치: 2023년 국내 생산 약 6천 톤, 중국산 수입 약 2만 톤(KREI 식품수급표 2023, UN Comtrade)
+    originHead: 1,
+    origins: [
+      { id: 'kr', name: '국산', weight: 6, head: ['redbean-farmer'] },
+      { id: 'cn', name: '중국', weight: 20, head: ['cn-redbean-farmer'] },
+    ],
+    // 근거: 농촌진흥청 RDA 인테러뱅 91호(2012)
+    quiz: {
+      q: '팥 꼬투리 하나에는 보통 씨앗이 몇 알쯤 들어 있을까요?',
+      options: ['1~3알', '6~10알', '20알 넘게'], answer: 1,
+      explain: '콩 꼬투리에는 1~3알이 들지만, 팥 꼬투리에는 6~10알이 들어 있어요.',
+      rewardId: 'redbean-breeder',
+    },
+  },
+  {
+    id: 'buckwheat', name: '메밀', aliases: ['메밀', '모밀', '메밀국수', '막국수', '소바', '메밀묵', '메밀전', '메밀차', '메밀가루'],
+    stages: ['jeju-buckwheat-farmer', 'noodle-maker', 'warehouse'],
+    // 가중치: 2023년 국내 2,975톤, 수입 중국 1,236톤·미국 739톤(제주메밀 기본계획 2025, UN Comtrade). 백 톤 단위
+    originHead: 1,
+    origins: [
+      { id: 'kr', name: '제주', weight: 30, head: ['jeju-buckwheat-farmer'] },
+      { id: 'cn', name: '중국', weight: 12, head: ['cn-buckwheat-farmer'] },
+      { id: 'us', name: '미국', weight: 7, head: ['us-buckwheat-farmer'] },
+    ],
+    // 근거: 제주특별자치도「제3차 제주메밀 산업 육성 기본계획」(2025, KOSIS 2023)
+    quiz: {
+      q: '우리나라에서 메밀을 가장 많이 기르는 곳은 어디일까요?',
+      options: ['강원도', '제주도', '경기도'], answer: 1,
+      explain: '2023년 전국 메밀 재배면적의 62%, 생산량의 57%가 제주에서 나왔어요. 제주는 봄과 가을, 두 번 메밀을 길러요.',
+      rewardId: 'buckwheat-researcher',
+    },
+  },
+  {
+    id: 'potato', name: '감자', aliases: ['감자', '감자칩', '포테이토칩', '감자튀김', '프렌치프라이', '감자전', '감자탕', '알감자', '해시브라운'],
+    stages: ['potato-farmer', 'potato-storage', 'garak-auctioneer', 'warehouse'],
+    // 가중치: 2024년 국내 생산 52만 톤, 미국산 감자 수입 연 12만 톤 안팎(강원도 감자 통계, 한국농어민신문 2026-02-03 KREI 인용). 만 톤 단위
+    originHead: 3,
+    origins: [
+      { id: 'kr', name: '국산', weight: 52, head: ['potato-farmer', 'potato-storage', 'garak-auctioneer'] },
+      { id: 'us', name: '미국', weight: 12, head: ['us-fries-plant'] },
+    ],
+    // 근거: 국립국어원「새국어생활」19-3(2009), 표준국어대사전 '감자'·'고구마'
+    quiz: {
+      q: '우리가 먹는 감자는 식물의 어느 부분일까요?',
+      options: ['땅속 줄기가 굵어진 덩이줄기', '뿌리가 굵어진 덩이뿌리', '열매'], answer: 0,
+      explain: '감자는 땅속 줄기가 굵어진 덩이줄기예요. 고구마는 뿌리가 굵어진 덩이뿌리라서 둘은 서로 다른 부분이에요.',
+      rewardId: 'seed-potato-researcher',
+    },
+  },
+  {
+    id: 'sweet-potato', name: '고구마', aliases: ['고구마', '군고구마', '고구마칩', '고구마라떼', '고구마맛탕', '맛탕', '고구마말랭이', '찐고구마'],
+    stages: ['sweetpotato-farmer', 'curing-worker', 'garak-auctioneer', 'warehouse'],
+    // 근거: 농촌진흥청「고구마 수확 후 관리기술」
+    quiz: {
+      q: '고구마를 캔 뒤 따뜻하고 습한 곳에 며칠 두는 큐어링은 왜 할까요?',
+      options: ['상처를 아물게 해 썩지 않게 하려고', '껍질 색을 진하게 하려고', '싹을 빨리 틔우려고'], answer: 0,
+      explain: '캘 때 생긴 상처로 병균이 들어가면 썩어요. 그래서 30~33℃, 습도 90~95%에서 나흘쯤 두어 상처를 아물게 해요.',
+      rewardId: 'sweetpotato-seedling',
+    },
+  },
+  {
+    id: 'radish', name: '무', aliases: ['무', '단무지', '깍두기', '무생채', '동치미', '총각김치', '무말랭이', '무국', '뭇국'],
+    stages: ['radish-farmer', 'warehouse'],
+    // 가중치: 가을무 54는 KREI 현안분석 제11호(2016)의 가을무 비중. 고랭지무·월동무 23은 임시값
+    originHead: 1,
+    origins: [
+      { id: 'autumn', name: '가을무', weight: 54, head: ['radish-farmer'] },
+      { id: 'highland', name: '고랭지무', weight: 23, head: ['highland-radish-farmer', 'garak-auctioneer'] }, // 임시값
+      { id: 'jeju', name: '제주 월동무', weight: 23, head: ['jeju-radish-farmer'] }, // 임시값
+    ],
+    // 근거: KREI 현안분석 제11호(2016, 7월 고랭지로 산지 교체·10월 가을무로 교체), 농업인신문 2023-08-04(평창 진부·정선 임계 등)
+    quiz: {
+      q: '한여름(8~9월)에 나오는 무는 주로 어디에서 자랄까요?',
+      options: ['강원 고랭지', '제주', '전남 바닷가'], answer: 0,
+      explain: '여름에는 서늘한 강원 높은 밭(평창 진부, 정선 임계 등)에서 기른 무가 나와요. 10월부터는 가을무, 12월부터는 제주 월동무가 나와요.',
+      rewardId: 'radish-stockpile',
+    },
+  },
+  {
+    id: 'apple', name: '사과', aliases: ['사과', '사과주스', '애플파이', '사과잼', '사과즙', '풋사과', '부사', '홍로'],
+    stages: ['apple-farmer', 'apple-apc', 'ca-storage', 'garak-auctioneer', 'warehouse'],
+    // 가중치: 2024년 재배면적 영남 23,422ha, 강원 1,748ha(KREI 농업전망 2025). 천 ha 단위. 충청·호남 등은 빠져 있다
+    originHead: 1,
+    origins: [
+      { id: 'yn', name: '경상도', weight: 23, head: ['apple-farmer'] },
+      { id: 'gw', name: '강원', weight: 2, head: ['gw-apple-farmer'] },
+    ],
+    // 근거: 농림축산식품부 설명자료 2024-03-15(수입을 요청한 11개국 모두 허용 전), 식물방역법(생과실 원칙적 수입 금지)
+    quiz: {
+      q: '우리나라 가게에서 파는 생사과는 대부분 어디서 왔을까요?',
+      options: ['국내 과수원', '미국', '뉴질랜드'], answer: 0,
+      explain: '생과일은 병해충이 함께 들어올 수 있어 원칙적으로 수입을 막고, 위험 분석을 마친 나라에서만 들여와요. 2024년 기준 생사과 수입이 허용된 나라는 없어요.',
+      rewardId: 'apple-quarantine',
+    },
+  },
+  {
+    id: 'grape', name: '포도', aliases: ['포도', '청포도', '샤인머스캣', '거봉', '캠벨', '캠벨얼리', '건포도', '포도주스', '와인', '포도주'],
+    stages: ['grape-farmer', 'garak-auctioneer', 'warehouse'],
+    // 가중치: 2024년 국내 생산 약 19만 9천 톤, 칠레산 생포도 수입 약 1만 3천 톤(2023년산 30,178톤 × 평년 칠레 비중 44.7%). 천 톤 단위
+    originHead: 2,
+    origins: [
+      { id: 'kr', name: '국산', weight: 199, head: ['grape-farmer', 'garak-auctioneer'] },
+      { id: 'cl', name: '칠레', weight: 13, head: ['cl-grape-farmer'] },
+    ],
+    // 근거: 시마네현 농업기술센터·오카야마현 자료(1988년 교배, 2006년 품종 등록)
+    quiz: {
+      q: '샤인머스캣 품종을 처음 만든 나라는 어디일까요?',
+      options: ['일본', '한국', '칠레'], answer: 0,
+      explain: '샤인머스캣은 일본 과수연구소가 1988년에 교배해 2006년에 품종으로 등록했어요. 지금은 우리 포도밭의 절반 가까이에서 길러요.',
+      rewardId: 'grape-breeder',
+    },
+  },
+  {
+    id: 'tomato', name: '토마토', aliases: ['토마토', '방울토마토', '대추방울토마토', '케첩', '케찹', '토마토소스', '토마토주스', '토마토파스타'],
+    stages: ['tomato-farmer', 'garak-auctioneer', 'warehouse'],
+    // 가중치는 임시값. 생토마토 생산량과 페이스트(농축) 수입량은 단위가 달라 바로 비교할 수 없다
+    originHead: 2,
+    origins: [
+      { id: 'kr', name: '국산', weight: 3, head: ['tomato-farmer', 'garak-auctioneer'] }, // 임시값
+      { id: 'cn', name: '중국 페이스트', weight: 1, head: ['cn-tomato-paste', 'ketchup-maker'] }, // 임시값
+    ],
+    // 근거: KREI「농업전망 2025」표7-27(관세청 인용)
+    quiz: {
+      q: '케첩을 만드는 토마토 페이스트, 우리나라에 가장 많이 들어오는 나라는?',
+      options: ['중국', '이탈리아', '칠레'], answer: 0,
+      explain: '2024년 수입한 토마토 페이스트의 약 62%가 중국산이고, 그다음이 미국산(약 24%)이에요.',
+      rewardId: 'crop-forecaster',
+    },
+  },
+  {
+    id: 'barley', name: '보리', aliases: ['보리', '보리차', '보리밥', '보리쌀', '맥아', '엿기름', '맥주'],
+    stages: ['barley-farmer', 'warehouse'],
+    // 가중치는 임시값. 국내 보리 생산량과 맥아 수입량을 같은 기준으로 비교한 자료를 찾지 못했다
+    originHead: 1,
+    origins: [
+      { id: 'kr', name: '국산 보리', weight: 3, head: ['barley-farmer'] }, // 임시값
+      { id: 'au', name: '호주 맥아', weight: 1, head: ['au-malt'] }, // 임시값
+    ],
+    // 근거: 농사로 일반보리 농작업일정, 한국민족문화대백과「보리」
+    quiz: {
+      q: '보리는 보통 언제 심어서 언제 거둘까요?',
+      options: ['봄에 심어 가을에 거둬요', '가을에 심어 이듬해 초여름에 거둬요', '여름에 심어 겨울에 거둬요'], answer: 1,
+      explain: '보리는 10월쯤 씨를 뿌려 겨울을 나고, 5월 말~6월에 거둬요.',
+      rewardId: 'barley-researcher',
+    },
+  },
+  {
+    id: 'squid', name: '오징어', aliases: ['오징어', '오징어채', '진미채', '오징어볶음', '마른오징어', '오징어순대', '오징어젓'],
+    stages: ['distant-squid-fisher', 'warehouse'],
+    // 가중치: 2024년 원양 63,156톤, 연근해 13,545톤(해양수산부 2025-02-21). 천 톤 단위. 수입 오징어는 근거 확인이 부족해 넣지 않았다
+    originHead: 1,
+    origins: [
+      { id: 'dw', name: '원양', weight: 63, head: ['distant-squid-fisher'] },
+      { id: 'ul', name: '울릉도', weight: 14, head: ['ulleung-squid-fisher', 'squid-dryer'] },
+    ],
+    // 근거: 한국민족문화대백과「울릉도 오징어」(추광성, 집어등)
+    quiz: {
+      q: '오징어잡이 배가 밤바다에 환한 불(집어등)을 켜는 까닭은?',
+      options: ['다른 배와 부딪히지 않으려고', '오징어가 빛을 따라 모여들어서', '그물을 말리려고'], answer: 1,
+      explain: '오징어는 빛을 따라 모여드는 성질이 있어요. 그래서 밤에 집어등을 켜고 오징어를 모아 잡아요.',
+      rewardId: 'squid-researcher',
+    },
+  },
 ]
 
 export const MATERIALS: Record<string, Material> = Object.fromEntries(list.map((m) => [m.id, m]))
@@ -504,6 +671,7 @@ export const LINK_RULES: LinkRule[] = [
   { personId: 'kr-battery', cardId: 'link-kr-battery' },
   { personId: 'santos-port', cardId: 'link-santos-port' },
   { personId: 'incheon-port', cardId: 'link-incheon-port' },
+  { personId: 'garak-auctioneer', cardId: 'link-garak' },
 ]
 
 export const SETS: CardSet[] = [
