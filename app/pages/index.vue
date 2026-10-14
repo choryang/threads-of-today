@@ -143,7 +143,7 @@ function journeyProgress(materialIds: string[], step: number, id: string, name: 
     <section v-if="game.remaining.value > 0" class="input panel" aria-label="물건 고르기">
       <div class="tabs" role="tablist">
         <button role="tab" :aria-selected="tab === 'text'" :class="{ on: tab === 'text' }" @click="tab = 'text'">말로 쓰기</button>
-        <button role="tab" :aria-selected="tab === 'photo'" :class="{ on: tab === 'photo' }" @click="tab = 'photo'">사진 찍기</button>
+        <button role="tab" :aria-selected="tab === 'photo'" :class="{ on: tab === 'photo' }" @click="tab = 'photo'">사진 올리기</button>
         <button role="tab" :aria-selected="tab === 'pick'" :class="{ on: tab === 'pick' }" @click="tab = 'pick'">골라 보기</button>
       </div>
 
@@ -158,8 +158,8 @@ function journeyProgress(materialIds: string[], step: number, id: string, name: 
           <input type="file" accept="image/*" class="sr-only" @change="onPhoto">
           <img v-if="photoUrl" :src="photoUrl" alt="고른 사진">
           <template v-else>
-            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z" /><circle cx="12" cy="13" r="3.5" /></svg>
-            <span>책상 위 물건을 찍어 보세요</span>
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="2" /><circle cx="9" cy="9.5" r="1.8" /><path d="M3.5 17l5-5 4 4 3-3 5 5" /></svg>
+            <span>물건이 보이는 사진을 올려 주세요</span>
           </template>
         </label>
         <p v-if="loading" class="muted small">사진 속 물건을 알아보는 중…</p>
