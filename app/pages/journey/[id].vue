@@ -3,6 +3,8 @@ import { computed, ref, shallowRef } from 'vue'
 import { MATERIALS } from '../../../shared/data/materials'
 import { PEOPLE } from '../../../shared/data/people'
 import { PLACES } from '../../../shared/data/places'
+import { EVENTS } from '../../../shared/data/journey-extras'
+import { quizFor } from '../../../shared/journey'
 import { dayStats } from '../../../shared/logic'
 import { buildTimeline } from '../../composables/useGame'
 import { renderVoice } from '../../../shared/voice'
@@ -10,7 +12,7 @@ import { renderVoice } from '../../../shared/voice'
 const route = useRoute()
 const game = useGame()
 const journey = computed(() => game.findJourney(String(route.params.id)))
-const timeline = computed(() => (journey.value ? buildTimeline(journey.value.materialIds) : []))
+const timeline = computed(() => (journey.value ? buildTimeline(journey.value.materialIds, journey.value.id) : []))
 const current = computed(() => (journey.value ? timeline.value[journey.value.step] : undefined))
 const voice = computed(() => renderVoice(journey.value?.voice, game.nickname.value))
 const isLast = computed(() => !!journey.value && journey.value.step >= timeline.value.length - 1)
@@ -29,16 +31,45 @@ const materialIndex = computed(() => {
 })
 const material = computed(() => (current.value ? MATERIALS[current.value.materialId] : undefined))
 
-/** 지금 재료의 경유지 목록과 몇 번째까지 왔는지 */
+/** 지금 재료의 경유지 목록과 몇 번째까지 왔는지 (이번 여정의 출발지 변형 기준) */
 const routeStops = computed(() => {
   if (!journey.value || !material.value) return []
+  const mid = material.value.id
   const stagesBefore = timeline.value.slice(0, journey.value.step + 1).filter(
-    (t) => t.type === 'stage' && t.materialId === material.value!.id,
+    (t) => t.type === 'stage' && t.materialId === mid,
   ).length
-  return material.value.stages.map((pid, i) => {
+  const stages = timeline.value.flatMap((t) => (t.type === 'stage' && t.materialId === mid ? [t.personId] : []))
+  return stages.map((pid, i) => {
     const place = PLACES[PEOPLE[pid]!.placeId]!
     return { pid, label: place.country || '바다', reached: i < stagesBefore, here: i === stagesBefore - 1 && current.value?.type === 'stage' }
   })
+})
+
+/** 이번 여정에서 나온 퀴즈 (재료마다 여러 개 중 하나) */
+const quiz = computed(() =>
+  journey.value && current.value?.type === 'quiz' ? quizFor(journey.value.materialIds, journey.value.id, current.value.materialId) : undefined,
+)
+const eventText = computed(() => {
+  const item = current.value
+  return item?.type === 'event' ? EVENTS.find((e) => e.id === item.eventId)?.text : ''
+})
+
+/** 퀴즈를 맞혀서 얻은 보상 카드 */
+const quizRewards = computed(() => {
+  if (!journey.value) return []
+  const j = journey.value
+  return j.materialIds.flatMap((mid) => {
+    const q = quizFor(j.materialIds, j.id, mid)
+    return q && j.quiz[mid] === q.answer ? [q.rewardId] : []
+  })
+})
+
+const nextLabel = computed(() => {
+  if (isLast.value) return '여정 마치기'
+  const after = timeline.value[(journey.value?.step ?? 0) + 1]
+  if (current.value?.type === 'quiz') return '다음 재료로 →'
+  if (after?.type === 'stage' || after?.type === 'hidden') return '다음 사람 만나기 →'
+  return '계속 가기 →'
 })
 
 const quizChoice = computed(() => {
@@ -71,7 +102,7 @@ function answer(i: number) {
   showToast(gained)
 }
 
-const summary = computed(() => (journey.value ? dayStats([journey.value.materialIds]) : { people: [], countries: [] }))
+const summary = computed(() => (journey.value ? dayStats([journey.value]) : { people: [], countries: [] }))
 const metPeople = computed(() => summary.value.people)
 </script>
 
@@ -108,13 +139,7 @@ const metPeople = computed(() => summary.value.people)
         <h2 class="h2">이번 여정에서 만난 사람</h2>
         <div class="grid">
           <MiniCard v-for="id in metPeople" :key="id" :person-id="id" :is-new="journey.newCards.includes(id)" />
-          <template v-for="mid in journey.materialIds" :key="mid">
-            <MiniCard
-              v-if="MATERIALS[mid]?.quiz && journey.quiz[mid] === MATERIALS[mid]!.quiz!.answer"
-              :person-id="MATERIALS[mid]!.quiz!.rewardId"
-              :is-new="journey.newCards.includes(MATERIALS[mid]!.quiz!.rewardId)"
-            />
-          </template>
+          <MiniCard v-for="id in quizRewards" :key="`q-${id}`" :person-id="id" :is-new="journey.newCards.includes(id)" />
         </div>
       </section>
 
@@ -152,32 +177,44 @@ const metPeople = computed(() => summary.value.people)
         <PersonCard :person-id="current.personId" :is-new="journey.newCards.includes(current.personId)" />
       </section>
 
-      <section v-else :key="`q${journey.step}`" class="quiz panel">
+      <section v-else-if="current.type === 'hidden'" :key="`h${journey.step}`" class="stage hidden-meet">
+        <p class="mono kicker gold">숨은 만남</p>
+        <p class="small muted">여정 중에 아주 가끔만 만나는 사람이에요.</p>
+        <PersonCard :person-id="current.personId" :is-new="journey.newCards.includes(current.personId)" />
+      </section>
+
+      <section v-else-if="current.type === 'event'" :key="`e${journey.step}`" class="story panel">
+        <span class="chip story-chip">이야기</span>
+        <p class="story-text">{{ eventText }}</p>
+        <p class="muted small">이야기는 여정을 꾸민 장면이에요. 실제로 있었던 일은 아니에요.</p>
+      </section>
+
+      <section v-else-if="quiz" :key="`q${journey.step}`" class="quiz panel">
         <p class="mono kicker gold">QUIZ · 맞히면 레어 카드</p>
-        <p class="q">{{ material!.quiz!.q }}</p>
+        <p class="q">{{ quiz.q }}</p>
         <div class="options">
           <button
-            v-for="(opt, i) in material!.quiz!.options"
+            v-for="(opt, i) in quiz.options"
             :key="opt"
             class="opt"
             :class="{
-              right: quizChoice !== undefined && i === material!.quiz!.answer,
-              wrong: quizChoice === i && i !== material!.quiz!.answer,
+              right: quizChoice !== undefined && i === quiz.answer,
+              wrong: quizChoice === i && i !== quiz.answer,
             }"
             :disabled="quizChoice !== undefined"
             @click="answer(i)"
           >
             <span>{{ opt }}</span>
             <span class="mono mark">
-              <template v-if="quizChoice !== undefined && i === material!.quiz!.answer">정답</template>
+              <template v-if="quizChoice !== undefined && i === quiz.answer">정답</template>
               <template v-else-if="quizChoice === i">오답</template>
             </span>
           </button>
         </div>
         <div v-if="quizChoice !== undefined" class="explain">
-          <p>{{ material!.quiz!.explain }}</p>
-          <div v-if="quizChoice === material!.quiz!.answer" class="reward">
-            <MiniCard :person-id="material!.quiz!.rewardId" :is-new="journey.newCards.includes(material!.quiz!.rewardId)" />
+          <p>{{ quiz.explain }}</p>
+          <div v-if="quizChoice === quiz.answer" class="reward">
+            <MiniCard :person-id="quiz.rewardId" :is-new="journey.newCards.includes(quiz.rewardId)" />
           </div>
           <p v-else class="muted small">같은 재료가 들어간 물건으로 다시 여정을 떠나면 또 도전할 수 있어요.</p>
         </div>
@@ -188,7 +225,7 @@ const metPeople = computed(() => summary.value.people)
         :disabled="current.type === 'quiz' && quizChoice === undefined"
         @click="next"
       >
-        {{ isLast ? '여정 마치기' : current.type === 'quiz' ? '다음 재료로 →' : '다음 사람 만나기 →' }}
+        {{ nextLabel }}
       </button>
     </template>
 
@@ -261,6 +298,11 @@ const metPeople = computed(() => summary.value.people)
 
 .stage { animation: pop-in 0.4s ease-out; }
 
+.story { display: flex; flex-direction: column; gap: 10px; animation: rise 0.25s ease-out; }
+.story-chip { align-self: flex-start; color: var(--accent); }
+.story-text { margin: 0; font-size: 17px; line-height: 1.6; }
+.hidden-meet { display: flex; flex-direction: column; gap: 6px; }
+.hidden-meet .kicker { margin: 0; }
 .quiz { display: flex; flex-direction: column; gap: 12px; animation: rise 0.25s ease-out; }
 .q { margin: 0; font-size: 18px; font-weight: 700; line-height: 1.45; }
 .options { display: flex; flex-direction: column; gap: 8px; }

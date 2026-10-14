@@ -1,18 +1,17 @@
 import { computed, effectScope, reactive, watch } from 'vue'
-import { MATERIALS, SETS } from '../../shared/data/materials'
+import { SETS } from '../../shared/data/materials'
 import { PEOPLE } from '../../shared/data/people'
 import {
   DAILY_LIMIT, completedSets, dateKey, findLinkCards, mysteryHints, mysteryProduct, previousDateKey,
   type Decomposed,
 } from '../../shared/logic'
 import { normalizeNickname, randomNickname } from '../../shared/nickname'
+import { buildTimeline, quizFor } from '../../shared/journey'
 import { emptySave, type DayLog, type Journey, type JourneySource, type MysteryLog, type Save } from '../../shared/progress'
 
 export type { DayLog, Journey, JourneySource, MysteryLog, Save } from '../../shared/progress'
 
-export type TimelineItem =
-  | { type: 'stage'; materialId: string; personId: string }
-  | { type: 'quiz'; materialId: string }
+export type { TimelineItem } from '../../shared/journey'
 
 const KEY = 'my-day-people:v1'
 
@@ -76,16 +75,7 @@ export function onJourneyFinish(listener: () => void) {
   return () => finishListeners.delete(listener)
 }
 
-export function buildTimeline(materialIds: string[]): TimelineItem[] {
-  const items: TimelineItem[] = []
-  for (const materialId of materialIds) {
-    const m = MATERIALS[materialId]
-    if (!m) continue
-    for (const personId of m.stages) items.push({ type: 'stage', materialId, personId })
-    if (m.quiz) items.push({ type: 'quiz', materialId })
-  }
-  return items
-}
+export { buildTimeline }
 
 export function useGame() {
   const s = getState()
@@ -133,8 +123,8 @@ export function useGame() {
     const day = ensureToday()
     if (source !== 'mystery' && regularCount.value >= DAILY_LIMIT) return null
     const journey: Journey = {
-      // 여러 기기의 기록을 합칠 때 겹치지 않게 무작위 꼬리를 붙인다 (앞 10글자는 날짜)
-      id: `${todayKey}-${day.journeys.length + 1}${Math.random().toString(36).slice(2, 6)}`,
+      // 여러 기기의 기록을 합칠 때 겹치지 않게 무작위 꼬리를 붙인다 (앞 10글자는 날짜, '-꼬리'가 있으면 새 여정 규칙을 쓴다)
+      id: `${todayKey}-${day.journeys.length + 1}-${Math.random().toString(36).slice(2, 6)}`,
       name: item.name,
       twist: item.twist,
       voice: item.voice,
@@ -149,7 +139,7 @@ export function useGame() {
     if (!s.items[item.name]) s.items[item.name] = todayKey
     const saved = day.journeys[day.journeys.length - 1]!
     // 첫 번째 사람은 여정을 시작하자마자 만난다
-    const first = buildTimeline(item.materialIds)[0]
+    const first = buildTimeline(saved.materialIds, saved.id)[0]
     if (first?.type === 'stage') saved.newCards.push(...collect(first.personId))
     return saved
   }
@@ -164,13 +154,13 @@ export function useGame() {
 
   /** 타임라인 다음 칸을 펼친다. 사람 칸이면 카드를 얻는다. */
   function revealNext(journey: Journey): string[] {
-    const timeline = buildTimeline(journey.materialIds)
+    const timeline = buildTimeline(journey.materialIds, journey.id)
     const item = timeline[journey.step]
     if (!item) return []
     if (item.type === 'quiz' && journey.quiz[item.materialId] === undefined) return []
     journey.step++
     const next = timeline[journey.step]
-    if (next?.type === 'stage') {
+    if (next?.type === 'stage' || next?.type === 'hidden') {
       const gained = collect(next.personId)
       journey.newCards.push(...gained)
       return gained
@@ -179,7 +169,7 @@ export function useGame() {
   }
 
   function answerQuiz(journey: Journey, materialId: string, choice: number): { correct: boolean; gained: string[] } {
-    const quiz = MATERIALS[materialId]?.quiz
+    const quiz = quizFor(journey.materialIds, journey.id, materialId)
     if (!quiz || journey.quiz[materialId] !== undefined) return { correct: false, gained: [] }
     journey.quiz[materialId] = choice
     const correct = choice === quiz.answer
@@ -195,9 +185,8 @@ export function useGame() {
     // 자정을 넘겨 끝낸 여정도 그 여정이 시작된 날 기준으로 연결을 찾는다
     const dayKey = journey.id.slice(0, 10)
     const day = s.days[dayKey] ?? ensureToday()
-    const allMaterials = day.journeys.filter((j) => j.done).flatMap((j) => j.materialIds)
     const gained: string[] = []
-    for (const cardId of findLinkCards(allMaterials)) {
+    for (const cardId of findLinkCards(day.journeys.filter((j) => j.done))) {
       if (!day.linkCards.includes(cardId)) day.linkCards.push(cardId)
       gained.push(...collect(cardId))
     }

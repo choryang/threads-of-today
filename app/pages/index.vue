@@ -85,8 +85,8 @@ function start() {
   router.push(`/journey/${journey.id}`)
 }
 
-function journeyProgress(materialIds: string[], step: number) {
-  const len = buildTimeline(materialIds).length
+function journeyProgress(materialIds: string[], step: number, id: string) {
+  const len = buildTimeline(materialIds, id).length
   return Math.round(((step + 1) / len) * 100)
 }
 </script>
@@ -130,7 +130,7 @@ function journeyProgress(materialIds: string[], step: number) {
           <span class="j-mats">{{ materialNames(j.materialIds) }}</span>
         </div>
         <span v-if="j.done" class="chip done">완료</span>
-        <span v-else class="chip mono">{{ journeyProgress(j.materialIds, j.step) }}%</span>
+        <span v-else class="chip mono">{{ journeyProgress(j.materialIds, j.step, j.id) }}%</span>
       </NuxtLink>
     </section>
 

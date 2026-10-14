@@ -1,4 +1,6 @@
 import { LINK_RULES, MATERIALS, PRODUCTS, SETS } from './data/materials'
+import { timelinePeople } from './journey'
+import { hash, seeded } from './random'
 import { PEOPLE } from './data/people'
 import { PLACES } from './data/places'
 import type { CardSet, Product } from './types'
@@ -32,15 +34,10 @@ export function sanitizeMaterialIds(ids: unknown): string[] {
   return out.slice(0, MAX_MATERIALS)
 }
 
-export interface StageRef {
-  materialId: string
-  personId: string
-}
-
-export function journeyStages(materialIds: string[]): StageRef[] {
-  return materialIds.flatMap((materialId) =>
-    (MATERIALS[materialId]?.stages ?? []).map((personId) => ({ materialId, personId })),
-  )
+/** 통계를 낼 여정. id가 있으면 그 여정에서 실제로 지나는 경로(출발지 변형·숨은 만남 포함)로 센다 */
+export interface JourneyRef {
+  materialIds: string[]
+  id?: string
 }
 
 export function countriesOf(personIds: Iterable<string>): string[] {
@@ -53,19 +50,23 @@ export function countriesOf(personIds: Iterable<string>): string[] {
   return [...set]
 }
 
-export function dayStats(materialIdLists: string[][]) {
+export function dayStats(journeys: JourneyRef[]) {
   const people = new Set<string>()
-  for (const ids of materialIdLists) for (const s of journeyStages(ids)) people.add(s.personId)
+  for (const j of journeys) for (const s of timelinePeople(j.materialIds, j.id)) people.add(s.personId)
   return { people: [...people], countries: countriesOf(people) }
 }
 
-/** 하루 동안 지나온 재료들 사이에서 겹치는 사람을 찾아 연결 카드 id를 돌려준다. */
-export function findLinkCards(materialIds: string[]): string[] {
-  const unique = [...new Set(materialIds)]
-  return LINK_RULES.filter((rule) => {
-    const hits = unique.filter((mid) => MATERIALS[mid]?.stages.includes(rule.personId))
-    return hits.length >= 2
-  }).map((rule) => rule.cardId)
+/** 하루 동안 지나온 여정들 사이에서, 서로 다른 재료 2개 이상에 등장한 사람을 찾아 연결 카드 id를 돌려준다. */
+export function findLinkCards(journeys: JourneyRef[]): string[] {
+  const materialsByPerson = new Map<string, Set<string>>()
+  for (const j of journeys) {
+    for (const { materialId, personId } of timelinePeople(j.materialIds, j.id)) {
+      const set = materialsByPerson.get(personId) ?? new Set<string>()
+      set.add(materialId)
+      materialsByPerson.set(personId, set)
+    }
+  }
+  return LINK_RULES.filter((rule) => (materialsByPerson.get(rule.personId)?.size ?? 0) >= 2).map((rule) => rule.cardId)
 }
 
 export function completedSets(owned: Set<string>): CardSet[] {
@@ -82,25 +83,6 @@ export function dateKey(d = new Date()): string {
 export function previousDateKey(key: string): string {
   const [y, m, d] = key.split('-').map(Number)
   return dateKey(new Date(y!, m! - 1, d! - 1))
-}
-
-function hash(s: string): number {
-  let h = 2166136261
-  for (let i = 0; i < s.length; i++) {
-    h ^= s.charCodeAt(i)
-    h = Math.imul(h, 16777619)
-  }
-  return h >>> 0
-}
-
-function seeded(seed: number) {
-  let x = seed || 1
-  return () => {
-    x ^= x << 13
-    x ^= x >>> 17
-    x ^= x << 5
-    return (x >>> 0) / 4294967296
-  }
 }
 
 export function mysteryProduct(key: string): Product {
@@ -124,7 +106,7 @@ export function mysteryOptions(key: string): Product[] {
 
 /** 점점 구체적으로 드러나는 힌트. 마지막 힌트는 재료 이름. */
 export function mysteryHints(product: Product): string[] {
-  const stats = dayStats([product.materialIds])
+  const stats = dayStats([{ materialIds: product.materialIds }])
   const hints = [`재료 ${product.materialIds.length}가지, ${stats.countries.length}개 나라를 거쳐 와요.`]
   for (const mid of product.materialIds.slice(0, 3)) {
     const first = PEOPLE[MATERIALS[mid]!.stages[0]!]!

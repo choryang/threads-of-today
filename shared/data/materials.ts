@@ -10,22 +10,43 @@ const list: Material[] = [
   {
     id: 'coffee', name: '커피 원두', aliases: ['커피', '원두', '아메리카노', '라떼', '콜드브루', '에스프레소'],
     stages: ['coffee-picker', 'washing-station', 'djibouti-docker', ...SEA.slice(0, 2), 'roaster', 'warehouse'],
+    // 출발지 변형. 가중치는 대략값이다(나중에 scripts/update-origins.ts로 수입 실적에 맞춘다). 근거는 people.ts 주석
+    originHead: 3,
+    origins: [
+      { id: 'et', name: '에티오피아', weight: 3, head: ['coffee-picker', 'washing-station', 'djibouti-docker'] },
+      { id: 'co', name: '콜롬비아', weight: 4, head: ['co-coffee-farmer', 'co-buenaventura-docker'] },
+      { id: 'vn', name: '베트남', weight: 3, head: ['vn-coffee-farmer', 'vn-coffee-port'] },
+    ],
     quiz: {
       q: '에티오피아는 바다가 없는 나라예요. 커피는 어느 나라 항구를 통해 나갈까요?',
       options: ['지부티', '이집트', '남아프리카공화국'], answer: 0,
       explain: '에티오피아 수출입 화물의 대부분은 이웃 나라 지부티 항구를 거쳐요.',
       rewardId: 'cupper',
     },
+    // 근거: Britannica 'coffee'(열매 속 씨앗 두 개), Oxford Business Group 2017(베트남 커피는 대부분 로부스타)
+    extraQuizzes: [
+      { q: '우리가 마시는 커피 원두는 커피 열매의 어느 부분일까요?', options: ['씨앗', '껍질', '잎'], answer: 0, explain: '커피 체리 속에는 보통 씨앗이 두 개 들어 있어요. 이 씨앗을 꺼내 말리고 볶은 게 원두예요.', rewardId: 'cupper' },
+      { q: '베트남에서 주로 기르는, 쓴맛이 진한 커피 품종은?', options: ['아라비카', '로부스타', '리베리카'], answer: 1, explain: '베트남 커피는 대부분 로부스타예요. 병에 강하고 쓴맛이 진해서 인스턴트커피에도 많이 쓰여요.', rewardId: 'cupper' },
+    ],
   },
   {
     id: 'cacao', name: '카카오', aliases: ['초콜릿', '초코', '카카오', '코코아', '핫초코', '브라우니'],
     stages: ['cacao-farmer', 'cacao-dryer', 'abidjan-docker', 'sea-crew', 'cocoa-grinder', 'busan-crane', 'warehouse'],
+    originHead: 3,
+    origins: [
+      { id: 'ci', name: '코트디부아르', weight: 6, head: ['cacao-farmer', 'cacao-dryer', 'abidjan-docker'] },
+      { id: 'gh', name: '가나', weight: 4, head: ['gh-cacao-farmer', 'gh-takoradi-docker'] },
+    ],
     quiz: {
       q: '세계에서 카카오를 가장 많이 생산하는 나라는?',
       options: ['브라질', '코트디부아르', '인도네시아'], answer: 1,
       explain: '서아프리카의 코트디부아르가 세계 카카오 생산 1위예요. 이웃 나라 가나가 그 뒤를 이어요.',
       rewardId: 'cacao-grader',
     },
+    // 근거: Britannica 'cocoa'(수확 뒤 발효·건조를 거쳐 향이 생긴다)
+    extraQuizzes: [
+      { q: '카카오 콩은 수확한 뒤 무엇을 거쳐야 초콜릿 향이 날까요?', options: ['발효', '냉동', '소금 절임'], answer: 0, explain: '꼬투리에서 꺼낸 콩을 며칠 동안 발효시키고 말려야 초콜릿 특유의 향이 생겨요.', rewardId: 'cacao-grader' },
+    ],
   },
   {
     id: 'sugar', name: '설탕', aliases: ['설탕', '사탕', '시럽', '탄산음료', '콜라', '사이다'],
@@ -36,6 +57,10 @@ const list: Material[] = [
       explain: '한국은 원당을 수입해서 국내 제당 공장에서 정제해 하얀 설탕을 만들어요.',
       rewardId: 'sugar-qc',
     },
+    // 근거: Britannica 'sugar beet'
+    extraQuizzes: [
+      { q: '사탕수수 말고 설탕을 만드는 작물은?', options: ['사탕무', '감자', '쌀'], answer: 0, explain: '추운 지방에서는 뿌리에 단맛이 많은 사탕무로 설탕을 만들어요.', rewardId: 'sugar-qc' },
+    ],
   },
   {
     id: 'wheat', name: '밀', aliases: ['밀', '밀가루', '빵', '라면', '국수', '파스타', '과자', '케이크', '피자', '만두'],
@@ -46,6 +71,10 @@ const list: Material[] = [
       explain: '한국의 밀 자급률은 아주 낮아서, 먹는 밀의 대부분을 미국·호주·캐나다 등에서 수입해요.',
       rewardId: 'grain-inspector',
     },
+    // 근거: Britannica 'gluten'
+    extraQuizzes: [
+      { q: '밀가루 반죽을 쫄깃하게 만드는 단백질은?', options: ['글루텐', '콜라겐', '케라틴'], answer: 0, explain: '밀가루에 물을 넣고 치대면 글루텐이 생겨 반죽이 늘어나고 쫄깃해져요.', rewardId: 'grain-inspector' },
+    ],
   },
   {
     id: 'palm-oil', name: '팜유', aliases: ['팜유', '라면', '과자', '마가린', '비누', '아이스크림'],
@@ -66,6 +95,10 @@ const list: Material[] = [
       explain: '벼의 겉껍질과 속겨를 벗겨 내는 일을 도정이라고 해요.',
       rewardId: 'rice-breeder',
     },
+    // 근거: 표준국어대사전 '현미', '백미'
+    extraQuizzes: [
+      { q: '왕겨만 벗기고 쌀겨는 남겨 둔 쌀을 뭐라고 할까요?', options: ['현미', '백미', '찹쌀'], answer: 0, explain: '왕겨만 벗긴 쌀이 현미예요. 쌀겨까지 깎아 내면 하얀 백미가 돼요.', rewardId: 'rice-breeder' },
+    ],
   },
   {
     id: 'laver', name: '김', aliases: ['김', '김밥', '삼각김밥', '조미김', '주먹밥'],
@@ -76,6 +109,10 @@ const list: Material[] = [
       explain: '한국은 세계 최대 김 수출국이에요. 김은 대표적인 효자 수출 수산물이에요.',
       rewardId: 'laver-auctioneer',
     },
+    // 근거: 해양수산부·수협 김 양식 안내(가을에 그물을 내려 겨울에서 이듬해 봄까지 수확)
+    extraQuizzes: [
+      { q: '김은 주로 어느 때 바다에서 길러 거둘까요?', options: ['한여름', '가을부터 이듬해 봄까지', '장마철'], answer: 1, explain: '김은 찬 바다에서 잘 자라요. 가을에 그물을 내려 겨울부터 이듬해 봄까지 거둬요.', rewardId: 'laver-auctioneer' },
+    ],
   },
   {
     id: 'tuna', name: '참치', aliases: ['참치', '참치캔', '참치마요', '삼각김밥', '참치김밥'],
@@ -106,6 +143,10 @@ const list: Material[] = [
       explain: '바나나는 덜 익은 초록색일 때 실어 와서, 숙성실에서 에틸렌 가스로 익혀요.',
       rewardId: 'banana-scientist',
     },
+    // 근거: Britannica 'banana'(재배종은 씨가 없어 뿌리줄기의 새순으로 번식)
+    extraQuizzes: [
+      { q: '씨가 거의 없는 바나나는 어떻게 새 나무를 늘릴까요?', options: ['뿌리에서 돋은 새순을 옮겨 심어요', '씨앗을 뿌려요', '꽃가루를 날려요'], answer: 0, explain: '우리가 먹는 바나나는 씨가 없어서, 뿌리줄기에서 돋아난 새순을 떼어 옮겨 심어 길러요.', rewardId: 'banana-scientist' },
+    ],
   },
   {
     id: 'cotton', name: '면', aliases: ['면', '티셔츠', '청바지', '셔츠', '양말', '수건', '에코백', '속옷', '후드티'],
@@ -136,6 +177,10 @@ const list: Material[] = [
       explain: '한국은 원유를 사우디아라비아에서 가장 많이 수입해요.',
       rewardId: 'refinery-safety',
     },
+    // 근거: PET(폴리에틸렌 테레프탈레이트)는 플라스틱의 한 종류
+    extraQuizzes: [
+      { q: '페트병의 페트(PET)는 무엇의 이름일까요?', options: ['플라스틱의 한 종류', '유리의 한 종류', '종이의 한 종류'], answer: 0, explain: '페트는 플라스틱의 한 종류예요. 가볍고 투명해서 음료병에 많이 쓰여요.', rewardId: 'refinery-safety' },
+    ],
   },
   {
     id: 'rubber', name: '천연고무', aliases: ['고무', '운동화', '타이어', '자전거', '고무장갑', '슬리퍼'],
@@ -146,6 +191,10 @@ const list: Material[] = [
       explain: '태국이 천연고무 생산 1위예요. 고무나무는 원래 남미 아마존이 고향이에요.',
       rewardId: 'latex-tester',
     },
+    // 근거: Britannica 'rubber'(고무나무 껍질을 그어 흘러나오는 라텍스를 모은다)
+    extraQuizzes: [
+      { q: '천연고무는 고무나무의 무엇을 모아 만들까요?', options: ['줄기에서 흐르는 하얀 수액', '잎', '뿌리'], answer: 0, explain: '나무껍질에 얇게 홈을 내면 하얀 수액(라텍스)이 흘러나와요. 이걸 모아 굳힌 게 천연고무예요.', rewardId: 'latex-tester' },
+    ],
   },
   {
     id: 'cobalt', name: '코발트', aliases: ['코발트', '배터리', '휴대폰', '스마트폰', '노트북', '전기차', '보조배터리', '이어폰'],
@@ -176,6 +225,10 @@ const list: Material[] = [
       explain: '아주 작은 먼지 하나도 회로를 망가뜨릴 수 있어서 반도체는 클린룸에서 만들어요.',
       rewardId: 'litho-engineer',
     },
+    // 근거: Britannica 'integrated circuit'(실리콘 웨이퍼 위에 만든다)
+    extraQuizzes: [
+      { q: '반도체 칩의 바탕이 되는 원소는?', options: ['실리콘(규소)', '구리', '금'], answer: 0, explain: '모래 속 규소를 아주 깨끗하게 만든 실리콘 원판(웨이퍼) 위에 회로를 새겨요.', rewardId: 'litho-engineer' },
+    ],
   },
   {
     id: 'assembly', name: '기기 조립', aliases: ['휴대폰', '스마트폰', '태블릿', '스마트워치', '이어폰'],
@@ -196,6 +249,10 @@ const list: Material[] = [
       explain: '알루미늄은 보크사이트에서 알루미나를 뽑고, 전기로 제련해 만들어요.',
       rewardId: 'can-recycler',
     },
+    // 근거: The Aluminum Association(알루미늄은 성질을 잃지 않고 거듭 재활용된다)
+    extraQuizzes: [
+      { q: '다 쓴 알루미늄 캔은 녹여서 몇 번까지 다시 쓸 수 있을까요?', options: ['한 번', '딱 열 번', '계속 되풀이해서'], answer: 2, explain: '알루미늄은 녹여도 성질이 거의 그대로라서 몇 번이고 다시 캔이 될 수 있어요.', rewardId: 'can-recycler' },
+    ],
   },
   {
     id: 'pulp', name: '종이', aliases: ['종이', '종이컵', '노트', '공책', '책', '휴지', '상자', '택배상자', '우유팩', '영수증'],
@@ -206,6 +263,10 @@ const list: Material[] = [
       explain: '브라질은 빨리 자라는 유칼립투스 덕분에 세계 최대 펄프 수출국이에요.',
       rewardId: 'forest-auditor',
     },
+    // 근거: 종이컵 안쪽은 폴리에틸렌(PE) 막으로 코팅한다(환경부 일회용컵 분리배출 안내)
+    extraQuizzes: [
+      { q: '종이컵 안쪽이 물에 젖지 않는 까닭은?', options: ['얇은 플라스틱 막을 입혀서', '소금을 발라서', '유리를 녹여 발라서'], answer: 0, explain: '종이컵 안쪽에는 아주 얇은 플라스틱 막이 입혀져 있어서 물이 스며들지 않아요.', rewardId: 'forest-auditor' },
+    ],
   },
   {
     id: 'orange', name: '오렌지', aliases: ['오렌지', '오렌지주스', '주스', '환타'],
@@ -216,6 +277,10 @@ const list: Material[] = [
       explain: '브라질이 세계 오렌지 주스 수출의 대부분을 차지해요.',
       rewardId: 'citrus-scientist',
     },
+    // 근거: 농축 주스는 과즙에서 물을 증발시켜 만든다(식품의약품안전처 식품 유형 기준)
+    extraQuizzes: [
+      { q: '오렌지 주스 농축액은 과즙에서 무엇을 빼서 만들까요?', options: ['물', '설탕', '껍질 색'], answer: 0, explain: '과즙에서 물을 날려 보내 진하게 만든 뒤, 멀리 보낸 다음 다시 물을 섞어 주스로 만들어요.', rewardId: 'citrus-scientist' },
+    ],
   },
   {
     id: 'soybean', name: '대두', aliases: ['콩', '대두', '두부', '두유', '간장', '된장', '식용유', '콩나물'],
@@ -226,6 +291,10 @@ const list: Material[] = [
       explain: '끓인 콩물에 간수를 넣으면 단백질이 엉겨 두부가 돼요.',
       rewardId: 'soy-breeder',
     },
+    // 근거: 표준국어대사전 '콩나물'
+    extraQuizzes: [
+      { q: '콩나물은 무엇을 길러 만든 걸까요?', options: ['콩을 물을 주며 싹 틔워서', '콩잎을 키워서', '콩꽃을 따서'], answer: 0, explain: '콩에 물만 주며 어두운 곳에서 싹을 틔우면 콩나물이 돼요.', rewardId: 'soy-breeder' },
+    ],
   },
   {
     id: 'steel', name: '철강', aliases: ['강철', '철강', '자전거', '참치캔', '통조림', '숟가락', '냄비', '자동차', '프라이팬'],
@@ -236,6 +305,10 @@ const list: Material[] = [
       explain: '용광로(고로)에 철광석과 석탄을 넣어 녹이면 쇳물이 나와요.',
       rewardId: 'scrap-worker',
     },
+    // 근거: Britannica 'blast furnace'(철광석·코크스·석회석을 넣는다)
+    extraQuizzes: [
+      { q: '용광로에 철광석과 함께 넣어 불을 지피는 것은?', options: ['코크스(석탄을 구운 것)', '나무', '소금'], answer: 0, explain: '석탄을 구워 만든 코크스가 높은 열을 내고, 철광석에서 산소를 떼어 내 쇳물을 만들어요.', rewardId: 'scrap-worker' },
+    ],
   },
   {
     id: 'milk', name: '우유', aliases: ['우유', '라떼', '치즈', '요거트', '아이스크림', '바나나우유', '버터'],
@@ -256,6 +329,10 @@ const list: Material[] = [
       explain: '수입 고춧가루와 건고추는 대부분 가까운 중국에서 와요.',
       rewardId: 'chili-breeder',
     },
+    // 근거: Britannica 'capsaicin'
+    extraQuizzes: [
+      { q: '고추의 매운맛을 내는 성분은?', options: ['캡사이신', '카페인', '카테킨'], answer: 0, explain: '고추의 매운맛은 캡사이신 때문이에요. 씨가 붙어 있는 하얀 부분에 특히 많아요.', rewardId: 'chili-breeder' },
+    ],
   },
   {
     id: 'cabbage', name: '배추', aliases: ['배추', '김치', '김치찌개', '김치볶음밥', '겉절이', '보쌈김치', '배추전'],
@@ -276,6 +353,10 @@ const list: Material[] = [
       explain: '유리는 규사라고 부르는 고운 모래에 소다회와 석회석을 섞어 녹여 만들어요.',
       rewardId: 'glass-recycler',
     },
+    // 근거: 환경부 재활용품 분리배출 안내(유리병은 색상별로 선별해 같은 색 유리로 재활용)
+    extraQuizzes: [
+      { q: '유리병을 재활용할 때 색깔별로 나누는 까닭은?', options: ['색이 섞이면 원하는 색의 새 유리를 만들기 어려워서', '무게가 달라서', '냄새가 달라서'], answer: 0, explain: '투명, 갈색, 초록 유리가 섞이면 새 유리의 색이 탁해져요. 그래서 색깔별로 나눠 다시 녹여요.', rewardId: 'glass-recycler' },
+    ],
   },
   {
     id: 'wood', name: '목재', aliases: ['나무', '목재', '원목', '책상', '의자', '나무젓가락', '젓가락', '연필', '가구', '침대', '선반', '도마'],
@@ -326,6 +407,10 @@ const list: Material[] = [
       explain: '마지막 숫자는 사육 환경이에요. 1은 방사, 2는 평사, 3·4는 케이지 사육이에요.',
       rewardId: 'egg-inspector',
     },
+    // 근거: 달걀 껍데기 색은 닭의 품종에 따라 정해진다(농촌진흥청 축산 정보)
+    extraQuizzes: [
+      { q: '달걀 껍데기 색은 무엇에 따라 달라질까요?', options: ['닭의 품종', '먹이의 양', '낳은 시간'], answer: 0, explain: '껍데기가 흰지 갈색인지는 닭의 품종에 따라 정해져요. 영양 차이와는 상관없어요.', rewardId: 'egg-inspector' },
+    ],
   },
   {
     id: 'corn', name: '옥수수', aliases: ['옥수수', '팝콘', '물엿', '시리얼', '콘칩', '콘플레이크', '콘버터', '옥수수수염차', '나초'],
@@ -336,6 +421,10 @@ const list: Material[] = [
       explain: '중서부 곡물은 미시시피강 바지선을 타고 멕시코만의 항구까지 내려가요.',
       rewardId: 'grain-trader',
     },
+    // 근거: Britannica 'popcorn'(알갱이 속 수분이 수증기가 되며 껍질이 터진다)
+    extraQuizzes: [
+      { q: '팝콘 알갱이가 터지는 까닭은?', options: ['속에 든 물이 수증기가 되어 껍질을 터뜨려서', '공기를 불어 넣어서', '기름이 끓어 넘쳐서'], answer: 0, explain: '단단한 껍질 속 물기가 뜨거워지면 수증기가 되어 부풀다가, 껍질을 뚫고 터져 나와요.', rewardId: 'grain-trader' },
+    ],
   },
   {
     id: 'shrimp', name: '새우', aliases: ['새우', '새우깡', '새우튀김', '감바스', '새우버거', '칵테일새우', '쉬림프', '새우볶음밥'],
@@ -356,6 +445,10 @@ const list: Material[] = [
       explain: '덖음은 찻잎을 솥에서 볶아 풀내를 없애고 향을 살리는 과정이에요.',
       rewardId: 'tea-taster',
     },
+    // 근거: Britannica 'tea'(녹차·홍차 모두 차나무 잎, 산화 여부로 갈린다)
+    extraQuizzes: [
+      { q: '녹차와 홍차는 같은 차나무 잎으로 만들 수 있을까요?', options: ['네, 만드는 방법이 달라요', '아니요, 다른 나무예요', '홍차는 꽃잎으로 만들어요'], answer: 0, explain: '같은 차나무 잎이라도 바로 덖으면 녹차, 잎을 산화시키면 홍차가 돼요.', rewardId: 'tea-taster' },
+    ],
   },
 ]
 

@@ -9,9 +9,9 @@ const busy = ref(false)
 const message = ref('')
 
 const done = computed(() => game.today.value.journeys.filter((j) => j.done))
-const stats = computed(() => dayStats(done.value.map((j) => j.materialIds)))
+const stats = computed(() => dayStats(done.value))
 const perItem = computed(() =>
-  done.value.map((j) => ({ id: j.id, name: j.name, ...dayStats([j.materialIds]) })),
+  done.value.map((j) => ({ id: j.id, name: j.name, ...dayStats([j]) })),
 )
 /** 카드에 그릴 캐릭터: 오늘 처음 만난 사람 우선, 최대 6명 */
 const faces = computed(() => {

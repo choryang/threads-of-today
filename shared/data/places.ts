@@ -37,6 +37,7 @@ const list: Place[] = [
   { id: 'bd-chittagong', name: '치타공 항구', country: '방글라데시', continent: 'asia' },
   { id: 'th-south', name: '태국 남부', country: '태국', continent: 'asia' },
   { id: 'th-laemchabang', name: '렘차방 항구', country: '태국', continent: 'asia' },
+  { id: 'vn-daklak', name: '베트남 닥락', country: '베트남', continent: 'asia' },
   { id: 'my-penang', name: '말레이시아 페낭', country: '말레이시아', continent: 'asia' },
   { id: 'sa', name: '사우디아라비아 유전', country: '사우디아라비아', continent: 'asia' },
 
@@ -46,6 +47,8 @@ const list: Place[] = [
   { id: 'dj', name: '지부티 항구', country: '지부티', continent: 'africa' },
   { id: 'ci', name: '코트디부아르 카카오 농장', country: '코트디부아르', continent: 'africa' },
   { id: 'ci-abidjan', name: '아비장 항구', country: '코트디부아르', continent: 'africa' },
+  { id: 'gh-western', name: '가나 서부 주', country: '가나', continent: 'africa' },
+  { id: 'gh-takoradi', name: '타코라디 항구', country: '가나', continent: 'africa' },
   { id: 'cd-katanga', name: '콩고민주공화국 카탕가', country: '콩고민주공화국', continent: 'africa' },
 
   // 유럽
@@ -74,6 +77,8 @@ const list: Place[] = [
   { id: 'br-sp', name: '브라질 상파울루주', country: '브라질', continent: 'americas' },
   { id: 'br-mt', name: '브라질 마투그로수', country: '브라질', continent: 'americas' },
   { id: 'br-santos', name: '산투스 항구', country: '브라질', continent: 'americas' },
+  { id: 'co-huila', name: '콜롬비아 우일라', country: '콜롬비아', continent: 'americas' },
+  { id: 'co-buenaventura', name: '부에나벤투라 항구', country: '콜롬비아', continent: 'americas' },
   { id: 'cl-atacama', name: '칠레 아타카마 사막', country: '칠레', continent: 'americas' },
 
   // 바다

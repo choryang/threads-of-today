@@ -231,6 +231,30 @@ const list: Person[] = [
   p('tea-roaster', '녹차 덖음 장인', 'kr-boseong', '뜨거운 솥에 찻잎을 넣고 손으로 뒤적이며 볶고 비벼요.', 'none', 'cup'),
   p('tea-taster', '차 품질 감별사', 'kr-boseong', '찻잎의 모양과 향, 우린 물의 색을 보고 차의 등급을 매겨요.', 'none', 'cup', 'rare', 'quiz'),
 
+  // ── 출발지 변형 (4단계) ──
+  // 커피: 콜롬비아. 우일라는 대표 산지 중 하나이고, 콜롬비아 커피 수출의 60% 넘게가 태평양 쪽 부에나벤투라 항구로 나간다.
+  //   출처: Portafolio(2025) "Crecen exportaciones de café colombiano en 2025 con Huila y Antioquia al frente",
+  //        Forbes Colombia "Exportaciones de café se frenan por bloqueos en la vía a Buenaventura" (Asoexport 인용)
+  p('co-coffee-farmer', '커피 농부', 'co-huila', '안데스 산비탈에서 아라비카 커피를 길러요. 비탈이 가팔라서 익은 열매를 손으로 하나씩 따요.', 'straw', 'cherry'),
+  p('co-buenaventura-docker', '부에나벤투라 항만 노동자', 'co-buenaventura', '콜롬비아의 태평양 쪽 항구예요. 이 나라 커피가 가장 많이 떠나는 곳이라 생두 자루가 끝없이 실려요.', 'safetyHelmet', 'box'),
+  // 커피: 베트남. 중부 고원의 닥락은 대표적인 커피 산지이고, 베트남 커피는 대부분 로부스타다. 호찌민 항구가 가장 큰 수출 관문.
+  //   출처: Viet Nam News Bizhub "Dak Lak Province's coffee exports enjoy robust growth",
+  //        Oxford Business Group "Vietnam 2017 report: coffee looks to remain a major player"
+  p('vn-coffee-farmer', '로부스타 커피 농부', 'vn-daklak', '중부 고원의 붉은 흙에서 쓴맛이 진한 로부스타 커피를 길러요. 수확한 열매는 마당에 펼쳐 햇볕에 말려요.', 'straw', 'cherry'),
+  p('vn-coffee-port', '호찌민 커피 수출 담당', 'vn-hcm', '고원에서 트럭으로 내려온 생두 자루를 검사하고 컨테이너에 실어 보내요.', 'safetyHelmet', 'clipboard'),
+  // 카카오: 가나. 서부 주가 큰 산지이고, 카카오는 주로 서부의 타코라디 항구와 동부의 테마 항구로 나간다.
+  //   출처: Citi Newsroom(2019/20 Cocoa Marketing Company 수치 인용: 타코라디 52%, 테마 42%),
+  //        MyJoyOnline "COCOBOD re-routes cocoa"
+  p('gh-cacao-farmer', '카카오 농부', 'gh-western', '꼬투리에서 꺼낸 콩을 바나나 잎으로 덮어 며칠 동안 발효시켜요. 그래야 초콜릿 향이 살아나요.', 'straw', 'pod'),
+  p('gh-takoradi-docker', '타코라디 항만 노동자', 'gh-takoradi', '가나 서부의 항구예요. 마른 카카오콩 자루를 배에 실어 바다 건너로 보내요.', 'safetyHelmet', 'box'),
+
+  // ── 숨은 만남 (에픽, 여정 중 아주 가끔) ──
+  p('ship-cook', '배 위의 요리사', 'sea', '몇 주씩 바다 위에 있는 선원들의 하루 세 끼를 책임져요. 흔들리는 주방에서도 국을 끓여요.', 'chef', 'cup', 'epic', 'hidden'),
+  p('reefer-tech', '냉동 컨테이너 기술자', 'sea', '얼리거나 차갑게 실어야 하는 화물이 상하지 않게 냉동 컨테이너의 온도를 살펴요.', 'beanie', 'wrench', 'epic', 'hidden'),
+  p('lashing-worker', '컨테이너 고박 작업자', 'kr-busan', '배에 쌓인 컨테이너가 파도에 흔들려도 떨어지지 않게 쇠막대와 고리로 단단히 묶어요.', 'safetyHelmet', 'wrench', 'epic', 'hidden'),
+  p('plant-quarantine', '식물 검역관', 'kr-busan', '외국에서 들어온 농산물에 해충이나 병이 묻어 오지 않았는지 꼼꼼히 살펴요.', 'none', 'magnifier', 'epic', 'hidden'),
+  p('customs-officer', '세관 직원', 'kr-incheon', '나라 밖에서 들어온 물건이 신고한 내용과 맞는지 확인해요.', 'cap', 'clipboard', 'epic', 'hidden'),
+
   // ── 연결 발견 카드 (에픽) ──
   p('link-sea-crew', '두 물건을 한 배로 나른 선원', 'sea', '오늘 고른 물건 두 개가 어쩌면 같은 배를 타고 왔을지도 몰라요. 바다는 서로 다른 여정이 만나는 곳이에요.', 'beanie', 'anchor', 'epic', 'link'),
   p('link-bulk-crew', '곡물과 광석을 함께 아는 선원', 'sea', '밀을 실었던 배가 다음 항해에는 철광석을 싣기도 해요. 같은 바다, 다른 화물.', 'beanie', 'wheat', 'epic', 'link'),

@@ -3,21 +3,25 @@ import { computed, ref } from 'vue'
 import { PEOPLE, PEOPLE_LIST } from '../../shared/data/people'
 import { withJosa } from '../../shared/logic'
 import type { Rarity } from '../../shared/types'
-import { RARITY_HOW, RARITY_LABEL } from '../utils/labels'
+import { HIDDEN_LABEL, RARITY_LABEL, badgeOf, howToMeet } from '../utils/labels'
 
 const game = useGame()
-const filter = ref<'all' | Rarity>('all')
+const filter = ref<Filter>('all')
 const open = ref<string | null>(null)
 
-const filters: Array<{ id: 'all' | Rarity; label: string }> = [
+type Filter = 'all' | Rarity | 'hidden'
+const filters: Array<{ id: Filter; label: string }> = [
   { id: 'all', label: '전체' },
   { id: 'common', label: RARITY_LABEL.common },
   { id: 'rare', label: RARITY_LABEL.rare },
   { id: 'epic', label: RARITY_LABEL.epic },
   { id: 'legendary', label: RARITY_LABEL.legendary },
+  { id: 'hidden', label: HIDDEN_LABEL },
 ]
 
-const list = computed(() => PEOPLE_LIST.filter((p) => filter.value === 'all' || p.rarity === filter.value))
+const list = computed(() =>
+  PEOPLE_LIST.filter((p) => filter.value === 'all' || (filter.value === 'hidden' ? p.kind === 'hidden' : p.rarity === filter.value)),
+)
 const total = PEOPLE_LIST.length
 const percent = computed(() => Math.round((game.ownedCount.value / total) * 100))
 const sets = computed(() => game.setProgress())
@@ -92,8 +96,8 @@ const metLabel = computed(() => `${withJosa(game.nickname.value, '이', '가')} 
         <PersonCard v-if="game.owns(openPerson.id)" :person-id="openPerson.id" :number="numberOf(openPerson.id)" />
         <div v-else class="locked-card panel">
           <Character :person-id="openPerson.id" locked :size="120" />
-          <p class="mono small muted">No.{{ String(numberOf(openPerson.id)).padStart(3, '0') }} · {{ RARITY_LABEL[openPerson.rarity] }}</p>
-          <p class="lock-how">{{ RARITY_HOW[openPerson.rarity] }}</p>
+          <p class="mono small muted">No.{{ String(numberOf(openPerson.id)).padStart(3, '0') }} · {{ badgeOf(openPerson) }}</p>
+          <p class="lock-how">{{ howToMeet(openPerson) }}</p>
         </div>
         <button class="btn btn-block" @click="open = null">닫기</button>
       </div>

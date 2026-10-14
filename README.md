@@ -130,6 +130,13 @@ npm run cache:export   # AI 캐시를 조회 수 순으로 data/review/cache.csv
   - 레어: 재료 퀴즈를 맞히면 만남
   - 에픽: 하루 동안 지나온 재료들이 같은 사람(선원, 항구, 공장)을 거치면 "연결 발견"
   - 전설: 세트(바다·땅·광산·밥상·공장)를 모두 모으면 만남
+  - 숨은 만남(에픽): 여정 중 아주 낮은 확률로 만남
+- 여정은 데이터와 확률로 매번 조금씩 달라진다. 무작위는 **여정 id를 시드로** 써서 새로고침하거나 다른 기기에서 열어도 같다 (`shared/journey.ts`).
+  - 출발지 변형: 커피(에티오피아·콜롬비아·베트남), 카카오(코트디부아르·가나)처럼 재료의 앞부분 경로가 가중치에 따라 바뀐다
+  - 이야기: 사람과 사람 사이에 낮은 확률(4%, 여정당 최대 2번)로 짧은 장면이 끼어든다. 화면에 '이야기' 표시를 붙이고, 실제 있었던 일이 아니라고 밝힌다
+  - 숨은 만남: 아주 낮은 확률(1~2%, 여정당 최대 1명)로 배 위의 요리사, 식물 검역관 같은 숨은 카드가 나온다. 도감에서 '숨은 만남'으로 따로 볼 수 있다
+  - 퀴즈: 재료 20개는 퀴즈가 2~3개라 여정마다 하나가 나온다. 보상 카드는 같다
+  - 이 기능 전에 시작한 여정(id에 '-꼬리'가 없는 것)은 기본 경로 그대로 간다
 - AI는 **어떤 재료로 나눌지만** 정한다. 여정의 사실 정보는 모두 `shared/data`에 직접 작성한 데이터에서만 나온다.
 - 처음 분해한 물건에는 FIRST 표시가 붙고, 도감에 '분해해 본 물건' 목록이 쌓인다.
 - 진행 상황은 브라우저 localStorage에 저장되고, 앱을 열 때와 여정을 마칠 때 서버(Upstash)와 합쳐진다. 로그인은 없다(익명 id + 복구 코드).
@@ -149,16 +156,21 @@ server/
   plugins/kv.ts           useStorage('kv')에 Upstash / 파일 / 메모리 드라이버 연결
   utils/                  decompose(Claude 호출) · matcher(서버 매처) · ai-cache · kv · users · profile-api
 shared/
-  data/           places · people · materials · synonyms · dictionary.json(물건 사전)
+  data/           places · people · materials(출발지 변형·추가 퀴즈 포함) · journey-extras(이야기·숨은 만남) · synonyms · dictionary.json(물건 사전)
+  journey.ts      여정 id 시드로 타임라인(출발지·이야기·숨은 만남·퀴즈 변형)을 만든다
   match/          AI 없는 매칭
   progress.ts     진행 상황 모양·병합·검사
   nickname.ts · recovery.ts · voice.ts · safety.ts · logic.ts
-scripts/          check-data · build-dictionary · export-cache · import-foodsafety(보류)
+scripts/          check-data · build-dictionary · export-cache · import-foodsafety(보류) · update-origins(보류)
 data/seeds/       물건·단어 시드 (사전 만들기 입력)
 tests/            node:test 단위 테스트
 ```
 
 ## 재료·사람 추가하기
+
+출발지 변형은 재료에 `originHead`(기본 경로 앞에서 몇 명을 바꿀지)와 `origins`(첫 번째는 기본 경로와 같게)를 적는다.
+새 사실을 넣을 때는 사람 카드 위에 출처를 주석으로 남긴다. 숨은 만남은 `shared/data/journey-extras.ts`의 `HIDDEN_RULES`에, 이야기는 `EVENTS`에 추가한다.
+
 
 1. `shared/data/people.ts`에 사람을 추가한다. 모자(`hat`)와 소품(`prop`)을 고르면 캐릭터가 자동으로 그려진다. 몸 색은 장소의 대륙으로 정해진다.
 2. `shared/data/materials.ts`에 재료와 `stages`(사람 id 순서), 퀴즈를 추가한다.
@@ -170,7 +182,7 @@ tests/            node:test 단위 테스트
 
 - 식품안전나라 품목제조보고(원재료) API: 가공식품의 실제 신고 원재료로 분해
 - 식품안전나라 바코드연계제품정보 API: 바코드 스캔 입력
-- 관세청 품목별·국가별 수출입실적 API: 재료별 출발 국가를 실제 수입 비중으로 뽑기
+- 관세청 품목별·국가별 수출입실적 API: 출발지 가중치를 실제 수입 비중으로 (`scripts/update-origins.ts` 뼈대만 있음)
 
 ## 출시 전에 확인할 것
 

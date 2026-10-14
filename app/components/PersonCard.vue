@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { PEOPLE } from '../../shared/data/people'
 import { PLACES } from '../../shared/data/places'
-import { RARITY_LABEL } from '../utils/labels'
+import { badgeOf } from '../utils/labels'
 
 const props = defineProps<{ personId: string; isNew?: boolean; number?: number }>()
 const person = computed(() => PEOPLE[props.personId]!)
@@ -13,7 +13,7 @@ const place = computed(() => PLACES[person.value.placeId]!)
   <article class="card" :class="`rarity-${person.rarity}`">
     <header class="top">
       <span class="mono no">{{ number ? `No.${String(number).padStart(3, '0')}` : place.country || '바다' }}</span>
-      <span class="badge">{{ RARITY_LABEL[person.rarity] }}</span>
+      <span class="badge">{{ badgeOf(person) }}</span>
     </header>
     <div class="art">
       <Character :person-id="personId" :size="150" bob />

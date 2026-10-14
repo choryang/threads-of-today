@@ -3,7 +3,9 @@ import { LINK_RULES, MATERIAL_LIST, PRODUCTS, SETS } from '../shared/data/materi
 import { PEOPLE, PEOPLE_LIST } from '../shared/data/people'
 import { PLACES } from '../shared/data/places'
 import dictionary from '../shared/data/dictionary.json'
+import { EVENTS, HIDDEN_RULES } from '../shared/data/journey-extras'
 import { SYNONYM_GROUPS } from '../shared/data/synonyms'
+import { buildTimeline, quizzesOf, resolveStages } from '../shared/journey'
 import { looksFactual } from '../shared/safety'
 import { CODE_WORDS } from '../shared/recovery'
 import { NICKNAME_MAX, NICKNAME_PARTS } from '../shared/nickname'
@@ -13,7 +15,10 @@ import { createMatcher, match, productEntries, type DictEntry } from '../shared/
 const errors: string[] = []
 const reachable = new Set<string>()
 
+const personIds = new Set<string>()
 for (const person of PEOPLE_LIST) {
+  if (personIds.has(person.id)) errors.push(`사람 id ${person.id} 중복`)
+  personIds.add(person.id)
   if (!PLACES[person.placeId]) errors.push(`${person.id}: 장소 ${person.placeId} 없음`)
 }
 for (const m of MATERIAL_LIST) {
@@ -22,10 +27,25 @@ for (const m of MATERIAL_LIST) {
     else if (PEOPLE[pid]!.kind !== 'stage') errors.push(`${m.id}: ${pid}는 stage 카드가 아님`)
     reachable.add(pid)
   }
-  if (m.quiz) {
-    if (!PEOPLE[m.quiz.rewardId] || PEOPLE[m.quiz.rewardId]!.kind !== 'quiz') errors.push(`${m.id}: 퀴즈 보상 ${m.quiz.rewardId} 오류`)
-    if (m.quiz.answer < 0 || m.quiz.answer >= m.quiz.options.length) errors.push(`${m.id}: 정답 인덱스 오류`)
-    reachable.add(m.quiz.rewardId)
+  for (const [i, quiz] of quizzesOf(m).entries()) {
+    if (!PEOPLE[quiz.rewardId] || PEOPLE[quiz.rewardId]!.kind !== 'quiz') errors.push(`${m.id}: 퀴즈 ${i} 보상 ${quiz.rewardId} 오류`)
+    if (quiz.answer < 0 || quiz.answer >= quiz.options.length) errors.push(`${m.id}: 퀴즈 ${i} 정답 인덱스 오류`)
+    if (quiz.rewardId !== m.quiz!.rewardId) errors.push(`${m.id}: 퀴즈 ${i} 보상이 첫 퀴즈와 다름`)
+    if (new Set(quiz.options).size !== quiz.options.length) errors.push(`${m.id}: 퀴즈 ${i} 보기 중복`)
+    reachable.add(quiz.rewardId)
+  }
+  // 출발지 변형: 첫 출발지는 기본 경로 앞부분과 같아야 하고, 모든 사람은 stage 카드
+  if (m.origins?.length) {
+    const head = m.stages.slice(0, m.originHead ?? 0).join(',')
+    if (m.origins[0]!.head.join(',') !== head) errors.push(`${m.id}: 첫 출발지가 기본 경로(${head})와 다름`)
+    for (const o of m.origins) {
+      if (!(o.weight > 0)) errors.push(`${m.id}/${o.id}: 가중치 오류`)
+      for (const pid of o.head) {
+        if (!PEOPLE[pid]) errors.push(`${m.id}/${o.id}: 사람 ${pid} 없음`)
+        else if (PEOPLE[pid]!.kind !== 'stage') errors.push(`${m.id}/${o.id}: ${pid}는 stage 카드가 아님`)
+        reachable.add(pid)
+      }
+    }
   }
 }
 for (const p of PRODUCTS) {
@@ -37,6 +57,29 @@ for (const rule of LINK_RULES) {
   if (count < 2) errors.push(`연결 ${rule.cardId}: ${rule.personId}가 재료 ${count}개에만 등장 → 얻을 수 없음`)
   reachable.add(rule.cardId)
 }
+// 여정 이벤트: 사실처럼 보이는 문구 금지
+const eventIds = new Set<string>()
+for (const e of EVENTS) {
+  if (eventIds.has(e.id)) errors.push(`이벤트 ${e.id} 중복`)
+  eventIds.add(e.id)
+  if (looksFactual(e.text)) errors.push(`이벤트 ${e.id}: 사실처럼 보이는 문구`)
+}
+// 숨은 만남: 카드가 hidden이고, 규칙의 사람이 해당 재료 여정(출발지 변형 포함)에 실제로 나와야 얻을 수 있다
+const allStages = (mid: string) => {
+  const m = MATERIAL_LIST.find((x) => x.id === mid)!
+  return [m.stages, ...(m.origins ?? []).map((o) => [...o.head, ...m.stages.slice(m.originHead ?? 0)])].flat()
+}
+for (const rule of HIDDEN_RULES) {
+  if (!PEOPLE[rule.cardId] || PEOPLE[rule.cardId]!.kind !== 'hidden') errors.push(`숨은 만남 ${rule.cardId}: hidden 카드가 아님`)
+  if (!(rule.chance > 0 && rule.chance <= 0.1)) errors.push(`숨은 만남 ${rule.cardId}: 확률은 0~10%`)
+  const mids = rule.materialIds ?? MATERIAL_LIST.map((m) => m.id)
+  for (const mid of mids) if (!MATERIAL_LIST.find((m) => m.id === mid)) errors.push(`숨은 만남 ${rule.cardId}: 재료 ${mid} 없음`)
+  const meets = mids.filter((mid) => MATERIAL_LIST.find((m) => m.id === mid) && rule.afterPersonIds.some((pid) => allStages(mid).includes(pid)))
+  if (!meets.length) errors.push(`숨은 만남 ${rule.cardId}: 등장할 여정이 없음`)
+  else reachable.add(rule.cardId)
+  if (rule.materialIds) for (const mid of rule.materialIds) if (!meets.includes(mid)) errors.push(`숨은 만남 ${rule.cardId}: 재료 ${mid} 여정에는 ${rule.afterPersonIds.join('/')}가 없음`)
+}
+
 for (const s of SETS) {
   for (const id of s.memberIds) if (!reachable.has(id)) errors.push(`${s.id}: 멤버 ${id}를 얻을 수 없음`)
   if (!PEOPLE[s.rewardId] || PEOPLE[s.rewardId]!.kind !== 'set') errors.push(`${s.id}: 보상 오류`)
@@ -84,7 +127,7 @@ if (match('지하철')) errors.push('지하철이 철강으로 오매칭')
 const phone = match('갤럭시 휴대폰')
 if (!phone?.materialIds.includes('cobalt')) errors.push('match 휴대폰 실패')
 if (match('ㅁㄴㅇㄹ') !== null) errors.push('match 무의미 입력이 매칭됨')
-const links = findLinkCards(['cobalt', 'lithium'])
+const links = findLinkCards([{ materialIds: ['cobalt', 'lithium'] }])
 if (!links.includes('link-cn-refinery')) errors.push(`연결 카드 실패: ${links}`)
 
 for (const key of ['2026-10-14', '2026-10-15', '2027-01-01']) {
@@ -95,7 +138,27 @@ for (const key of ['2026-10-14', '2026-10-15', '2027-01-01']) {
 }
 
 console.log('물건 사전', dictKeys.size, '· 재료', MATERIAL_LIST.length, '· 사람 카드', PEOPLE_LIST.length, '· 대표 물건', PRODUCTS.length, '· 장소', Object.keys(PLACES).length)
-console.log('스마트폰 하루 통계', dayStats([phone!.materialIds]))
+console.log('스마트폰 하루 통계', dayStats([{ materialIds: phone!.materialIds }]))
+
+// 시드 여정 통계: 같은 id면 같은 타임라인, 출발지·이벤트·숨은 만남 빈도
+const N = 3000
+const originCount: Record<string, number> = {}
+let withEvent = 0
+let withHidden = 0
+for (let i = 0; i < N; i++) {
+  const id = `2026-10-14-1-${i.toString(36).padStart(4, '0')}`
+  const t1 = JSON.stringify(buildTimeline(['coffee', 'cacao', 'salmon'], id))
+  if (t1 !== JSON.stringify(buildTimeline(['coffee', 'cacao', 'salmon'], id))) errors.push(`${id}: 같은 id인데 타임라인이 다름`)
+  const items = JSON.parse(t1) as Array<{ type: string; personId?: string }>
+  if (items[0]?.type !== 'stage') errors.push(`${id}: 첫 칸이 사람 카드가 아님`)
+  if (items.some((t) => t.type === 'event')) withEvent++
+  if (items.some((t) => t.type === 'hidden')) withHidden++
+  const first = items[0]?.personId ?? ''
+  originCount[first] = (originCount[first] ?? 0) + 1
+}
+for (const old of ['2026-10-14-1', '2026-10-14-1abcd']) if (JSON.stringify(buildTimeline(['coffee', 'cacao'], old)) !== JSON.stringify(buildTimeline(['coffee', 'cacao']))) errors.push(`예전 여정 id ${old}는 기본 경로여야 함`)
+if (resolveStages(MATERIAL_LIST.find((m) => m.id === 'coffee')!, null).stages[0] !== 'coffee-picker') errors.push('기본 출발지 오류')
+console.log(`여정 ${N}개(커피·카카오·연어): 이벤트 ${Math.round((withEvent / N) * 100)}%, 숨은 만남 ${Math.round((withHidden / N) * 100)}%, 커피 첫 사람`, originCount)
 console.log('오늘 미스터리', mysteryProduct('2026-10-14').name, mysteryHints(mysteryProduct('2026-10-14')))
 if (errors.length) {
   console.error('\n오류', errors.length, '건\n' + errors.join('\n'))

@@ -16,9 +16,10 @@
 shared/                 앱과 서버가 상대 경로로 함께 import (Nuxt 자동 import 대상 아님)
   types.ts              Person, Material, Product, LinkRule, CardSet 타입
   data/places.ts        장소 (country, continent → 캐릭터 몸 색)
-  data/people.ts        사람 카드. kind: stage | quiz | link | set, rarity: common | rare | epic | legendary
-  data/materials.ts     재료 여정(stages = 사람 id 순서), 퀴즈, 대표 물건(PRODUCTS), 연결 규칙, 세트
+  data/people.ts        사람 카드. kind: stage | quiz | link | set | hidden, rarity: common | rare | epic | legendary
+  data/materials.ts     재료 여정(stages = 사람 id 순서), 출발지 변형(originHead, origins), 퀴즈(quiz + extraQuizzes), 대표 물건(PRODUCTS), 연결 규칙, 세트
   data/synonyms.ts      동의어 묶음 (첫 단어가 대표 표기)
+  data/journey-extras.ts 여정 이벤트(EVENTS, '이야기')·숨은 만남 규칙(HIDDEN_RULES)
   data/dictionary.json  미리 만든 물건 사전 (scripts/build-dictionary.ts가 생성). 서버에서만 import
   safety.ts             looksFactual: AI 문구에 숫자·나라 이름이 섞였는지 검사
   progress.ts           Save 타입, mergeSaves(카드·물건 합집합, 날짜 기록 30일), sanitizeSave(서버 입력 검사)
@@ -26,7 +27,9 @@ shared/                 앱과 서버가 상대 경로로 함께 import (Nuxt �
   recovery.ts           복구 코드 '낱말-낱말-숫자4' 생성·정규화
   voice.ts              voice의 {name} 자리표시자 검사·renderVoice (AI에 닉네임을 보내지 않는다)
   match/                AI 없는 매칭. normalize → exact → synonym → typo(자모 편집 거리) → compound → partial, 결과에 via
-  logic.ts              sanitizeMaterialIds / dayStats / findLinkCards / 미스터리 등 순수 함수
+  journey.ts            buildTimeline(materialIds, journeyId): 여정 id 시드로 출발지·이야기·숨은 만남·퀴즈 변형. '-꼬리' 없는 예전 id는 기본 경로
+  random.ts             hash / mix32 / seeded
+  logic.ts              sanitizeMaterialIds / dayStats(여정별 실제 경로) / findLinkCards / 미스터리 등 순수 함수
 server/
   api/decompose.post.ts 텍스트·사진 → 재료 id. 로컬 매칭 → 공유 캐시 → (IP별 하루 한도 안에서) Claude → 캐시 저장
   api/profile/          index(익명 id·복구 코드 발급) · sync · restore
@@ -45,6 +48,7 @@ app/
 scripts/check-data.ts     데이터 검사. 모든 변경 후 반드시 통과시킬 것
 scripts/build-dictionary.ts  data/seeds/*.txt → Message Batches API → dictionary.json + data/review/dictionary.csv (--dry-run, --limit, --resume)
 scripts/import-foodsafety.ts (선택, 실행 보류) 식품안전나라 원재료 → 재료 규칙 연결 뼈대
+scripts/update-origins.ts (실행 보류) 관세청 수출입실적 → 출발지 가중치 제안 뼈대
 scripts/export-cache.ts   AI 캐시를 조회 수 순으로 data/review/cache.csv (사용자 입력이 들어 있어 커밋하지 않음)
 tests/                    node:test + tsx 단위 테스트
 ```
@@ -59,7 +63,8 @@ tests/                    node:test + tsx 단위 테스트
 6. API 키 없이도 앱이 동작해야 한다(로컬 매칭으로 폴백).
 7. 사람 카드를 추가하면 어떤 경로로든 얻을 수 있어야 한다(check:data가 검사).
 8. AI에는 닉네임 같은 사용자 정보를 보내지 않는다. 사전·캐시는 모든 사용자가 같이 쓴다.
-9. Save 모양을 바꾸면 `shared/progress.ts`의 mergeSaves·sanitizeSave와 tests/progress.test.ts도 함께 고친다.
+9. 여정 이벤트는 특정 날짜·실제 사건을 말하지 않는 연출만 쓰고, 화면에 '이야기'로 표시한다. 무작위는 늘 여정 id 시드로.
+10. Save 모양을 바꾸면 `shared/progress.ts`의 mergeSaves·sanitizeSave와 tests/progress.test.ts도 함께 고친다.
 
 ## 알려진 상태
 
