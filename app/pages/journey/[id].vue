@@ -4,7 +4,7 @@ import { MATERIALS, PRODUCTS } from '../../../shared/data/materials'
 import { PEOPLE } from '../../../shared/data/people'
 import { PLACES } from '../../../shared/data/places'
 import { EVENTS } from '../../../shared/data/journey-extras'
-import { buildTimeline, quizFor } from '../../../shared/journey'
+import { buildTimeline, optionOrder, quizFor } from '../../../shared/journey'
 import { dayStats, withJosa } from '../../../shared/logic'
 import { lineupOf, linkPersonOf, pickTeaser } from '../../../shared/next'
 import type { Product } from '../../../shared/types'
@@ -79,6 +79,12 @@ const quiz = computed(() =>
   journey.value && current.value?.type === 'quiz' ? quizFor(journey.value.materialIds, journey.value.id, current.value.materialId) : undefined,
 )
 const quizChoice = computed(() => (journey.value && current.value?.type === 'quiz' ? journey.value.quiz[current.value.materialId] : undefined))
+/** 보기를 화면에 놓는 순서. i는 데이터 인덱스라 답 저장·정답 판정은 그대로 쓴다 */
+const quizOptions = computed(() => {
+  const q = quiz.value
+  if (!q || !journey.value || current.value?.type !== 'quiz') return []
+  return optionOrder(journey.value.id, current.value.materialId, q.options.length).map((i) => ({ i, opt: q.options[i]! }))
+})
 const eventText = computed(() => {
   const item = current.value
   return item?.type === 'event' ? EVENTS.find((e) => e.id === item.eventId)?.text : ''
@@ -406,7 +412,7 @@ function followTeaser(p: Product) {
           <p class="q">{{ quiz.q }}</p>
           <div class="options">
             <button
-              v-for="(opt, i) in quiz.options"
+              v-for="{ i, opt } in quizOptions"
               :key="opt"
               class="opt"
               :class="{ right: quizChoice !== undefined && i === quiz.answer, wrong: quizChoice === i && i !== quiz.answer }"

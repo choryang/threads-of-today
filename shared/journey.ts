@@ -149,6 +149,21 @@ export function quizFor(materialIds: string[], journeyId: string | undefined, ma
   return item?.type === 'quiz' && m ? quizzesOf(m)[item.quizIndex] : undefined
 }
 
+/**
+ * 퀴즈 보기를 화면에 놓을 순서(데이터 인덱스 목록). 데이터의 보기는 작은 수부터 정렬해 두고, 정답 자리가 한쪽에 몰리지 않게
+ * 화면에서만 여정 id 시드로 섞는다. 저장하는 답은 데이터 인덱스 그대로라 지난 기록의 정답 판정은 바뀌지 않는다.
+ */
+export function optionOrder(journeyId: string | undefined, materialId: string, count: number): number[] {
+  const order = Array.from({ length: count }, (_, i) => i)
+  if (!journeyId) return order
+  const rand = seeded(mix32(hash(`options:${journeyId}:${materialId}`)))
+  for (let i = count - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1))
+    ;[order[i], order[j]] = [order[j]!, order[i]!]
+  }
+  return order
+}
+
 /** 여정에서 만나는 사람(단계 + 숨은 만남) */
 export function timelinePeople(materialIds: string[], journeyId?: string, itemName?: string): Array<{ materialId: string; personId: string }> {
   return buildTimeline(materialIds, journeyId, itemName).flatMap((t) =>

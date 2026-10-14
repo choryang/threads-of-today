@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { MATERIALS } from '../shared/data/materials'
-import { buildTimeline, closingPeople, quizFor, quizzesOf } from '../shared/journey'
+import { buildTimeline, closingPeople, optionOrder, quizFor, quizzesOf } from '../shared/journey'
 import { closingKind } from '../shared/data/shops'
 import { dayStats, findLinkCards } from '../shared/logic'
 
@@ -67,4 +67,25 @@ test('마지막 장면: 물건 종류에 맞는 가게 사람이 여정 맨 끝�
   // 물건 이름이 없거나 예전 여정 id면 그대로
   assert.deepEqual(buildTimeline(['coffee'], id).length, t.length - 2)
   assert.deepEqual(buildTimeline(['coffee'], '2026-10-14-1', '아메리카노'), buildTimeline(['coffee']))
+})
+
+test('퀴즈 보기: 같은 여정이면 같은 순서, 정답 자리는 고르게', () => {
+  const journeys = ids(1000)
+  for (const id of journeys.slice(0, 50)) {
+    const order = optionOrder(id, 'coffee', 3)
+    assert.deepEqual(order, optionOrder(id, 'coffee', 3))
+    assert.deepEqual([...order].sort(), [0, 1, 2])
+  }
+  assert.deepEqual(optionOrder(undefined, 'coffee', 3), [0, 1, 2])
+  // 정답이 화면 몇 번째 칸에 놓이는지 센다 (여정 1,000개 × 재료마다 이번 여정에 나온 퀴즈)
+  const counts = [0, 0, 0]
+  for (const id of journeys) {
+    for (const mid of Object.keys(MATERIALS)) {
+      const q = quizFor([mid], id, mid)
+      if (!q || q.options.length !== 3) continue
+      counts[optionOrder(id, mid, 3).indexOf(q.answer)]!++
+    }
+  }
+  const total = counts.reduce((a, b) => a + b, 0)
+  for (const c of counts) assert.ok(Math.abs(c / total - 1 / 3) < 0.02, `정답 자리 비율 ${counts.map((x) => (x / total).toFixed(3))}`)
 })
