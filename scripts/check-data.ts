@@ -9,7 +9,7 @@ import { buildTimeline, quizzesOf, resolveStages } from '../shared/journey'
 import { looksFactual } from '../shared/safety'
 import { CODE_WORDS } from '../shared/recovery'
 import { NICKNAME_MAX, NICKNAME_PARTS } from '../shared/nickname'
-import { dayStats, findLinkCards, mysteryHints, mysteryOptions, mysteryProduct } from '../shared/logic'
+import { dayStats, findLinkCards, journeyMaterialIds, mysteryHints, mysteryOptions, mysteryProduct } from '../shared/logic'
 import { createMatcher, match, productEntries, type DictEntry } from '../shared/match'
 
 const errors: string[] = []
@@ -94,6 +94,7 @@ const dictKeys = new Set<string>()
 for (const e of dictionary as DictEntry[]) {
   if (dictKeys.has(e.key)) errors.push(`사전 ${e.key}: key 중복`)
   dictKeys.add(e.key)
+  if (e.materialIds.length && journeyMaterialIds(e.materialIds, e.missing).length === 0) errors.push(`사전 ${e.key}: 준비 중 재료가 있는데 포장재만 남음`)
   // 재료가 하나도 없으면 준비 중 재료(missing)라도 있어야 한다
   if (!e.materialIds.length && !e.missing?.length) errors.push(`사전 ${e.key}: 재료 0개`)
   for (const m of e.missing ?? []) if (!/^[가-힣][가-힣 ]*$/.test(m)) errors.push(`사전 ${e.key}: 준비 중 재료 이름 "${m}"`)

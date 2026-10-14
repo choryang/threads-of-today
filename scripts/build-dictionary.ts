@@ -4,6 +4,8 @@
  *   npx tsx scripts/build-dictionary.ts --dry-run          요청 본문 예시와 예상 비용만 출력 (API 호출 없음)
  *   npx tsx scripts/build-dictionary.ts --limit 50         시드 50개만 배치로 보낸다 (실행 전 확인을 받는다)
  *   npx tsx scripts/build-dictionary.ts --resume <batch>   이미 만든 배치의 결과만 다시 받아 사전에 반영한다
+ *   npx tsx scripts/build-dictionary.ts --redo-missing 팥,감자   준비 중 재료에 이 이름이 있는 사전 항목만 다시 만든다 (재료를 추가한 뒤)
+ *   npx tsx scripts/build-dictionary.ts --refresh          API 없이, 지금 사전에 정리 규칙(resolveMaterials)을 다시 적용하고 검토 CSV를 새로 쓴다
  *   --yes                                                  확인 질문을 건너뛴다
  *
  * 환경 변수: ANTHROPIC_API_KEY (없으면 NUXT_ANTHROPIC_API_KEY), DICT_MODEL (기본 claude-haiku-5-5)
@@ -18,9 +20,8 @@ import path from 'node:path'
 import readline from 'node:readline/promises'
 import Anthropic from '@anthropic-ai/sdk'
 import { MATERIALS } from '../shared/data/materials'
-import { sanitizeMaterialIds } from '../shared/logic'
 import { compact, createMatcher, productEntries, type DictEntry } from '../shared/match'
-import { SYSTEM, TOOL_NAME, buildTool, clean, cleanFlavor, cleanMissing, textPrompt } from '../server/utils/decompose'
+import { SYSTEM, TOOL_NAME, buildTool, canonicalMissing, clean, cleanFlavor, resolveMaterials, textPrompt } from '../server/utils/decompose'
 
 const ROOT = process.cwd()
 const SEED_FILES = { item: 'data/seeds/items.txt', word: 'data/seeds/words.txt' } as const
@@ -55,6 +56,8 @@ const dryRun = flag('dry-run')
 const assumeYes = flag('yes')
 const limit = option('limit') ? Number(option('limit')) : undefined
 const resumeId = option('resume')
+const refresh = flag('refresh')
+const redoMissing = option('redo-missing')?.split(',').map((s) => canonicalMissing(s.trim())).filter(Boolean)
 if (limit !== undefined && !(limit > 0)) throw new Error('--limit 뒤에는 1 이상의 숫자를 적어 주세요')
 
 // ---------- 파일 ----------
@@ -87,6 +90,38 @@ function pendingSeeds(): Seed[] {
     const hit = lookup(key)
     return !(hit && 'entry' in hit)
   })
+}
+
+/** --redo-missing: 준비 중 재료에 이 이름들이 들어 있는 사전 항목의 시드 */
+function redoSeeds(names: string[]): Seed[] {
+  const keys = new Set(loadDictionary().filter((e) => e.missing?.some((m) => names.includes(canonicalMissing(m)))).map((e) => e.key))
+  const seen = new Set<string>()
+  return loadSeeds().filter((s) => {
+    const key = compact(s.text)
+    if (!keys.has(key) || seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+}
+
+/** --refresh: 정리 규칙만 다시 적용. 재료도 준비 중 재료도 남지 않는 항목은 사전에서 빼고 알려 준다 */
+function refreshDictionary() {
+  const kept: DictEntry[] = []
+  const removed: string[] = []
+  let changed = 0
+  for (const e of loadDictionary()) {
+    const { materialIds, missing } = resolveMaterials(e.materialIds, e.missing ?? [])
+    if (!materialIds.length && !missing.length) {
+      removed.push(e.key)
+      continue
+    }
+    const { missing: _old, ...rest } = e
+    const next: DictEntry = { ...rest, materialIds, ...(missing.length ? { missing } : {}) }
+    if (JSON.stringify(next) !== JSON.stringify(e)) changed++
+    kept.push(next)
+  }
+  writeOutputs(kept, [])
+  console.log(`사전 ${kept.length}개 (바뀜 ${changed}, 뺌 ${removed.length}${removed.length ? `: ${removed.join(', ')}` : ''})`)
 }
 
 // ---------- 요청 ----------
@@ -146,8 +181,7 @@ interface Rejected {
 function toEntry(seed: Seed, input: any): DictEntry | string {
   if (!input) return '도구 호출 없음'
   if (!input.recognized) return '물건으로 잇지 못함'
-  const materialIds = sanitizeMaterialIds(input.material_ids)
-  const missing = cleanMissing(input.missing_ingredients)
+  const { materialIds, missing } = resolveMaterials(input.material_ids, input.missing_ingredients)
   if (!materialIds.length && !missing.length) return '재료 0개'
   const rawVoices: unknown[] = Array.isArray(input.voices) ? input.voices : []
   const voices = [...new Set(rawVoices.map((v) => cleanFlavor(v, 50, { allowName: true })).filter(Boolean))]
@@ -254,7 +288,12 @@ async function main() {
     return
   }
 
-  let seeds = pendingSeeds()
+  if (refresh) {
+    refreshDictionary()
+    return
+  }
+
+  let seeds = redoMissing?.length ? redoSeeds(redoMissing) : pendingSeeds()
   if (limit) seeds = seeds.slice(0, limit)
   if (!seeds.length) {
     console.log('새로 만들 시드가 없어요.')

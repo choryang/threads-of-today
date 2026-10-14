@@ -11,7 +11,7 @@
  */
 import { MATERIAL_LIST, PRODUCTS } from '../data/materials'
 import { SYNONYM_GROUPS } from '../data/synonyms'
-import { MAX_MATERIALS, type Decomposed } from '../logic'
+import { MAX_MATERIALS, journeyMaterialIds, type Decomposed } from '../logic'
 import { editDistance, hasSyllable, toJamo } from './hangul'
 import { compact, normalize } from './normalize'
 
@@ -149,7 +149,8 @@ export function createMatcher(entries: DictEntry[]) {
       const { entry } = t
       const voice = entry.voices?.length ? entry.voices[Math.floor(Math.random() * entry.voices.length)] : undefined
       const missing = entry.missing?.length ? { missing: entry.missing } : {}
-      return { name: entry.name, materialIds: entry.materialIds.slice(0, MAX_MATERIALS), twist: entry.twist, voice, ...missing, via, key: entry.key }
+      const materialIds = journeyMaterialIds(entry.materialIds, entry.missing).slice(0, MAX_MATERIALS)
+      return { name: entry.name, materialIds, twist: entry.twist, voice, ...missing, via, key: entry.key }
     }
     return { name: display, materialIds: t.materialIds.slice(0, MAX_MATERIALS), via, key }
   }

@@ -20,6 +20,18 @@ export interface Decomposed {
   missing?: string[]
 }
 
+/** 포장재 재료. 주재료가 준비 중인데 이것만 남으면 여정을 떠나지 않는다 */
+export const PACKAGING_IDS = ['plastic', 'pulp', 'glass']
+
+/**
+ * 주재료가 준비 중(missing)이고 남은 재료가 포장재뿐이면 재료를 비운다 → "여정을 떠날 수 없음".
+ * 보리차가 페트병 여정만 떠나는 일을 막는다. 생수·비닐봉지처럼 준비 중 재료가 없는 포장재 물건은 그대로 둔다.
+ */
+export function journeyMaterialIds(materialIds: string[], missing: string[] | undefined): string[] {
+  if (missing?.length && materialIds.every((id) => PACKAGING_IDS.includes(id))) return []
+  return materialIds
+}
+
 /** 받침 유무에 따라 조사를 붙인다. withJosa('광부', '이', '가') → '광부가' */
 export function withJosa(word: string, withBatchim: string, withoutBatchim: string): string {
   const last = word.charCodeAt(word.length - 1)

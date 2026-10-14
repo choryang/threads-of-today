@@ -1,6 +1,7 @@
 import { MATERIAL_LIST } from '../../shared/data/materials'
+import { COVERED, MISSING_GROUPS, NOT_INGREDIENTS } from '../../shared/data/missing-names'
 import { compact } from '../../shared/match/normalize'
-import { MAX_MATERIALS, sanitizeMaterialIds, type Decomposed } from '../../shared/logic'
+import { MAX_MATERIALS, journeyMaterialIds, sanitizeMaterialIds, type Decomposed } from '../../shared/logic'
 import { looksFactual } from '../../shared/safety'
 import { isValidVoiceTemplate } from '../../shared/voice'
 
@@ -58,21 +59,45 @@ item_name은 사용자가 알아보기 쉬운 짧은 한국어 이름(15자 이�
 export const TOOL_NAME = 'report_materials'
 export const MAX_MISSING = 3
 
-/** 재료 목록의 이름·별칭. AI가 목록에 있는 재료를 missing으로 적으면 걸러 낸다. */
-const KNOWN_WORDS = new Set(MATERIAL_LIST.flatMap((m) => [m.name, ...m.aliases]).map(compact))
+/** 재료 이름·별칭 → 재료 id. 별칭이 재료 하나만 가리킬 때만 쓴다('라면'처럼 여럿이면 null) */
+const KNOWN_WORDS = new Map<string, string | null>()
+for (const m of MATERIAL_LIST) {
+  for (const w of [m.name, ...m.aliases].map(compact)) {
+    const prev = KNOWN_WORDS.get(w)
+    KNOWN_WORDS.set(w, prev === undefined || prev === m.id ? m.id : null)
+  }
+}
+/** 같은 재료의 다른 이름 → 대표 표기 */
+const CANONICAL = new Map(MISSING_GROUPS.flatMap(([head, ...rest]) => [head!, ...rest].map((n) => [compact(n), head!] as const)))
+const DROPPED = new Set(NOT_INGREDIENTS.map(compact))
+const COVERED_IDS = new Map(Object.entries(COVERED).map(([n, id]) => [compact(n), id]))
 
-/** missing_ingredients를 다듬는다: 짧은 한글 이름만, 중복·목록에 있는 재료·사실 정보처럼 보이는 것은 버린다 */
-export function cleanMissing(v: unknown): string[] {
-  if (!Array.isArray(v)) return []
-  const out: string[] = []
-  for (const item of v) {
+/** 준비 중 재료 이름의 대표 표기 (동태 → 명태) */
+export const canonicalMissing = (name: string) => CANONICAL.get(compact(name)) ?? name
+
+/**
+ * AI가 고른 재료 id와 missing_ingredients를 정리한다. 사전 만들기·실시간 분해·사전 다시 정리(--refresh)가 함께 쓴다.
+ *   - missing: 짧은 한글 이름만. 같은 재료의 다른 이름은 대표 표기로(동태 → 명태), 재료가 아닌 것은 버린다(비타민)
+ *   - missing인데 이미 있는 재료면(찹쌀, 사과처럼 나중에 추가된 재료) 그 재료 id로 옮긴다
+ *   - 주재료가 준비 중인데 포장재만 남으면 재료를 비운다 (journeyMaterialIds)
+ */
+export function resolveMaterials(rawIds: unknown, rawMissing: unknown): { materialIds: string[]; missing: string[] } {
+  const ids = sanitizeMaterialIds(rawIds)
+  const missing: string[] = []
+  for (const item of Array.isArray(rawMissing) ? rawMissing : []) {
     const name = clean(item, 12)
     if (!name || !/^[가-힣][가-힣 ]*$/.test(name) || looksFactual(name)) continue
-    if (KNOWN_WORDS.has(compact(name)) || out.some((o) => compact(o) === compact(name))) continue
-    out.push(name)
-    if (out.length >= MAX_MISSING) break
+    const key = compact(name)
+    if (DROPPED.has(key)) continue
+    const known = COVERED_IDS.get(key) ?? KNOWN_WORDS.get(key)
+    if (known !== undefined) {
+      if (known && !ids.includes(known)) ids.push(known)
+      continue
+    }
+    const canonical = canonicalMissing(name)
+    if (!missing.includes(canonical) && missing.length < MAX_MISSING) missing.push(canonical)
   }
-  return out
+  return { materialIds: journeyMaterialIds(ids.slice(0, MAX_MATERIALS), missing), missing }
 }
 
 /**
@@ -136,8 +161,7 @@ export function parseToolResponse(json: any): DecomposeResult {
     : null
   const input = block?.input
   if (!input) return { ok: false, message: '물건을 알아보지 못했어요. 다시 시도해 주세요.' }
-  const ids = sanitizeMaterialIds(input.material_ids)
-  const missing = cleanMissing(input.missing_ingredients)
+  const { materialIds: ids, missing } = resolveMaterials(input.material_ids, input.missing_ingredients)
   if (!input.recognized || (!ids.length && !missing.length)) {
     return { ok: false, message: '이건 여정으로 잇기 어려워요. 오늘 손에 닿은 다른 걸 적어 볼까요?' }
   }

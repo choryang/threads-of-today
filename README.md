@@ -53,6 +53,11 @@ npm run cache:export   # AI 캐시를 조회 수 순으로 data/review/cache.csv
 주재료가 재료 목록에 없으면 AI는 다른 작물·과일·차로 대신하지 않고(망고주스 → 바나나 ✕), 실제로 들어가는 재료만 고른 뒤
 목록에 없는 주재료 이름을 `missing_ingredients`로 따로 보고한다. 화면에는 "망고의 여정은 아직 준비 중이에요"를 보여 주고,
 나머지 재료가 있으면 그 재료로만 여정을 떠난다. 실제로 들어가는 재료가 하나도 없으면(둥굴레차) 여정을 떠날 수 없다.
+주재료가 준비 중인데 포장재(plastic, pulp, glass)만 남아도 여정을 떠날 수 없다(보리차가 페트병 여정만 떠나지 않게). 생수처럼 준비 중 재료가 없는 포장재 물건은 그대로 떠난다.
+
+준비 중 재료 이름은 `shared/data/missing-names.ts` 규칙으로 정리한다(`resolveMaterials`).
+같은 재료의 다른 이름은 대표 표기로 합치고(동태·황태 → 명태, 곶감 → 감), 재료가 아닌 것은 빼고(비타민, 향료),
+이미 있는 재료의 한 형태는 그 재료로 옮긴다(찹쌀 → 쌀, 홍차 찻잎 → 녹차). 규칙을 바꾸면 `npm run dict:build -- --refresh`로 사전에 다시 적용한다.
 
 - 사전·캐시·Claude 어느 경로로 나왔든, 사용자에게 "준비 중"을 보여 줄 때마다 Upstash 정렬 집합 `mdp:stats:missing`에 재료 이름별로 1씩 센다.
 - `npm run cache:export`가 이 집계를 `data/review/missing-live.csv`로 뽑는다.
@@ -205,7 +210,7 @@ tests/            node:test 단위 테스트
   그 전까지는 화면이나 홍보 문구에서 "많이 들어오는 나라 순" 같은 표현을 쓰지 않는다.
 - 브라질 커피 카드(`br-coffee-farmer`, `br-santos-coffee`)의 근거는 `shared/data/people.ts` 주석의 Conab·Cecafé 인용 기사다. 원 자료(Conab 작황 조사, Cecafé 월간 보고서)로 한 번 더 확인하면 좋다.
 - 물건 사전(`shared/data/dictionary.json`)은 AI가 만든 결과다. `data/review/dictionary.csv`를 훑어보고 재료가 어색한 항목은 고치거나 지운다.
-  새 재료를 추가하면, 그 재료가 `missing`에 들어 있는 사전 항목을 지우고 사전 만들기를 다시 돌려야 새 재료로 분해된다.
+  새 재료를 추가하면 `npm run dict:build -- --redo-missing 팥,감자`로 그 재료가 `missing`에 들어 있는 항목만 다시 만든다.
 - Upstash를 연결하지 않으면 AI 요청 제한이 서버 인스턴스마다 따로 세어져 느슨해지고, 다른 기기에서 이어 하기가 꺼진다.
 
 ## Upstash 연결 후 확인할 것

@@ -1,5 +1,5 @@
 import type { Decomposed } from '../../shared/logic'
-import { seoulDateKey as dateKey } from '../../shared/logic'
+import { journeyMaterialIds, seoulDateKey as dateKey } from '../../shared/logic'
 import { normalize } from '../../shared/match'
 import { hashIp, incrementCounter, incrementScores, kv } from './kv'
 
@@ -65,7 +65,7 @@ export async function countMissing(missing: string[] | undefined): Promise<void>
 
 export const toDecomposed = ({ name, materialIds, twist, voice, missing }: Decomposed): Decomposed => ({
   name,
-  materialIds,
+  materialIds: journeyMaterialIds(materialIds, missing),
   twist,
   voice,
   ...(missing?.length ? { missing } : {}),
