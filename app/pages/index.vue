@@ -3,9 +3,11 @@ import { computed, nextTick, ref } from 'vue'
 import { MATERIALS, PRODUCTS } from '../../shared/data/materials'
 import type { Decomposed } from '../../shared/logic'
 import type { Journey, JourneySource } from '../composables/useGame'
-import { journeySchedule, locationAt, remainingMs } from '../../shared/timing'
-import { remainingLabel } from '../utils/labels'
+import { PEOPLE } from '../../shared/data/people'
+import { PLACES } from '../../shared/data/places'
+import { buildTimeline } from '../../shared/journey'
 import { shrinkImage } from '../utils/image'
+import { matchLocal } from '../utils/local-match'
 import { productIconSvg } from '../utils/product-icon'
 import { renderVoice } from '../../shared/voice'
 
@@ -36,13 +38,24 @@ const trips = computed(() => {
   return [...earlier, ...game.today.value.journeys]
 })
 
-/** 여정마다 지금 위치와 남은 시간 */
+/** 여정마다 지금 위치(나라 또는 '바다 위')와 몇 번째 장면인지 */
 function tripStatus(j: Journey): { where: string; left: string; state: 'arrived' | 'quiz' | 'moving' } {
   if (j.done) return { where: '', left: '도착했어요', state: 'arrived' }
-  const clock = game.clockOf(j, game.now.value)
-  if (clock.arrived) return { where: '', left: '도착했어요', state: 'arrived' }
-  if (clock.waitingQuiz) return { where: '', left: '퀴즈가 기다리고 있어요', state: 'quiz' }
-  return { where: locationAt(journeySchedule(j).timeline, clock.index), left: remainingLabel(remainingMs(clock, game.speed.value)), state: 'moving' }
+  const timeline = buildTimeline(j.materialIds, j.id, j.name)
+  const item = timeline[j.step]
+  if (item?.type === 'quiz' && j.quiz[item.materialId] === undefined) return { where: '', left: '퀴즈가 기다리고 있어요', state: 'quiz' }
+  return { where: whereAt(timeline, j.step), left: `${j.step + 1}/${timeline.length} · 이어 보기`, state: 'moving' }
+}
+
+/** index 칸에서 물건이 있는 곳. 이야기·퀴즈 칸은 바로 앞 사람의 자리 */
+function whereAt(timeline: ReturnType<typeof buildTimeline>, index: number): string {
+  for (let i = Math.min(index, timeline.length - 1); i >= 0; i--) {
+    const t = timeline[i]!
+    if (t.type !== 'stage' && t.type !== 'hidden') continue
+    const place = PLACES[PEOPLE[t.personId]?.placeId ?? '']
+    return place?.continent === 'sea' ? '바다 위' : place?.country ?? ''
+  }
+  return ''
 }
 
 /** "망고·딸기의 여정은 아직 준비 중이에요" */
@@ -81,6 +94,15 @@ function submitText() {
   if (!value || loading.value) return
   if (photoUrl.value) URL.revokeObjectURL(photoUrl.value)
   photoUrl.value = ''
+  // 대표 물건·앱용 사전에서 찾으면 서버를 거치지 않고 바로 보여 준다. 못 찾을 때만 서버(캐시 → AI)로
+  const local = matchLocal(value)
+  if (local) {
+    error.value = ''
+    preview.value = { name: local.name, materialIds: local.materialIds, twist: local.twist, voice: local.voice, missing: local.missing, source: 'text' }
+    // 준비 중 재료 집계는 서버가 한다. 결과를 기다리지 않는다 (서버도 같은 사전에서 찾아 AI를 부르지 않는다)
+    if (local.missing?.length) $fetch('/api/decompose', { method: 'POST', body: { text: value } }).catch(() => {})
+    return
+  }
   ask({ text: value }, 'text')
 }
 
@@ -154,7 +176,6 @@ function start() {
     <section v-if="trips.length" class="trips" aria-labelledby="trips-title">
       <div class="trips-head">
         <h2 id="trips-title" class="trips-title">오늘 떠난 여정</h2>
-        <SpeedToggle />
       </div>
       <NuxtLink v-for="j in trips" :key="j.id" :to="`/journey/${j.id}`" class="trip" :class="`trip-${tripStatus(j).state}`">
         <span class="trip-name">{{ j.name }}</span>
@@ -197,7 +218,10 @@ function start() {
           <input id="item" ref="textEl" v-model="text" maxlength="40" placeholder="물건, 음식, 고양이, 월요일… 뭐든지" autocomplete="off">
           <button class="btn btn-primary" :disabled="!text.trim() || loading">분해하기</button>
         </form>
-        <p v-if="loading" class="muted small" role="status">{{ photoUrl ? '사진 속 물건을 알아보는 중…' : '재료로 나누는 중…' }}</p>
+        <p v-if="loading" class="muted small thinking" role="status">
+          <span class="dots" aria-hidden="true"><span /><span /><span /></span>
+          {{ photoUrl ? '사진 속 물건을 알아보는 중…' : '재료를 살펴보는 중…' }}
+        </p>
         <p v-if="error" class="error" role="alert">{{ error }}</p>
       </div>
     </template>
@@ -247,7 +271,7 @@ function start() {
   min-height: 200px; padding: 28px 20px;
   border-radius: 24px; border: 0; background: var(--accent); color: var(--accent-ink);
   box-shadow: 0 10px 30px rgba(242, 193, 78, 0.25);
-  animation: pop-in 0.4s ease-out;
+  animation: pop-in var(--motion-enter) var(--motion-ease);
 }
 .first-go:active { transform: scale(0.97); }
 .first-icon { padding: 10px; border-radius: 999px; background: var(--paper); }
@@ -277,7 +301,7 @@ function start() {
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
   min-height: 96px; padding: 10px 6px;
   border-radius: 18px; border: 1px solid var(--line); background: var(--surface);
-  transition: transform 0.12s ease, background 0.12s ease;
+  transition: transform var(--motion-press) ease, background var(--motion-press) ease;
 }
 .tile:active { transform: scale(0.96); background: var(--surface-2); }
 .tile-icon {
@@ -300,12 +324,18 @@ function start() {
   text-decoration: underline; text-underline-offset: 3px; cursor: pointer;
 }
 
-.text-form { display: flex; gap: 8px; animation: rise 0.2s ease-out; }
+.text-form { display: flex; gap: 8px; animation: rise var(--motion-enter) var(--motion-ease); }
 .text-form input {
   flex: 1; min-width: 0; min-height: 52px; padding: 0 14px;
   border-radius: 14px; border: 1px solid var(--line); background: var(--surface); font-size: 16px;
 }
 .text-form input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+.thinking { display: flex; align-items: center; justify-content: center; gap: 8px; }
+.dots { display: inline-flex; gap: 4px; }
+.dots span { width: 6px; height: 6px; border-radius: 999px; background: var(--accent); animation: bob var(--motion-bob) ease-in-out infinite; }
+.dots span:nth-child(2) { animation-delay: calc(var(--motion-bob) / -3); }
+.dots span:nth-child(3) { animation-delay: calc(var(--motion-bob) / -1.5); }
 
 .error { margin: 0; color: #ffb4a6; font-size: 14px; text-align: center; }
 .small { margin: 0; font-size: 13px; text-align: center; }
@@ -322,7 +352,7 @@ function start() {
   display: flex; flex-direction: column; gap: 10px;
   padding: 20px 20px calc(20px + env(safe-area-inset-bottom));
   border-radius: 24px 24px 0 0; background: var(--surface); border-top: 1px solid var(--accent);
-  animation: rise 0.22s ease-out;
+  animation: rise var(--motion-enter) var(--motion-ease);
 }
 .sheet .small { text-align: left; }
 .close {

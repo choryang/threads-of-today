@@ -38,12 +38,3 @@ export function badgeOf(person: { rarity: Rarity; kind: string }): string {
 export function howToMeet(person: { rarity: Rarity; kind: string }): string {
   return person.kind === 'hidden' ? HIDDEN_HOW : RARITY_HOW[person.rarity]
 }
-
-/** 도착까지 남은 실제 시간. "약 25분", "약 1시간 10분", 1분 안쪽이면 "곧" */
-export function remainingLabel(ms: number): string {
-  const min = Math.ceil(ms / 60_000)
-  if (ms < 60_000) return '곧 도착해요'
-  if (min < 60) return `도착까지 약 ${min}분`
-  const h = Math.floor(min / 60)
-  return `도착까지 약 ${h}시간${min % 60 ? ` ${min % 60}분` : ''}`
-}

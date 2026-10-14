@@ -4,8 +4,7 @@
  * 병합 규칙
  *  - 카드·물건·고마움: 합집합. 같은 id면 먼저 얻은(전한) 날을 남긴다.
  *  - 날짜별 기록(days, mystery): 합친 뒤 오늘 기준 최근 30일만 남긴다.
- *    같은 날의 여정은 id로 짝짓고, 지금 시각에 더 많이 진행된 쪽(여정 시계 기준)을 남긴다.
- *  - 배속(speed): updatedAt이 더 최근인 쪽. 진 쪽 기기의 여정은 이긴 배속으로 바뀐 시각에 기준점을 새로 찍은 뒤 비교한다.
+ *    같은 날의 여정은 id로 짝짓고, 더 많이 진행한 쪽을 남긴다.
  *  - 연속 기록: 마지막 날이 더 최근인 쪽. 같으면 큰 값.
  *  - 닉네임: updatedAt이 더 최근인 쪽.
  *  - 재료별 누적(threads): 같은 재료는 떠난 횟수가 큰 쪽, 처음 떠난 날은 이른 쪽.
@@ -14,7 +13,6 @@
 import { MATERIALS, SETS } from './data/materials'
 import { PEOPLE } from './data/people'
 import { normalizeNickname } from './nickname'
-import { DEFAULT_SPEED, isSpeed, journeyClock, reanchor, type Speed } from './timing'
 
 export type JourneySource = 'text' | 'photo' | 'pick' | 'mystery'
 
@@ -32,10 +30,6 @@ export interface Journey {
   quiz: Record<string, number>
   newCards: string[]
   done: boolean
-  /** 여정 시계의 기준 시각(ms). 없으면 이 기능 전에 시작한 여정 (shared/timing.ts) */
-  anchorAt?: number
-  /** 기준 시각까지 흐른 게임 날수 */
-  anchorDays?: number
   /** 지난 여정의 '다음 여정 추천'을 따라 떠났으면, 그 예고에서 말을 건 사람 id (shared/next.ts) */
   teaser?: string
 }
@@ -66,12 +60,6 @@ export interface ThreadStat {
   first: string
 }
 
-export interface SpeedSetting {
-  value: Speed
-  /** 마지막으로 바꾼 시각(ms). 병합할 때 더 최근 것을 남긴다 */
-  updatedAt: number
-}
-
 export interface Save {
   v: 1
   cards: Record<string, string>
@@ -87,8 +75,6 @@ export interface Save {
   /** 재료 id → 누적 기록. 날짜별 기록(days)은 30일만 남아서 실타래는 이걸로 그린다 */
   threads: Record<string, ThreadStat>
   nickname?: Nickname
-  /** 여정 배속. 없으면 1배 */
-  speed?: SpeedSetting
 }
 
 export const KEEP_DAYS = 30
@@ -125,32 +111,22 @@ function mergeRecordOfDates(a: Record<string, string>, b: Record<string, string>
   return out
 }
 
-/** 마친 여정 > 지금 게임 날수 > 답한 퀴즈 수 > 펼친 칸 수 */
-function progressOf(j: Journey, now: number, speed: Speed): number[] {
-  return [j.done ? 1 : 0, journeyClock(j, now, speed).day, Object.keys(j.quiz).length, j.step]
-}
+const progressOf = (j: Journey) => (j.done ? 1_000_000 : 0) + j.step * 100 + Object.keys(j.quiz).length
 
-function moreProgressed(a: Journey, b: Journey, now: number, speed: Speed): boolean {
-  const pa = progressOf(a, now, speed)
-  const pb = progressOf(b, now, speed)
-  for (let i = 0; i < pa.length; i++) if (pa[i] !== pb[i]) return pa[i]! > pb[i]!
-  return true
-}
-
-function mergeJourney(a: Journey, b: Journey, now: number, speed: Speed): Journey {
-  const [main, other] = moreProgressed(a, b, now, speed) ? [a, b] : [b, a]
+function mergeJourney(a: Journey, b: Journey): Journey {
+  const [main, other] = progressOf(a) >= progressOf(b) ? [a, b] : [b, a]
   const teaser = main.teaser ?? other.teaser
   return { ...main, quiz: { ...other.quiz, ...main.quiz }, newCards: union(main.newCards, other.newCards), ...(teaser ? { teaser } : {}) }
 }
 
-function mergeDay(a: DayLog | undefined, b: DayLog | undefined, now: number, speed: Speed): DayLog {
+function mergeDay(a: DayLog | undefined, b: DayLog | undefined): DayLog {
   if (!a) return b!
   if (!b) return a
   const journeys = [...a.journeys]
   for (const j of b.journeys) {
     const i = journeys.findIndex((x) => x.id === j.id)
     if (i < 0) journeys.push(j)
-    else journeys[i] = mergeJourney(journeys[i]!, j, now, speed)
+    else journeys[i] = mergeJourney(journeys[i]!, j)
   }
   return { journeys, linkCards: union(a.linkCards, b.linkCards) }
 }
@@ -170,32 +146,9 @@ function pickRecent<T>(records: Record<string, T>, todayKey: string): Record<str
   return Object.fromEntries(Object.entries(records).filter(([k]) => isRecent(k, todayKey)))
 }
 
-/** 배속에서 진 쪽의 여정: 이긴 배속으로 바뀐 시각에, 진 쪽 배속으로 기준점을 새로 찍은 복사본 */
-function reanchoredDays(save: Save, at: number, speed: Speed): Record<string, DayLog> {
+export function mergeSaves(a: Save, b: Save, todayKey: string): Save {
   const days: Record<string, DayLog> = {}
-  for (const [k, day] of Object.entries(save.days)) {
-    days[k] = {
-      ...day,
-      journeys: day.journeys.map((j) => {
-        const copy = { ...j }
-        reanchor(copy, at, speed)
-        return copy
-      }),
-    }
-  }
-  return days
-}
-
-/** now: 같은 여정의 진행을 비교할 시각 (여정 시계 기준) */
-export function mergeSaves(a: Save, b: Save, todayKey: string, now = Date.now()): Save {
-  const speedA = a.speed ?? { value: DEFAULT_SPEED, updatedAt: 0 }
-  const speedB = b.speed ?? { value: DEFAULT_SPEED, updatedAt: 0 }
-  const speedWin = speedA.updatedAt >= speedB.updatedAt ? speedA : speedB
-  const daysA = speedWin === speedA || speedA.value === speedWin.value ? a.days : reanchoredDays(a, speedWin.updatedAt, speedA.value)
-  const daysB = speedWin === speedB || speedB.value === speedWin.value ? b.days : reanchoredDays(b, speedWin.updatedAt, speedB.value)
-
-  const days: Record<string, DayLog> = {}
-  for (const k of new Set([...Object.keys(daysA), ...Object.keys(daysB)])) days[k] = mergeDay(daysA[k], daysB[k], now, speedWin.value)
+  for (const k of new Set([...Object.keys(a.days), ...Object.keys(b.days)])) days[k] = mergeDay(a.days[k], b.days[k])
   const mystery: Record<string, MysteryLog> = {}
   for (const k of new Set([...Object.keys(a.mystery), ...Object.keys(b.mystery)])) mystery[k] = mergeMystery(a.mystery[k], b.mystery[k])
 
@@ -219,7 +172,6 @@ export function mergeSaves(a: Save, b: Save, todayKey: string, now = Date.now())
     mystery: pickRecent(mystery, todayKey),
     streak,
     ...(nickname ? { nickname: { ...nickname } } : {}),
-    ...(a.speed || b.speed ? { speed: { ...speedWin } } : {}),
   }
 }
 
@@ -245,9 +197,6 @@ function sanitizeJourney(v: unknown): Journey | null {
     quiz,
     newCards: strList(v.newCards, 60).filter((id) => PEOPLE[id]),
     done: v.done === true,
-    ...(Number.isFinite(v.anchorAt) && v.anchorAt >= 0 && Number.isFinite(v.anchorDays) && v.anchorDays >= 0 && v.anchorDays <= 1000
-      ? { anchorAt: v.anchorAt as number, anchorDays: v.anchorDays as number }
-      : {}),
     ...(typeof v.teaser === 'string' && PEOPLE[v.teaser] ? { teaser: v.teaser } : {}),
   }
 }
@@ -300,9 +249,6 @@ export function sanitizeSave(raw: unknown, todayKey: string): Save {
     const value = normalizeNickname(raw.nickname.value)
     const updatedAt = Number(raw.nickname.updatedAt)
     if (value && Number.isFinite(updatedAt)) s.nickname = { value, updatedAt }
-  }
-  if (isObj(raw.speed) && isSpeed(raw.speed.value) && Number.isFinite(raw.speed.updatedAt)) {
-    s.speed = { value: raw.speed.value, updatedAt: raw.speed.updatedAt }
   }
   return s
 }

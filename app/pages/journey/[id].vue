@@ -1,28 +1,26 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, shallowRef, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, shallowRef, watch } from 'vue'
 import { MATERIALS, PRODUCTS } from '../../../shared/data/materials'
 import { PEOPLE } from '../../../shared/data/people'
 import { PLACES } from '../../../shared/data/places'
 import { EVENTS } from '../../../shared/data/journey-extras'
-import { quizFor } from '../../../shared/journey'
+import { buildTimeline, quizFor } from '../../../shared/journey'
 import { dayStats, withJosa } from '../../../shared/logic'
 import { lineupOf, linkPersonOf, pickTeaser } from '../../../shared/next'
 import type { Product } from '../../../shared/types'
-import { journeySchedule, remainingMs } from '../../../shared/timing'
 import { renderVoice } from '../../../shared/voice'
-import { remainingLabel } from '../../utils/labels'
+import { characterSvg } from '../../utils/character'
+import { MOTION, autoDwellMs, reducedMotion } from '../../utils/motion'
 import { productIconSvg } from '../../utils/product-icon'
 
 const route = useRoute()
 const router = useRouter()
 const game = useGame()
 const journey = computed(() => game.findJourney(String(route.params.id)))
-const timeline = computed(() => (journey.value ? journeySchedule(journey.value).timeline : []))
+const timeline = computed(() => (journey.value ? buildTimeline(journey.value.materialIds, journey.value.id, journey.value.name) : []))
 const current = computed(() => (journey.value ? timeline.value[journey.value.step] : undefined))
 const voice = computed(() => renderVoice(journey.value?.voice, game.nickname.value))
-const clock = computed(() => (journey.value ? game.clockOf(journey.value, game.now.value) : undefined))
-const dayLabel = computed(() => `D+${Math.floor(clock.value?.day ?? 0)}`)
-const timeLeft = computed(() => (clock.value ? remainingLabel(remainingMs(clock.value, game.speed.value)) : ''))
+const isLast = computed(() => !!journey.value && journey.value.step >= timeline.value.length - 1)
 
 /** 방금 얻은 카드 알림 */
 const toast = shallowRef<string[]>([])
@@ -41,7 +39,7 @@ function metAgain(cardId: string) {
   return `${withJosa(p?.name ?? jobOf(linkPersonOf(cardId) ?? ''), '을', '를')} 또 만났어요!`
 }
 
-const progressPct = computed(() => (clock.value && clock.value.total ? (clock.value.day / clock.value.total) * 100 : 0))
+const progressPct = computed(() => (journey.value && timeline.value.length ? ((journey.value.step + 1) / timeline.value.length) * 100 : 0))
 
 const materialIndex = computed(() => {
   const mid = current.value?.materialId
@@ -76,22 +74,16 @@ const routeStops = computed(() => {
   })
 })
 
-/** 지금 칸이 답을 기다리는 퀴즈 */
+/** 지금 칸의 퀴즈 (재료마다 여러 개 중 이번 여정에 나온 하나) */
 const quiz = computed(() =>
-  journey.value && current.value?.type === 'quiz' && clock.value?.waitingQuiz
-    ? quizFor(journey.value.materialIds, journey.value.id, current.value.materialId)
-    : undefined,
+  journey.value && current.value?.type === 'quiz' ? quizFor(journey.value.materialIds, journey.value.id, current.value.materialId) : undefined,
 )
+const quizChoice = computed(() => (journey.value && current.value?.type === 'quiz' ? journey.value.quiz[current.value.materialId] : undefined))
 const eventText = computed(() => {
   const item = current.value
   return item?.type === 'event' ? EVENTS.find((e) => e.id === item.eventId)?.text : ''
 })
 
-/** 방금 답한 퀴즈. 시간은 바로 다시 흐르고, 결과는 닫을 때까지 장면 위에 남긴다 */
-const answered = ref<{ materialId: string; choice: number } | null>(null)
-const answeredQuiz = computed(() =>
-  journey.value && answered.value ? quizFor(journey.value.materialIds, journey.value.id, answered.value.materialId) : undefined,
-)
 
 /** 퀴즈를 맞혀서 얻은 보상 카드 */
 const quizRewards = computed(() => {
@@ -112,37 +104,126 @@ function showToast(ids: string[]) {
   toast.value = ids
   setTimeout(() => {
     if (toast.value === ids) toast.value = []
-  }, 2600)
+  }, MOTION.toastMs)
 }
+
+/** 다음 칸으로. 마지막 칸이면 여정을 마친다. 애니메이션 중에 눌러도 바로 넘어간다 */
+function next() {
+  const j = journey.value
+  if (!j || j.done) return
+  if (current.value?.type === 'quiz' && quizChoice.value === undefined) return
+  clearTimers()
+  if (isLast.value) {
+    game.finishJourney(j)
+    window.scrollTo({ top: 0 })
+    return
+  }
+  showToast(game.revealNext(j))
+  window.scrollTo({ top: 0 })
+}
+
+const nextLabel = computed(() => {
+  if (isLast.value) return '여정 마치기'
+  const after = timeline.value[(journey.value?.step ?? 0) + 1]
+  return after?.type === 'stage' || after?.type === 'hidden' ? '다음 사람 만나기' : '다음'
+})
 
 function answer(i: number) {
   if (!journey.value || current.value?.type !== 'quiz') return
-  const materialId = current.value.materialId
-  const { gained } = game.answerQuiz(journey.value, materialId, i)
-  answered.value = { materialId, choice: i }
-  game.advanceJourney(journey.value)
+  const { gained } = game.answerQuiz(journey.value, current.value.materialId, i)
   showToast(gained)
 }
 
-/** "자리를 비운 사이" 요약. 화면에 들어올 때 한 번 정한다 */
-const away = ref<{ days: number; people: string[] } | null>(null)
+// ── 고마워요: 손 흔드는 모습을 MOTION.waveMs 보여 준 뒤 다음 카드로 ──
+let waveTimer: ReturnType<typeof setTimeout> | undefined
+const currentPerson = computed(() => (current.value?.type === 'stage' || current.value?.type === 'hidden' ? current.value.personId : ''))
+watch(
+  () => (currentPerson.value ? game.thanked(currentPerson.value) : false),
+  (now, before) => {
+    if (!now || before) return
+    clearTimeout(waveTimer)
+    const step = journey.value?.step
+    waveTimer = setTimeout(() => {
+      if (journey.value?.step === step) next()
+    }, reducedMotion() ? 0 : MOTION.waveMs)
+  },
+)
 
-onMounted(() => {
+// ── 다음 사람 미리 불러오기: 캐릭터 SVG를 미리 만들어 두고, 화면 밖에 한 번 그려 둔다 ──
+const nextPerson = computed(() => {
   const j = journey.value
-  if (!j) return
-  game.advanceJourney(j)
-  const summary = game.awaySummary(j)
-  if (summary && (summary.people.length || summary.days >= 1)) away.value = summary
-  game.markSeen(j)
+  if (!j) return ''
+  const t = timeline.value.slice(j.step + 1).find((x) => x.type === 'stage' || x.type === 'hidden')
+  return t?.type === 'stage' || t?.type === 'hidden' ? t.personId : ''
 })
+watch(nextPerson, (id) => {
+  const p = id ? PEOPLE[id] : undefined
+  if (!p) return
+  characterSvg(p)
+  characterSvg(p, { wave: true })
+}, { immediate: true })
 
-// 화면을 켜 둔 동안: 본 칸을 기록하고, 새로 얻은 카드를 알린다
-watch(() => [journey.value?.step, Math.floor(clock.value?.day ?? 0)], () => {
-  if (journey.value) game.markSeen(journey.value)
-})
-watch(() => journey.value?.newCards.length ?? 0, (n, old) => {
-  if (journey.value && n > old && !away.value) showToast(journey.value.newCards.slice(old))
-})
+// ── 이야기 화면: 글자 수에 맞춰 3~6초 머문 뒤 저절로 넘어간다. 누르고 있으면 멈추고, 한 번 누르면 바로 넘어간다 ──
+let storyTimer: ReturnType<typeof setTimeout> | undefined
+let storyStartedAt = 0
+const storyLeft = ref(0)
+const storyTotal = ref(0)
+const storyPaused = ref(false)
+
+function runStory(ms: number) {
+  clearTimeout(storyTimer)
+  storyLeft.value = ms
+  storyStartedAt = Date.now()
+  storyPaused.value = false
+  storyTimer = setTimeout(next, ms)
+}
+function pauseStory() {
+  if (current.value?.type !== 'event' || storyPaused.value) return
+  clearTimeout(storyTimer)
+  storyLeft.value = Math.max(0, storyLeft.value - (Date.now() - storyStartedAt))
+  storyPaused.value = true
+}
+watch(
+  () => (current.value?.type === 'event' ? journey.value?.step : undefined),
+  (step) => {
+    clearTimeout(storyTimer)
+    if (step === undefined) return
+    storyTotal.value = autoDwellMs(eventText.value ?? '')
+    runStory(storyTotal.value)
+  },
+  { immediate: true },
+)
+
+// ── 밀어서 넘기기 + 이야기 화면 누르기 ──
+const SWIPE_PX = 60
+const TAP_MS = 250
+let press: { x: number; y: number; at: number } | null = null
+
+function onPointerDown(e: PointerEvent) {
+  press = { x: e.clientX, y: e.clientY, at: Date.now() }
+  pauseStory()
+}
+function onPointerUp(e: PointerEvent) {
+  if (!press) return
+  const dx = e.clientX - press.x
+  const dy = e.clientY - press.y
+  const held = Date.now() - press.at
+  press = null
+  if (dx < -SWIPE_PX && Math.abs(dy) < Math.abs(dx)) return next()
+  if (current.value?.type !== 'event') return
+  if (held < TAP_MS) return next()
+  runStory(storyLeft.value)
+}
+function onPointerCancel() {
+  press = null
+  if (current.value?.type === 'event' && storyPaused.value) runStory(storyLeft.value)
+}
+
+function clearTimers() {
+  clearTimeout(waveTimer)
+  clearTimeout(storyTimer)
+}
+onBeforeUnmount(clearTimers)
 
 const summary = computed(() => (journey.value ? dayStats([journey.value]) : { people: [], countries: [] }))
 const metPeople = computed(() => summary.value.people)
@@ -189,25 +270,6 @@ function followTeaser(p: Product) {
       <p>여정을 찾을 수 없어요.</p>
       <NuxtLink to="/" class="btn btn-primary">처음으로</NuxtLink>
     </div>
-
-    <!-- 자리를 비운 사이 -->
-    <section v-else-if="away" class="away panel" aria-live="polite">
-      <p class="mono kicker gold">WHILE YOU WERE AWAY</p>
-      <p class="away-title">
-        <template v-if="away.days >= 1">자리를 비운 사이 <span class="mono">{{ away.days }}</span>일이 흘렀어요.</template>
-        <template v-else>자리를 비운 사이 여정이 조금 나아갔어요.</template>
-        <template v-if="away.people.length"><br>새로 <span class="mono">{{ away.people.length }}</span>명을 만났어요.</template>
-      </p>
-      <div v-if="away.people.length" class="away-faces">
-        <div v-for="(pid, i) in away.people" :key="pid + i" class="away-face" :style="{ animationDelay: `${i * 0.08}s` }">
-          <Character :person-id="pid" :size="56" />
-          <span class="small">{{ jobOf(pid) }}</span>
-        </div>
-      </div>
-      <p v-if="journey.done" class="small gold">그리고 여정이 끝나 물건이 도착했어요.</p>
-      <p v-else-if="clock?.waitingQuiz" class="small gold">퀴즈가 기다리고 있어요.</p>
-      <button class="btn btn-primary btn-block" @click="away = null">{{ journey.done ? '도착한 모습 보기' : '여정 이어 보기' }}</button>
-    </section>
 
     <!-- 도착 -->
     <template v-else-if="journey.done">
@@ -291,13 +353,8 @@ function followTeaser(p: Product) {
           <span class="name">{{ journey.name }}</span>
           <span class="mono muted small">재료 {{ materialIndex + 1 }}/{{ journey.materialIds.length }} · {{ material?.name }}</span>
         </div>
-        <SpeedToggle />
+        <span class="mono muted small">{{ journey.step + 1 }}/{{ timeline.length }}</span>
       </header>
-
-      <div class="clock">
-        <span class="mono day">{{ dayLabel }}</span>
-        <span class="muted small">{{ clock?.waitingQuiz ? '퀴즈에 답하면 다시 시간이 흘러요' : timeLeft }}</span>
-      </div>
 
       <div class="progress" aria-hidden="true">
         <span :style="{ width: `${progressPct}%` }" />
@@ -308,7 +365,7 @@ function followTeaser(p: Product) {
           <Character :person-id="pid" :size="36" />
           <span class="sr-only">{{ jobOf(pid) }}</span>
         </li>
-        <li v-if="hasNext" class="face next" aria-label="다음 사람">?</li>
+        <li v-if="hasNext" class="face next-face" aria-label="다음 사람">?</li>
       </ol>
 
       <ol class="route" aria-label="경유지">
@@ -318,42 +375,73 @@ function followTeaser(p: Product) {
         </li>
       </ol>
 
-      <section v-if="answeredQuiz && answered" class="quiz-result panel">
-        <p class="mono kicker gold">{{ answered.choice === answeredQuiz.answer ? '정답이에요' : '아쉬워요' }}</p>
-        <p class="small">정답: {{ answeredQuiz.options[answeredQuiz.answer] }}</p>
-        <p class="explain-text">{{ answeredQuiz.explain }}</p>
-        <p v-if="answered.choice !== answeredQuiz.answer && journey.newCards.includes(answeredQuiz.rewardId)" class="small gold">그래도 첫 여정 선물로 이 사람을 만나게 해 드릴게요.</p>
-        <div v-if="answered.choice === answeredQuiz.answer || journey.newCards.includes(answeredQuiz.rewardId)" class="reward">
-          <MiniCard :person-id="answeredQuiz.rewardId" :is-new="journey.newCards.includes(answeredQuiz.rewardId)" />
-        </div>
-        <button class="btn btn-block" @click="answered = null">확인</button>
-      </section>
-
-      <Transition name="scene" mode="out-in">
-        <section v-if="current.type === 'stage'" :key="`s${journey.step}`" class="stage">
+      <!-- 칸마다 key를 바꿔 등장 애니메이션만 쓴다. 나가는 애니메이션을 기다리지 않아 바로 넘어간다 -->
+      <div
+        :key="journey.step"
+        class="scene"
+        @pointerdown="onPointerDown"
+        @pointerup="onPointerUp"
+        @pointercancel="onPointerCancel"
+      >
+        <section v-if="current.type === 'stage'" class="stage">
           <PersonCard :person-id="current.personId" :is-new="journey.newCards.includes(current.personId)" />
         </section>
 
-        <section v-else-if="current.type === 'hidden'" :key="`h${journey.step}`" class="stage hidden-meet">
+        <section v-else-if="current.type === 'hidden'" class="stage hidden-meet">
           <p class="mono kicker gold">숨은 만남</p>
           <PersonCard :person-id="current.personId" :is-new="journey.newCards.includes(current.personId)" />
         </section>
 
-        <section v-else-if="current.type === 'event'" :key="`e${journey.step}`" class="story panel">
+        <section v-else-if="current.type === 'event'" class="story panel" :class="{ paused: storyPaused }">
           <span class="chip story-chip">이야기</span>
           <p class="story-text">{{ eventText }}</p>
+          <div class="story-bar" aria-hidden="true">
+            <span :style="{ animationDuration: `${storyTotal}ms` }" />
+          </div>
+          <p class="muted small">누르고 있으면 멈추고, 한 번 누르면 넘어가요</p>
         </section>
 
-        <section v-else-if="quiz" :key="`q${journey.step}`" class="quiz panel">
+        <section v-else-if="quiz" class="quiz panel">
           <p class="mono kicker gold">QUIZ · 맞히면 레어 카드</p>
           <p class="q">{{ quiz.q }}</p>
           <div class="options">
-            <button v-for="(opt, i) in quiz.options" :key="opt" class="opt" @click="answer(i)">
+            <button
+              v-for="(opt, i) in quiz.options"
+              :key="opt"
+              class="opt"
+              :class="{ right: quizChoice !== undefined && i === quiz.answer, wrong: quizChoice === i && i !== quiz.answer }"
+              :disabled="quizChoice !== undefined"
+              @click="answer(i)"
+            >
               <span>{{ opt }}</span>
+              <span class="mono mark">
+                <template v-if="quizChoice !== undefined && i === quiz.answer">정답</template>
+                <template v-else-if="quizChoice === i">오답</template>
+              </span>
             </button>
           </div>
+          <div v-if="quizChoice !== undefined" class="explain">
+            <p>{{ quiz.explain }}</p>
+            <p v-if="quizChoice !== quiz.answer && journey.newCards.includes(quiz.rewardId)" class="small gold">그래도 첫 여정 선물로 이 사람을 만나게 해 드릴게요.</p>
+            <div v-if="quizChoice === quiz.answer || journey.newCards.includes(quiz.rewardId)" class="reward">
+              <MiniCard :person-id="quiz.rewardId" :is-new="journey.newCards.includes(quiz.rewardId)" />
+            </div>
+          </div>
         </section>
-      </Transition>
+      </div>
+
+      <button
+        class="btn btn-primary btn-block next-btn"
+        :disabled="current.type === 'quiz' && quizChoice === undefined"
+        @click="next"
+      >
+        {{ current.type === 'quiz' && quizChoice === undefined ? '답을 골라 주세요' : nextLabel }}
+      </button>
+
+      <!-- 다음 사람의 캐릭터를 화면 밖에 미리 그려 둔다 -->
+      <div v-if="nextPerson" class="preload" aria-hidden="true">
+        <Character :person-id="nextPerson" :size="150" />
+      </div>
     </template>
 
     <Transition name="toast">
@@ -383,7 +471,7 @@ function followTeaser(p: Product) {
   padding: 16px; border-radius: 18px;
   background: linear-gradient(160deg, #2b2150, #172840);
   border: 2px solid var(--r-epic);
-  animation: pop-in 0.5s ease-out;
+  animation: pop-in var(--motion-enter) var(--motion-ease);
 }
 .lb-title { margin: 0; font-family: var(--font-display); font-size: 22px; }
 .lb-met { margin: 0; font-size: 15px; font-weight: 700; word-break: keep-all; }
@@ -398,7 +486,7 @@ function followTeaser(p: Product) {
 .name { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 .progress { height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; }
-.progress span { display: block; height: 100%; background: var(--accent); transition: width 1s linear; }
+.progress span { display: block; height: 100%; background: var(--accent); transition: width var(--motion-enter) var(--motion-ease); }
 
 .route {
   list-style: none; margin: 0; padding: 4px 0 0;
@@ -422,14 +510,14 @@ function followTeaser(p: Product) {
 .reached .label { color: var(--text); }
 .label { white-space: nowrap; max-width: 64px; overflow: hidden; text-overflow: ellipsis; }
 
-.stage { animation: pop-in 0.4s ease-out; }
+.stage { animation: pop-in var(--motion-enter) var(--motion-ease); }
 
-.story { display: flex; flex-direction: column; gap: 10px; animation: rise 0.25s ease-out; }
+.story { display: flex; flex-direction: column; gap: 10px; animation: rise var(--motion-enter) var(--motion-ease); cursor: pointer; user-select: none; }
 .story-chip { align-self: flex-start; color: var(--accent); }
 .story-text { margin: 0; font-size: 17px; line-height: 1.6; }
 .hidden-meet { display: flex; flex-direction: column; gap: 6px; }
 .hidden-meet .kicker { margin: 0; }
-.quiz { display: flex; flex-direction: column; gap: 12px; animation: rise 0.25s ease-out; }
+.quiz { display: flex; flex-direction: column; gap: 12px; animation: rise var(--motion-enter) var(--motion-ease); }
 .q { margin: 0; font-size: 18px; font-weight: 700; line-height: 1.45; }
 .options { display: flex; flex-direction: column; gap: 8px; }
 .opt {
@@ -438,6 +526,21 @@ function followTeaser(p: Product) {
   background: var(--ground); border: 1px solid var(--line); font-size: 15px; text-align: left;
 }
 .reward { width: 120px; }
+.opt:disabled { cursor: default; }
+.opt.right { background: #1e3a2e; border: 2px solid var(--ok); }
+.opt.wrong { background: #3a1f22; border: 2px solid var(--bad); }
+.mark { font-size: 12px; }
+.explain { display: flex; flex-direction: column; gap: 10px; font-size: 14px; line-height: 1.55; animation: rise var(--motion-enter) var(--motion-ease); }
+.explain p { margin: 0; }
+
+/* 밀어서 넘길 때 세로 스크롤은 그대로 */
+.scene { touch-action: pan-y; }
+.story-bar { height: 3px; border-radius: 2px; background: var(--line); overflow: hidden; }
+.story-bar span { display: block; height: 100%; background: var(--accent); transform-origin: left; animation: story-fill linear forwards; }
+.story.paused .story-bar span { animation-play-state: paused; }
+@keyframes story-fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+.next-btn { position: sticky; bottom: calc(84px + env(safe-area-inset-bottom)); z-index: 5; }
+.preload { position: absolute; width: 1px; height: 1px; overflow: hidden; opacity: 0; pointer-events: none; }
 
 .touched { margin: 0; font-size: 17px; line-height: 1.5; word-break: keep-all; }
 .touched strong { color: var(--accent); font-size: 22px; font-weight: 500; }
@@ -445,7 +548,7 @@ function followTeaser(p: Product) {
 .teaser {
   display: flex; flex-direction: column; gap: 10px;
   padding: 16px; border-radius: 18px; background: var(--surface); border: 1px solid var(--line);
-  animation: rise 0.4s ease-out 0.9s both;
+  animation: rise var(--motion-enter) var(--motion-ease) calc(var(--motion-enter) * 3) both;
 }
 .teaser-who { display: flex; align-items: center; gap: 12px; }
 .teaser-say { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
@@ -482,14 +585,11 @@ function followTeaser(p: Product) {
   padding: 24px 20px; border-radius: 24px;
   background: linear-gradient(160deg, #2b2150, #172840);
   border: 2px solid var(--r-epic);
-  animation: pop-in 0.5s ease-out;
+  animation: pop-in var(--motion-enter) var(--motion-ease);
 }
 .reunion-title { font-size: 28px; word-break: keep-all; }
 .reunion-text { margin: 0; font-size: 15px; line-height: 1.5; word-break: keep-all; }
 .reunion-card { width: 140px; }
-
-.clock { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: -10px; }
-.day { font-size: 24px; color: var(--accent); }
 
 .faces {
   list-style: none; margin: 0; padding: 2px 0;
@@ -499,27 +599,10 @@ function followTeaser(p: Product) {
   flex: 0 0 auto; width: 44px; height: 44px;
   display: flex; align-items: center; justify-content: center;
   border-radius: 999px; background: var(--surface); border: 1px solid var(--line);
-  animation: pop-in 0.4s ease-out;
+  animation: pop-in var(--motion-enter) var(--motion-ease);
 }
 .face.now { border-color: var(--accent); }
-.face.next { color: var(--faint); font-family: var(--font-mono); font-size: 18px; border-style: dashed; }
-
-.away { display: flex; flex-direction: column; gap: 12px; animation: rise 0.3s ease-out; }
-.away-title { margin: 0; font-size: 19px; line-height: 1.5; font-weight: 700; }
-.away-faces { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
-.away-face {
-  display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center;
-  animation: pop-in 0.4s ease-out both;
-}
-.away-face .small { font-size: 12px; line-height: 1.3; word-break: keep-all; }
-
-.quiz-result { display: flex; flex-direction: column; gap: 8px; animation: rise 0.25s ease-out; }
-.explain-text { margin: 0; font-size: 14px; line-height: 1.55; }
-
-.scene-enter-active { transition: opacity 0.6s ease, transform 0.6s ease; }
-.scene-leave-active { transition: opacity 0.4s ease, transform 0.4s ease; }
-.scene-enter-from { opacity: 0; transform: translateX(24px); }
-.scene-leave-to { opacity: 0; transform: translateX(-24px); }
+.face.next-face { color: var(--faint); font-family: var(--font-mono); font-size: 18px; border-style: dashed; }
 
 .toast {
   position: fixed; left: 50%; top: max(16px, env(safe-area-inset-top));
@@ -529,6 +612,6 @@ function followTeaser(p: Product) {
   background: var(--accent); color: var(--accent-ink); font-weight: 700; font-size: 14px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35); z-index: 30;
 }
-.toast-enter-active, .toast-leave-active { transition: all 0.25s ease; }
+.toast-enter-active, .toast-leave-active { transition: all var(--motion-enter) var(--motion-ease); }
 .toast-enter-from, .toast-leave-to { opacity: 0; transform: translate(-50%, -10px); }
 </style>

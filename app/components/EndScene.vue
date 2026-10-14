@@ -59,6 +59,6 @@ onBeforeUnmount(() => {
   display: flex; align-items: center; justify-content: center;
   border-radius: 999px; background: var(--paper);
   box-shadow: 0 0 0 6px rgba(242, 193, 78, 0.18);
-  animation: pop-in 0.4s ease-out;
+  animation: pop-in var(--motion-enter) var(--motion-ease);
 }
 </style>

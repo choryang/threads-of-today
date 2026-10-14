@@ -17,9 +17,7 @@ import { dayStats, findLinkCards, journeyMaterialIds, mysteryOptions, mysteryPro
 import { MYSTERY_HINT_COUNT, middleCandidates, mysteryHints } from '../shared/mystery'
 import { MYSTERY_INFO } from '../shared/data/mystery'
 import { createMatcher, match, productEntries, type DictEntry } from '../shared/match'
-import { PERSON_DAYS, placeKindOf } from '../shared/data/durations'
 import { NAME_GROUPS } from '../shared/data/names'
-import { MAX_JOURNEY_DAYS, MIN_JOURNEY_DAYS, MS_PER_DAY, SPEEDS, journeySchedule } from '../shared/timing'
 
 const errors: string[] = []
 const reachable = new Set<string>()
@@ -250,27 +248,6 @@ for (const rule of LINK_RULES) {
 }
 const unnamed = PEOPLE_LIST.filter((p) => !p.name)
 console.log('이름:', PEOPLE_LIST.length - unnamed.length, '/', PEOPLE_LIST.length, unnamed.length ? `· 이름 없음 ${unnamed.map((p) => p.id).join(', ')}` : '')
-
-// 여정 시계: 여정에 나오는 사람은 모두 장소 종류가 정해져 있어야 하고, 여정 길이는 MIN~MAX 날수 안
-for (const person of PEOPLE_LIST) {
-  if (person.kind === 'stage' && !PERSON_DAYS[person.id] && !placeKindOf(person.id)) errors.push(`${person.id}(${person.job}): 머무는 날수를 정할 장소 종류가 없음 (data/durations.ts)`)
-}
-for (const id of Object.keys(PERSON_DAYS)) if (!PEOPLE[id]) errors.push(`durations: 사람 ${id} 없음`)
-if (MAX_JOURNEY_DAYS * MS_PER_DAY / Math.max(...SPEEDS) > 10 * 60_000 + 1) errors.push('가장 빠른 배속에서 긴 여정이 10분을 넘음')
-{
-  let shortest = Infinity
-  let longest = 0
-  for (const p of PRODUCTS) {
-    for (let i = 0; i < 40; i++) {
-      const total = journeySchedule({ id: `2026-10-14-1-${i.toString(36).padStart(4, '0')}`, name: p.name, materialIds: p.materialIds }).total
-      if (total < MIN_JOURNEY_DAYS - 1e-6 || total > MAX_JOURNEY_DAYS + 1e-6) errors.push(`${p.id}: 여정 길이 ${total}일`)
-      shortest = Math.min(shortest, total)
-      longest = Math.max(longest, total)
-    }
-  }
-  const minutes = (days: number) => SPEEDS.map((v) => `${v}배 ${Math.round((days * MS_PER_DAY) / v / 6000) / 10}분`).join(' · ')
-  console.log(`여정 길이: 짧은 것 ${Math.round(shortest * 10) / 10}일 (${minutes(shortest)}), 긴 것 ${Math.round(longest * 10) / 10}일 (${minutes(longest)})`)
-}
 
 const today = mysteryProduct('2026-10-15')
 console.log('오늘 미스터리', today.name, mysteryHints(today, mysteryOptions('2026-10-15').filter((o) => o.id !== today.id)))
