@@ -53,6 +53,21 @@ test('검사: 모르는 카드와 잘못된 값은 버린다', () => {
   assert.equal(s.nickname, undefined)
 })
 
+test('다음 여정 예고를 따라 떠난 여정: teaser는 아는 사람 id만 남고, 병합해도 유지된다', () => {
+  const j = { ...journey(`${TODAY}-1-abcd`, 1), teaser: 'sea-crew' }
+  const bad = { ...journey(`${TODAY}-2-abcd`, 1), teaser: 'nobody' }
+  const s = sanitizeSave({ days: { [TODAY]: { journeys: [j, bad] } } }, TODAY)
+  assert.equal(s.days[TODAY]!.journeys[0]!.teaser, 'sea-crew')
+  assert.equal('teaser' in s.days[TODAY]!.journeys[1]!, false)
+  const a: Save = { ...emptySave(), days: { [TODAY]: { journeys: [j], linkCards: [] } } }
+  const b: Save = { ...emptySave(), days: { [TODAY]: { journeys: [{ ...journey(j.id, 2) }], linkCards: [] } } }
+  // 더 많이 진행한 쪽(b)에 teaser가 없어도 남는다
+  for (const merged of [mergeSaves(a, b, TODAY), mergeSaves(b, a, TODAY)]) {
+    assert.equal(merged.days[TODAY]!.journeys[0]!.step, 2)
+    assert.equal(merged.days[TODAY]!.journeys[0]!.teaser, 'sea-crew')
+  }
+})
+
 test('고마움: 합집합으로 합치고 먼저 전한 날을 남긴다. 예전 기록(thanks 없음)과도 합쳐진다', () => {
   const [p1, p2] = PEOPLE_LIST.map((p) => p.id)
   const a: Save = { ...emptySave(), cards: { [p1!]: '2026-10-01', [p2!]: '2026-10-01' }, thanks: { [p1!]: '2026-10-12' } }

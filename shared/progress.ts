@@ -36,6 +36,8 @@ export interface Journey {
   anchorAt?: number
   /** 기준 시각까지 흐른 게임 날수 */
   anchorDays?: number
+  /** 지난 여정의 '다음 여정 추천'을 따라 떠났으면, 그 예고에서 말을 건 사람 id (shared/next.ts) */
+  teaser?: string
 }
 
 export interface DayLog {
@@ -137,7 +139,8 @@ function moreProgressed(a: Journey, b: Journey, now: number, speed: Speed): bool
 
 function mergeJourney(a: Journey, b: Journey, now: number, speed: Speed): Journey {
   const [main, other] = moreProgressed(a, b, now, speed) ? [a, b] : [b, a]
-  return { ...main, quiz: { ...other.quiz, ...main.quiz }, newCards: union(main.newCards, other.newCards) }
+  const teaser = main.teaser ?? other.teaser
+  return { ...main, quiz: { ...other.quiz, ...main.quiz }, newCards: union(main.newCards, other.newCards), ...(teaser ? { teaser } : {}) }
 }
 
 function mergeDay(a: DayLog | undefined, b: DayLog | undefined, now: number, speed: Speed): DayLog {
@@ -245,6 +248,7 @@ function sanitizeJourney(v: unknown): Journey | null {
     ...(Number.isFinite(v.anchorAt) && v.anchorAt >= 0 && Number.isFinite(v.anchorDays) && v.anchorDays >= 0 && v.anchorDays <= 1000
       ? { anchorAt: v.anchorAt as number, anchorDays: v.anchorDays as number }
       : {}),
+    ...(typeof v.teaser === 'string' && PEOPLE[v.teaser] ? { teaser: v.teaser } : {}),
   }
 }
 

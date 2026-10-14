@@ -3,6 +3,8 @@
  * 무작위는 여정 id를 시드로 써서, 새로고침하거나 다른 기기에서 열어도 같은 여정이 나온다.
  * 새 여정 id는 '2026-10-14-1-k3x9'처럼 무작위 꼬리가 붙는다. 꼬리가 없는 예전 id(2026-10-14-1, 2026-10-14-1abcd)는
  * 기본 경로 그대로 둬서, 이 기능이 들어가기 전에 시작한 여정이 중간에 바뀌지 않게 한다.
+ * 사용자의 첫 여정은 id 끝에 '-first'를 붙인다(FIRST_SUFFIX). 그 여정에서는 숨은 만남이 반드시 하나 나온다.
+ * 숨은 만남이 나올 자리가 없는 경로면 퀴즈 보상을 대신 준다(firstJourneyGift).
  * 물건 이름을 넘기면 여정 맨 끝에 손에 닿기 직전의 가게·사무실 사람을 붙인다(shared/data/shops.ts). 끝에만 붙어서
  * 이미 진행 중인 여정의 앞부분은 바뀌지 않는다.
  */
@@ -25,7 +27,13 @@ export type TimelineItem =
   | { type: 'event'; materialId: string; eventId: string }
   | { type: 'quiz'; materialId: string; quizIndex: number }
 
-const NEW_ID = /^\d{4}-\d{2}-\d{2}-\d+-[0-9a-z]+$/
+const NEW_ID = /^\d{4}-\d{2}-\d{2}-\d+-[0-9a-z]+(-first)?$/
+/** 사용자의 첫 여정 id 꼬리 */
+export const FIRST_SUFFIX = '-first'
+
+export function isFirstJourney(journeyId?: string): boolean {
+  return !!journeyId && /^\d{4}-\d{2}-\d{2}-\d+-[0-9a-z]+-first$/.test(journeyId)
+}
 
 /** 여정 id에서 난수를 만든다. 예전 id나 id가 없으면 null(기본 경로) */
 export function journeyRandom(journeyId?: string): (() => number) | null {
@@ -112,6 +120,19 @@ export function buildTimeline(materialIds: string[], journeyId?: string, itemNam
     if (quizzes.length) items.push({ type: 'quiz', materialId, quizIndex: rand ? Math.floor(rand() * quizzes.length) : 0 })
   })
 
+  // 첫 여정: 확률에서 숨은 만남이 안 나왔으면, 나올 수 있는 자리 중 하나에 넣는다 (위의 난수 흐름은 그대로 둔다)
+  if (rand && hidden === 0 && isFirstJourney(journeyId)) {
+    const spots = items.flatMap((t, i) => {
+      if (t.type !== 'stage') return []
+      const rule = HIDDEN_RULES.find((r) => r.afterPersonIds.includes(t.personId) && (!r.materialIds || r.materialIds.includes(t.materialId)))
+      return rule ? [{ i, materialId: t.materialId, cardId: rule.cardId }] : []
+    })
+    if (spots.length) {
+      const spot = spots[hash(`first-hidden:${journeyId}`) % spots.length]!
+      items.splice(spot.i + 1, 0, { type: 'hidden', materialId: spot.materialId, personId: spot.cardId })
+    }
+  }
+
   const known = materialIds.filter((id) => MATERIALS[id])
   const lastMaterial = known[known.length - 1]
   if (rand && itemName && journeyId && lastMaterial) {
@@ -133,4 +154,9 @@ export function timelinePeople(materialIds: string[], journeyId?: string, itemNa
   return buildTimeline(materialIds, journeyId, itemName).flatMap((t) =>
     t.type === 'stage' || t.type === 'hidden' ? [{ materialId: t.materialId, personId: t.personId }] : [],
   )
+}
+
+/** 첫 여정인데 숨은 만남이 나올 자리가 없으면, 퀴즈를 틀려도 보상 카드를 준다 */
+export function firstJourneyGift(materialIds: string[], journeyId: string): boolean {
+  return isFirstJourney(journeyId) && !buildTimeline(materialIds, journeyId).some((t) => t.type === 'hidden')
 }

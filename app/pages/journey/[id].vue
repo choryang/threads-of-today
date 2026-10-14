@@ -1,16 +1,20 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, shallowRef, watch } from 'vue'
-import { MATERIALS } from '../../../shared/data/materials'
+import { MATERIALS, PRODUCTS } from '../../../shared/data/materials'
 import { PEOPLE } from '../../../shared/data/people'
 import { PLACES } from '../../../shared/data/places'
 import { EVENTS } from '../../../shared/data/journey-extras'
 import { quizFor } from '../../../shared/journey'
-import { dayStats } from '../../../shared/logic'
+import { dayStats, withJosa } from '../../../shared/logic'
+import { lineupOf, linkPersonOf, pickTeaser } from '../../../shared/next'
+import type { Product } from '../../../shared/types'
 import { journeySchedule, remainingMs } from '../../../shared/timing'
 import { renderVoice } from '../../../shared/voice'
 import { remainingLabel } from '../../utils/labels'
+import { productIconSvg } from '../../utils/product-icon'
 
 const route = useRoute()
+const router = useRouter()
 const game = useGame()
 const journey = computed(() => game.findJourney(String(route.params.id)))
 const timeline = computed(() => (journey.value ? journeySchedule(journey.value).timeline : []))
@@ -29,6 +33,12 @@ function jobNames(ids: string[]) {
 
 function jobOf(id: string) {
   return PEOPLE[id]?.job ?? ''
+}
+
+/** 연결 카드를 얻었을 때: "{이름}을(를) 또 만났어요!" (이름이 없으면 직업으로) */
+function metAgain(cardId: string) {
+  const p = PEOPLE[cardId]
+  return `${withJosa(p?.name ?? jobOf(linkPersonOf(cardId) ?? ''), '을', '를')} 또 만났어요!`
 }
 
 const progressPct = computed(() => (clock.value && clock.value.total ? (clock.value.day / clock.value.total) * 100 : 0))
@@ -89,7 +99,8 @@ const quizRewards = computed(() => {
   const j = journey.value
   return j.materialIds.flatMap((mid) => {
     const q = quizFor(j.materialIds, j.id, mid)
-    return q && j.quiz[mid] === q.answer ? [q.rewardId] : []
+    // 첫 여정 선물로 틀려도 받은 보상까지
+    return q && j.quiz[mid] !== undefined && (j.quiz[mid] === q.answer || j.newCards.includes(q.rewardId)) ? [q.rewardId] : []
   })
 })
 
@@ -135,6 +146,41 @@ watch(() => journey.value?.newCards.length ?? 0, (n, old) => {
 
 const summary = computed(() => (journey.value ? dayStats([journey.value]) : { people: [], countries: [] }))
 const metPeople = computed(() => summary.value.people)
+
+// ── 끝 장면 ──
+const productId = computed(() => PRODUCTS.find((p) => p.name === journey.value?.name)?.id ?? '')
+const lineup = computed(() => lineupOf(metPeople.value))
+
+/** 추천을 따라 떠나 그 사람을 다시 만났으면, 그 연결 카드를 평소보다 크게 보여 준다 */
+const reunionCard = computed(() => {
+  const j = journey.value
+  return j?.teaser ? linkGained.value.find((id) => linkPersonOf(id) === j.teaser) : undefined
+})
+const reunionPerson = computed(() => (reunionCard.value ? linkPersonOf(reunionCard.value) ?? '' : ''))
+const reunionOpen = ref(true)
+
+/**
+ * 다음 여정 예고. 이 여정과 같은 날 떠나야 연결 카드가 나오므로, 오늘 떠난 여정이고 오늘 더 떠날 수 있을 때만.
+ * 화면에 처음 보일 때의 카드로 한 번 정한다 (예고를 따라 떠나도 이 화면의 예고가 바뀌지 않게).
+ */
+const teaser = shallowRef<ReturnType<typeof pickTeaser>>(null)
+watch(
+  () => journey.value?.done,
+  (done) => {
+    const j = journey.value
+    if (!done || !j || teaser.value) return
+    if (j.id.slice(0, 10) !== game.todayKey || game.remaining.value <= 0) return
+    teaser.value = pickTeaser(j, new Set(Object.keys(game.state.cards)))
+  },
+  { immediate: true },
+)
+
+function followTeaser(p: Product) {
+  const t = teaser.value
+  if (!t) return
+  const next = game.startJourney({ name: p.name, materialIds: [...p.materialIds] }, 'pick', { teaser: t.personId })
+  if (next) router.push(`/journey/${next.id}`)
+}
 </script>
 
 <template>
@@ -168,35 +214,70 @@ const metPeople = computed(() => summary.value.people)
       <header class="head">
         <p class="mono muted kicker">ARRIVED</p>
         <h1 class="display title">도착했어요</h1>
-        <p class="arrived-sub">{{ journey.name }}에 닿은 사람들</p>
-        <p v-if="voice" class="voice">“{{ voice }}”</p>
-        <p class="big">
-          <strong class="mono">{{ summary.countries.length }}</strong>개 나라,
-          <strong class="mono">{{ metPeople.length }}</strong>명의 사람
-        </p>
-        <p class="muted small">{{ summary.countries.join(' · ') }}</p>
       </header>
 
-      <section v-if="linkGained.length" class="link-banner">
+      <EndScene :people="lineup" :product-id="productId" :item-name="journey.name" />
+
+      <p class="touched">
+        이 {{ journey.name }}에 <strong class="mono">{{ summary.countries.length }}</strong>개 나라,
+        <strong class="mono">{{ metPeople.length }}</strong>명이 닿아 있었어요
+      </p>
+      <p v-if="voice" class="voice">“{{ voice }}”</p>
+
+      <section v-if="linkGained.length && !reunionCard" class="link-banner">
         <p class="mono kicker gold">CONNECTION FOUND</p>
         <p class="lb-title">여정이 서로 겹쳤어요!</p>
+        <p v-for="id in linkGained" :key="id" class="lb-met">{{ metAgain(id) }}</p>
         <p class="small">오늘 지나온 재료들이 같은 사람을 거쳐 왔어요. 에픽 카드를 얻었어요.</p>
         <div class="grid">
           <MiniCard v-for="id in linkGained" :key="id" :person-id="id" is-new />
         </div>
       </section>
 
-      <section>
-        <h2 class="h2">이번 여정에서 만난 사람</h2>
+      <section v-if="teaser" class="teaser" aria-labelledby="next-title">
+        <div class="teaser-who">
+          <Character :person-id="teaser.personId" :size="72" bob />
+          <div class="teaser-say">
+            <p class="bubble">나는 오늘 다른 물건도 날랐어요. 뭘까요?</p>
+            <p class="small muted">{{ jobOf(teaser.personId) }}</p>
+          </div>
+        </div>
+        <h2 id="next-title" class="h2">다음 여정 추천</h2>
+        <div class="next-list">
+          <button v-for="p in teaser.products" :key="p.id" class="next" @click="followTeaser(p)">
+            <!-- eslint-disable-next-line vue/no-v-html -- 직접 그린 SVG -->
+            <svg class="next-icon" viewBox="0 0 32 32" width="40" height="40" aria-hidden="true" v-html="productIconSvg(p.id)" />
+            <span class="next-name">{{ p.name }}</span>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" class="next-go"><path d="M9 6l6 6-6 6" /></svg>
+          </button>
+        </div>
+      </section>
+
+      <details class="cards">
+        <summary>만난 사람 카드 <span class="mono">{{ metPeople.length + quizRewards.length }}</span>장 보기</summary>
         <div class="grid">
           <MiniCard v-for="id in metPeople" :key="id" :person-id="id" :is-new="journey.newCards.includes(id)" />
           <MiniCard v-for="id in quizRewards" :key="`q-${id}`" :person-id="id" :is-new="journey.newCards.includes(id)" />
         </div>
-      </section>
+      </details>
 
       <div class="actions">
-        <NuxtLink to="/" class="btn btn-primary btn-block">다른 물건 고르기</NuxtLink>
+        <NuxtLink to="/" class="btn btn-block" :class="{ 'btn-primary': !teaser }">다른 물건 고르기</NuxtLink>
         <NuxtLink to="/result" class="btn btn-block">오늘의 결과 카드</NuxtLink>
+      </div>
+
+      <!-- 추천을 따라와 다시 만난 사람: 평소 연결 카드보다 크게 -->
+      <div v-if="reunionCard && reunionOpen" class="reunion-wrap" role="dialog" aria-modal="true" aria-labelledby="reunion-title">
+        <div class="reunion">
+          <p class="mono kicker gold">CONNECTION FOUND</p>
+          <Character :person-id="reunionPerson" :size="132" wave />
+          <p id="reunion-title" class="reunion-title display">{{ metAgain(reunionCard) }}</p>
+          <p class="reunion-text">{{ withJosa(jobOf(reunionPerson), '이', '가') }} 두 물건을 모두 날랐어요. 에픽 카드를 얻었어요.</p>
+          <div class="reunion-card">
+            <MiniCard :person-id="reunionCard" is-new />
+          </div>
+          <button class="btn btn-primary btn-block" @click="reunionOpen = false">반가워요</button>
+        </div>
       </div>
     </template>
 
@@ -241,7 +322,8 @@ const metPeople = computed(() => summary.value.people)
         <p class="mono kicker gold">{{ answered.choice === answeredQuiz.answer ? '정답이에요' : '아쉬워요' }}</p>
         <p class="small">정답: {{ answeredQuiz.options[answeredQuiz.answer] }}</p>
         <p class="explain-text">{{ answeredQuiz.explain }}</p>
-        <div v-if="answered.choice === answeredQuiz.answer" class="reward">
+        <p v-if="answered.choice !== answeredQuiz.answer && journey.newCards.includes(answeredQuiz.rewardId)" class="small gold">그래도 첫 여정 선물로 이 사람을 만나게 해 드릴게요.</p>
+        <div v-if="answered.choice === answeredQuiz.answer || journey.newCards.includes(answeredQuiz.rewardId)" class="reward">
           <MiniCard :person-id="answeredQuiz.rewardId" :is-new="journey.newCards.includes(answeredQuiz.rewardId)" />
         </div>
         <button class="btn btn-block" @click="answered = null">확인</button>
@@ -291,8 +373,6 @@ const metPeople = computed(() => summary.value.people)
   margin: 4px 0; padding: 10px 14px; border-radius: 14px 14px 14px 4px;
   background: var(--paper); color: var(--ink); font-size: 14px; line-height: 1.5; align-self: flex-start;
 }
-.big { margin: 4px 0 0; font-size: 18px; }
-.big strong { color: var(--accent); font-size: 26px; font-weight: 500; }
 .small { margin: 0; font-size: 13px; }
 .h2 { margin: 0 0 10px; font-size: 15px; }
 .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
@@ -306,6 +386,7 @@ const metPeople = computed(() => summary.value.people)
   animation: pop-in 0.5s ease-out;
 }
 .lb-title { margin: 0; font-family: var(--font-display); font-size: 22px; }
+.lb-met { margin: 0; font-size: 15px; font-weight: 700; word-break: keep-all; }
 
 .bar { display: flex; align-items: center; gap: 12px; }
 .icon-btn {
@@ -358,7 +439,54 @@ const metPeople = computed(() => summary.value.people)
 }
 .reward { width: 120px; }
 
-.arrived-sub { margin: 0; font-size: 16px; color: var(--muted); }
+.touched { margin: 0; font-size: 17px; line-height: 1.5; word-break: keep-all; }
+.touched strong { color: var(--accent); font-size: 22px; font-weight: 500; }
+
+.teaser {
+  display: flex; flex-direction: column; gap: 10px;
+  padding: 16px; border-radius: 18px; background: var(--surface); border: 1px solid var(--line);
+  animation: rise 0.4s ease-out 0.9s both;
+}
+.teaser-who { display: flex; align-items: center; gap: 12px; }
+.teaser-say { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.bubble {
+  margin: 0; padding: 10px 14px; border-radius: 14px 14px 14px 4px;
+  background: var(--paper); color: var(--ink); font-size: 15px; font-weight: 700; line-height: 1.45; word-break: keep-all;
+}
+.teaser .h2 { margin: 4px 0 0; }
+.next-list { display: flex; flex-direction: column; gap: 8px; }
+.next {
+  display: flex; align-items: center; gap: 12px;
+  min-height: 60px; padding: 8px 14px; border-radius: 14px;
+  background: var(--ground); border: 1px solid var(--accent); color: var(--text); text-align: left;
+}
+.next:active { transform: scale(0.98); }
+.next-icon { flex-shrink: 0; padding: 4px; border-radius: 999px; background: var(--paper); }
+.next-name { flex: 1; font-size: 15px; font-weight: 700; }
+.next-go { color: var(--accent); flex-shrink: 0; }
+
+.cards summary {
+  min-height: 44px; display: flex; align-items: center; gap: 4px; cursor: pointer;
+  font-size: 15px; font-weight: 700;
+}
+.cards[open] summary { margin-bottom: 8px; }
+
+.reunion-wrap {
+  position: fixed; inset: 0; z-index: 40;
+  display: flex; align-items: center; justify-content: center; padding: 16px;
+  background: rgba(5, 10, 20, 0.78);
+}
+.reunion {
+  width: 100%; max-width: 400px;
+  display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center;
+  padding: 24px 20px; border-radius: 24px;
+  background: linear-gradient(160deg, #2b2150, #172840);
+  border: 2px solid var(--r-epic);
+  animation: pop-in 0.5s ease-out;
+}
+.reunion-title { font-size: 28px; word-break: keep-all; }
+.reunion-text { margin: 0; font-size: 15px; line-height: 1.5; word-break: keep-all; }
+.reunion-card { width: 140px; }
 
 .clock { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: -10px; }
 .day { font-size: 24px; color: var(--accent); }

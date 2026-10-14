@@ -7,7 +7,7 @@ import {
 } from '../../shared/logic'
 import { mysteryHints } from '../../shared/mystery'
 import { normalizeNickname, randomNickname } from '../../shared/nickname'
-import { buildTimeline, quizFor } from '../../shared/journey'
+import { FIRST_SUFFIX, buildTimeline, firstJourneyGift, quizFor } from '../../shared/journey'
 import {
   DEFAULT_SPEED, MS_PER_DAY, anchorAtQuiz, ensureAnchor, journeyClock, journeySchedule, reanchor, type JourneyClock, type Speed,
 } from '../../shared/timing'
@@ -203,12 +203,17 @@ export function useGame() {
     return gained
   }
 
-  function startJourney(item: Decomposed, source: JourneySource): Journey | null {
+  /** 아직 카드가 한 장도 없는 사람 (첫 여정 전) */
+  const firstVisit = computed(() => ownedCount.value === 0)
+
+  /** teaser: 지난 여정의 '다음 여정 추천'을 따라 떠날 때, 말을 건 사람 id */
+  function startJourney(item: Decomposed, source: JourneySource, opts: { teaser?: string } = {}): Journey | null {
     const day = ensureToday()
     if (source !== 'mystery' && regularCount.value >= DAILY_LIMIT) return null
     const journey: Journey = {
       // 여러 기기의 기록을 합칠 때 겹치지 않게 무작위 꼬리를 붙인다 (앞 10글자는 날짜, '-꼬리'가 있으면 새 여정 규칙을 쓴다)
-      id: `${todayKey}-${day.journeys.length + 1}-${Math.random().toString(36).slice(2, 6)}`,
+      // 첫 여정에는 '-first'를 더 붙여 숨은 만남(또는 퀴즈 보상)을 보장한다 (shared/journey.ts)
+      id: `${todayKey}-${day.journeys.length + 1}-${Math.random().toString(36).slice(2, 6)}${firstVisit.value ? FIRST_SUFFIX : ''}`,
       name: item.name,
       twist: item.twist,
       voice: item.voice,
@@ -220,6 +225,7 @@ export function useGame() {
       done: false,
       anchorAt: Date.now(),
       anchorDays: 0,
+      ...(opts.teaser && PEOPLE[opts.teaser] ? { teaser: opts.teaser } : {}),
     }
     day.journeys.push(journey)
     // 연속 기록은 여정을 떠날 때 올라간다 (밤에 떠나 다음 날 도착해도 떠난 날 기준)
@@ -310,7 +316,9 @@ export function useGame() {
     anchorAtQuiz(journey, materialId, Date.now())
     now.value = Date.now()
     const correct = choice === quiz.answer
-    const gained = correct ? collect(quiz.rewardId) : []
+    // 첫 여정에 숨은 만남이 나올 자리가 없으면, 처음 답한 퀴즈의 보상은 틀려도 준다
+    const gift = !correct && firstJourneyGift(journey.materialIds, journey.id) && !journey.newCards.some((id) => PEOPLE[id]?.kind === 'quiz')
+    const gained = correct || gift ? collect(quiz.rewardId) : []
     journey.newCards.push(...gained)
     return { correct, gained }
   }
@@ -407,6 +415,7 @@ export function useGame() {
     remaining,
     regularCount,
     ownedCount,
+    firstVisit,
     itemCount,
     knowsItem,
     streak,

@@ -106,6 +106,18 @@ function pick(productId: string) {
   preview.value = { name: p.name, materialIds: [...p.materialIds], source: 'pick' }
 }
 
+/** 첫 방문(카드 0장, 떠난 여정 없음)에는 커피 한 잔으로 바로 떠나는 버튼 하나만 크게. '다른 물건 고르기'를 누르면 원래 메인 */
+const FIRST_PRODUCT_ID = 'americano'
+const skipWelcome = ref(false)
+const welcome = computed(() => game.firstVisit.value && !trips.value.length && !skipWelcome.value)
+
+function startFirst() {
+  const p = PRODUCTS.find((x) => x.id === FIRST_PRODUCT_ID)
+  if (!p) return
+  const journey = game.startJourney({ name: p.name, materialIds: [...p.materialIds] }, 'pick')
+  if (journey) router.push(`/journey/${journey.id}`)
+}
+
 function closePreview() {
   preview.value = null
 }
@@ -125,7 +137,20 @@ function start() {
 </script>
 
 <template>
-  <main class="page home">
+  <main v-if="welcome" class="page home welcome">
+    <header class="head">
+      <h1 class="display title">오늘 손에 닿은 물건은?</h1>
+      <p class="muted welcome-sub">물건 하나가 손에 오기까지 거쳐 온 사람들을 만나러 가요.</p>
+    </header>
+    <button class="first-go" @click="startFirst">
+      <!-- eslint-disable-next-line vue/no-v-html -- 직접 그린 SVG -->
+      <svg class="first-icon" viewBox="0 0 32 32" width="72" height="72" aria-hidden="true" v-html="productIconSvg(FIRST_PRODUCT_ID)" />
+      <span class="first-label">커피 한 잔부터 시작해 볼까요?</span>
+    </button>
+    <button class="link welcome-other" @click="skipWelcome = true">다른 물건 고르기</button>
+  </main>
+
+  <main v-else class="page home">
     <section v-if="trips.length" class="trips" aria-labelledby="trips-title">
       <div class="trips-head">
         <h2 id="trips-title" class="trips-title">오늘 떠난 여정</h2>
@@ -215,6 +240,19 @@ function start() {
 
 <style scoped>
 .home { gap: 16px; }
+.welcome { justify-content: center; min-height: 70dvh; gap: 24px; }
+.welcome-sub { margin: 0; font-size: 15px; line-height: 1.5; word-break: keep-all; }
+.first-go {
+  display: flex; flex-direction: column; align-items: center; gap: 14px;
+  min-height: 200px; padding: 28px 20px;
+  border-radius: 24px; border: 0; background: var(--accent); color: var(--accent-ink);
+  box-shadow: 0 10px 30px rgba(242, 193, 78, 0.25);
+  animation: pop-in 0.4s ease-out;
+}
+.first-go:active { transform: scale(0.97); }
+.first-icon { padding: 10px; border-radius: 999px; background: var(--paper); }
+.first-label { font-family: var(--font-display); font-size: 24px; line-height: 1.3; word-break: keep-all; }
+.welcome-other { align-self: center; }
 .trips { display: flex; flex-direction: column; gap: 6px; }
 .trips-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .trips-title { margin: 0; font-size: 15px; }
