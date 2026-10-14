@@ -11,6 +11,7 @@ const hasThreads = computed(() => tapestry.value.threads.length > 0)
   <main class="page">
     <header class="head">
       <h1 class="display title">나의 실타래</h1>
+      <RecordTabs />
       <p v-if="hasThreads" class="muted small">
         실 <span class="mono">{{ tapestry.threads.length }}</span>가닥 · 나라 <span class="mono">{{ tapestry.countries.length }}</span>곳.
         나라를 누르면 그곳에서 만난 사람들이 보여요.

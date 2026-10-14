@@ -137,9 +137,9 @@ npm run cache:export   # AI 캐시를 조회 수 순으로 data/review/cache.csv
 
 | 입력 방식 | 동작 |
 | --- | --- |
-| 말로 쓰기 | 뭐든지 입력. 물건이면 그대로, "고양이"·"월요일"처럼 물건이 아니면 가장 가까운 물건으로 이어 준다 (고양이 → 고양이 사료). 물건이 건네는 한마디도 함께 |
-| 사진 올리기 | 사진을 768px로 줄여 Claude 비전으로 인식 → 재료 분해 |
-| 골라 보기 | 대표 물건 30개 중 선택 (API 호출 없음) |
+| 직접 쓰기 | 메인의 "찾는 물건이 없나요?"에서 펼친다. 뭐든지 입력. 물건이면 그대로, "고양이"·"월요일"처럼 물건이 아니면 가장 가까운 물건으로 이어 준다 (고양이 → 고양이 사료). 물건이 건네는 한마디도 함께 |
+| 사진 찍기 | 같은 줄에서 사진을 고른다. 사진을 768px로 줄여 Claude 비전으로 인식 → 재료 분해 |
+| 물건 타일 | 메인 기본 화면. 대표 물건 타일(처음 9개, "더 보기"로 전부)을 누르면 재료 미리보기 (API 호출 없음) |
 | 오늘의 미스터리 | 날짜마다 모두에게 같은 물건(보기 6개). 틀릴 때마다 힌트가 하나씩 열린다(쓰임새 → 분류 → 여정 중간의 사람 → 거쳐 오는 나라 → 출발지 사람·재료). 맞히면 보너스 여정 |
 
 - 하루 여정 3번. 미스터리 보너스 여정은 따로 센다.
@@ -178,7 +178,7 @@ npm run cache:export   # AI 캐시를 조회 수 순으로 data/review/cache.csv
 
 ```
 app/
-  pages/          index(입력) · journey/[id](여정) · mystery · dex(도감) · result(공유 카드)
+  pages/          index(물건 타일·직접 쓰기·사진) · journey/[id](여정) · mystery · dex(도감·통계) · result(기록: 오늘 여정·공유 카드) · threads(기록 안 '나의 실타래')
   components/     Character · PersonCard · MiniCard · BottomNav · NicknameEditor · DeviceTransfer
   composables/    useGame.ts 게임 상태와 규칙 · useSync.ts 서버 동기화
   plugins/        sync.client.ts 앱을 열 때·여정을 마칠 때 동기화
@@ -245,7 +245,7 @@ Vercel에서 Upstash Redis를 연결한 다음 아래 순서로 확인한다. �
 
 **1. 캐시 저장·조회** (`NUXT_ANTHROPIC_API_KEY`가 있어야 확인할 수 있다)
 
-- [ ] 사전에 없을 법한 입력(예: 평소 안 쓰는 긴 물건 이름)을 '말로 쓰기'로 넣는다. 응답(개발자 도구 Network의 `/api/decompose`)에 `"source":"ai"`가 있고 `via`는 없다
+- [ ] 사전에 없을 법한 입력(예: 평소 안 쓰는 긴 물건 이름)을 '직접 쓰기'로 넣는다. 응답(개발자 도구 Network의 `/api/decompose`)에 `"source":"ai"`가 있고 `via`는 없다
 - [ ] Data Browser에 `mdp:cache:text:{정규화한 입력}` 키가 생겼고 `hits: 1`, `firstSeen`, `source: "ai"`가 들어 있다. TTL은 약 180일(15,552,000초)
 - [ ] 같은 입력을 **다른 브라우저나 기기**에서 다시 넣으면 응답에 `"via":"cache"`가 붙고, 키의 `hits`가 2로 오른다
 - [ ] 띄어쓰기만 다르게 넣어도 같은 키로 잡힌다

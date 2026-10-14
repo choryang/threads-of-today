@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref } from 'vue'
+import { MATERIALS } from '../../shared/data/materials'
 import { PEOPLE } from '../../shared/data/people'
+import { buildTimeline } from '../../shared/journey'
 import { dayStats } from '../../shared/logic'
 
 const game = useGame()
@@ -21,6 +23,13 @@ const faces = computed(() => {
   const rest = stats.value.people.filter((id) => !fresh.includes(id))
   return [...new Set([...fresh, ...rest])].slice(0, 6)
 })
+function materialNames(ids: string[]) {
+  return ids.map((id) => MATERIALS[id]?.name).join(' · ')
+}
+function journeyProgress(materialIds: string[], step: number, id: string, name: string) {
+  const len = buildTimeline(materialIds, id, name).length
+  return Math.round(((step + 1) / len) * 100)
+}
 const newToday = computed(() => Object.values(game.state.cards).filter((d) => d === game.todayKey).length)
 
 const [y, m, d] = game.todayKey.split('-')
@@ -90,8 +99,21 @@ async function save(share: boolean) {
   <main class="page">
     <header class="head">
       <h1 class="display title">오늘의 기록</h1>
+      <RecordTabs />
       <p class="muted small">오늘 마친 여정 {{ done.length }}개 · 새로 만난 사람 {{ newToday }}명</p>
     </header>
+
+    <section v-if="game.today.value.journeys.length" class="today" aria-label="오늘 떠난 여정">
+      <h2 class="h2">오늘 떠난 여정</h2>
+      <NuxtLink v-for="j in game.today.value.journeys" :key="j.id" :to="`/journey/${j.id}`" class="j-row panel">
+        <div class="j-main">
+          <span class="j-name">{{ j.name }}</span>
+          <span class="j-mats">{{ materialNames(j.materialIds) }}</span>
+        </div>
+        <span v-if="j.done" class="chip done">완료</span>
+        <span v-else class="chip mono">{{ journeyProgress(j.materialIds, j.step, j.id, j.name) }}%</span>
+      </NuxtLink>
+    </section>
 
     <section v-if="!done.length" class="panel empty">
       <p>아직 마친 여정이 없어요.</p>
@@ -144,6 +166,13 @@ async function save(share: boolean) {
 .head { display: flex; flex-direction: column; gap: 6px; }
 .title { font-size: 30px; }
 .small { margin: 0; font-size: 13px; line-height: 1.5; }
+.h2 { margin: 0 0 4px; font-size: 15px; }
+.today { display: flex; flex-direction: column; gap: 8px; }
+.j-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 56px; text-decoration: none; color: var(--text); padding: 12px 14px; }
+.j-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.j-name { font-weight: 700; }
+.j-mats { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.done { color: var(--ok); border-color: var(--ok); }
 .empty { display: flex; flex-direction: column; gap: 10px; }
 .empty p { margin: 0; }
 
