@@ -179,14 +179,12 @@ const metPeople = computed(() => summary.value.people)
 
       <section v-else-if="current.type === 'hidden'" :key="`h${journey.step}`" class="stage hidden-meet">
         <p class="mono kicker gold">숨은 만남</p>
-        <p class="small muted">여정 중에 아주 가끔만 만나는 사람이에요.</p>
         <PersonCard :person-id="current.personId" :is-new="journey.newCards.includes(current.personId)" />
       </section>
 
       <section v-else-if="current.type === 'event'" :key="`e${journey.step}`" class="story panel">
         <span class="chip story-chip">이야기</span>
         <p class="story-text">{{ eventText }}</p>
-        <p class="muted small">이야기는 여정을 꾸민 장면이에요. 실제로 있었던 일은 아니에요.</p>
       </section>
 
       <section v-else-if="quiz" :key="`q${journey.step}`" class="quiz panel">
@@ -216,7 +214,6 @@ const metPeople = computed(() => summary.value.people)
           <div v-if="quizChoice === quiz.answer" class="reward">
             <MiniCard :person-id="quiz.rewardId" :is-new="journey.newCards.includes(quiz.rewardId)" />
           </div>
-          <p v-else class="muted small">같은 재료가 들어간 물건으로 다시 여정을 떠나면 또 도전할 수 있어요.</p>
         </div>
       </section>
 
