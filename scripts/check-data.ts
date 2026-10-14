@@ -94,7 +94,9 @@ const dictKeys = new Set<string>()
 for (const e of dictionary as DictEntry[]) {
   if (dictKeys.has(e.key)) errors.push(`사전 ${e.key}: key 중복`)
   dictKeys.add(e.key)
-  if (!e.materialIds.length) errors.push(`사전 ${e.key}: 재료 0개`)
+  // 재료가 하나도 없으면 준비 중 재료(missing)라도 있어야 한다
+  if (!e.materialIds.length && !e.missing?.length) errors.push(`사전 ${e.key}: 재료 0개`)
+  for (const m of e.missing ?? []) if (!/^[가-힣][가-힣 ]*$/.test(m)) errors.push(`사전 ${e.key}: 준비 중 재료 이름 "${m}"`)
   for (const id of e.materialIds) if (!MATERIAL_LIST.find((m) => m.id === id)) errors.push(`사전 ${e.key}: 재료 ${id} 없음`)
   for (const v of [...(e.voices ?? []), e.twist ?? '']) if (v && looksFactual(v)) errors.push(`사전 ${e.key}: 사실처럼 보이는 문구 "${v}"`)
 }
