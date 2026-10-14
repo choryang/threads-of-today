@@ -2,7 +2,7 @@
  * 진행 상황(Save)의 모양과 기기 사이 병합 규칙. 브라우저(localStorage)와 서버(Upstash)가 같은 함수를 쓴다.
  *
  * 병합 규칙
- *  - 카드·물건: 합집합. 같은 id면 먼저 얻은 날을 남긴다.
+ *  - 카드·물건·고마움: 합집합. 같은 id면 먼저 얻은(전한) 날을 남긴다.
  *  - 날짜별 기록(days, mystery): 합친 뒤 오늘 기준 최근 30일만 남긴다.
  *    같은 날의 여정은 id로 짝짓고, 더 많이 진행한 쪽을 남긴다.
  *  - 연속 기록: 마지막 날이 더 최근인 쪽. 같으면 큰 값.
@@ -55,6 +55,8 @@ export interface Save {
   mystery: Record<string, MysteryLog>
   /** 분해해 본 물건 이름 → 처음 분해한 날 */
   items: Record<string, string>
+  /** 고마움을 전한 카드 id → 전한 날. 만난 사람(cards)에게만, 한 사람에게 한 번 */
+  thanks: Record<string, string>
   nickname?: Nickname
 }
 
@@ -63,7 +65,7 @@ const LIMITS = { items: 2000, journeysPerDay: 12, name: 40, voice: 80, guesses: 
 const DATE = /^\d{4}-\d{2}-\d{2}$/
 
 export function emptySave(): Save {
-  return { v: 1, cards: {}, days: {}, streak: { last: '', count: 0 }, mystery: {}, items: {} }
+  return { v: 1, cards: {}, days: {}, streak: { last: '', count: 0 }, mystery: {}, items: {}, thanks: {} }
 }
 
 /** todayKey를 포함해 최근 days일의 날짜 키인지 */
@@ -135,6 +137,8 @@ export function mergeSaves(a: Save, b: Save, todayKey: string): Save {
     v: 1,
     cards: mergeRecordOfDates(a.cards, b.cards),
     items: mergeRecordOfDates(a.items, b.items),
+    // 예전 기록에는 thanks가 없을 수 있다
+    thanks: mergeRecordOfDates(a.thanks ?? {}, b.thanks ?? {}),
     days: pickRecent(days, todayKey),
     mystery: pickRecent(mystery, todayKey),
     streak,
@@ -174,6 +178,9 @@ export function sanitizeSave(raw: unknown, todayKey: string): Save {
   const s = emptySave()
   if (!isObj(raw)) return s
   if (isObj(raw.cards)) for (const [id, d] of Object.entries(raw.cards)) if (PEOPLE[id] && typeof d === 'string' && DATE.test(d)) s.cards[id] = d
+  if (isObj(raw.thanks)) {
+    for (const [id, d] of Object.entries(raw.thanks)) if (s.cards[id] && typeof d === 'string' && DATE.test(d)) s.thanks[id] = d
+  }
   if (isObj(raw.items)) {
     for (const [name, d] of Object.entries(raw.items).slice(0, LIMITS.items)) {
       if (typeof d === 'string' && DATE.test(d) && name.length <= LIMITS.name) s.items[name] = d

@@ -53,6 +53,23 @@ test('검사: 모르는 카드와 잘못된 값은 버린다', () => {
   assert.equal(s.nickname, undefined)
 })
 
+test('고마움: 합집합으로 합치고 먼저 전한 날을 남긴다. 예전 기록(thanks 없음)과도 합쳐진다', () => {
+  const [p1, p2] = PEOPLE_LIST.map((p) => p.id)
+  const a: Save = { ...emptySave(), cards: { [p1!]: '2026-10-01', [p2!]: '2026-10-01' }, thanks: { [p1!]: '2026-10-12' } }
+  const b: Save = { ...emptySave(), cards: { [p1!]: '2026-10-01', [p2!]: '2026-10-01' }, thanks: { [p1!]: '2026-10-10', [p2!]: '2026-10-13' } }
+  assert.deepEqual(mergeSaves(a, b, TODAY).thanks, { [p1!]: '2026-10-10', [p2!]: '2026-10-13' })
+  const old = { ...emptySave(), cards: { [p1!]: '2026-10-01' } } as Partial<Save>
+  delete old.thanks
+  assert.deepEqual(mergeSaves(old as Save, a, TODAY).thanks, { [p1!]: '2026-10-12' })
+})
+
+test('검사: 고마움은 만난 카드에만, 날짜 형식이 맞을 때만 남긴다', () => {
+  const [p1, p2] = PEOPLE_LIST.map((p) => p.id)
+  const s = sanitizeSave({ cards: { [p1!]: TODAY }, thanks: { [p1!]: TODAY, [p2!]: TODAY, nobody: TODAY, [`${p1}x`]: 'bad' } }, TODAY)
+  assert.deepEqual(s.thanks, { [p1!]: TODAY })
+  assert.deepEqual(sanitizeSave({ cards: { [p1!]: TODAY } }, TODAY).thanks, {})
+})
+
 test('닉네임: 기본값은 12자 이하, 직접 정한 값은 앞뒤 공백 제거·1~12자', () => {
   for (let i = 0; i < 300; i++) assert.ok(Array.from(randomNickname()).length <= NICKNAME_MAX)
   assert.match(randomNickname(() => 0), /^.+의 .+$/)

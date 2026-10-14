@@ -5,6 +5,8 @@ import { PLACES } from '../shared/data/places'
 import dictionary from '../shared/data/dictionary.json'
 import { EVENTS, HIDDEN_RULES } from '../shared/data/journey-extras'
 import { SYNONYM_GROUPS } from '../shared/data/synonyms'
+import { SET_THANKS_SCENES, THANKS_BY_PERSON } from '../shared/data/thanks'
+import { thanksRepliesOf } from '../shared/thanks'
 import { buildTimeline, quizzesOf, resolveStages } from '../shared/journey'
 import { looksFactual } from '../shared/safety'
 import { CODE_WORDS } from '../shared/recovery'
@@ -100,6 +102,20 @@ for (const e of dictionary as DictEntry[]) {
   for (const m of e.missing ?? []) if (!/^[가-힣][가-힣 ]*$/.test(m)) errors.push(`사전 ${e.key}: 준비 중 재료 이름 "${m}"`)
   for (const id of e.materialIds) if (!MATERIAL_LIST.find((m) => m.id === id)) errors.push(`사전 ${e.key}: 재료 ${id} 없음`)
   for (const v of [...(e.voices ?? []), e.twist ?? '']) if (v && looksFactual(v)) errors.push(`사전 ${e.key}: 사실처럼 보이는 문구 "${v}"`)
+}
+
+// 고마워요: 모든 사람에게 답이 2개 이상, 세트마다 감사 장면. 숫자·이모지 없이
+const EMOJI = /\p{Extended_Pictographic}/u
+for (const person of PEOPLE_LIST) {
+  const replies = thanksRepliesOf(person.id)
+  if (replies.length < 2) errors.push(`${person.id}: 고마워요 답이 ${replies.length}개`)
+  for (const r of replies) if (/[0-9]/.test(r) || EMOJI.test(r)) errors.push(`${person.id}: 답에 숫자·이모지 "${r}"`)
+}
+for (const id of Object.keys(THANKS_BY_PERSON)) if (!PEOPLE[id]) errors.push(`고마워요 답: 사람 ${id} 없음`)
+for (const set of SETS) {
+  const lines = SET_THANKS_SCENES[set.id] ?? []
+  if (!lines.length) errors.push(`${set.id}: 감사 장면 없음`)
+  for (const line of lines) if (/[0-9]/.test(line) || EMOJI.test(line)) errors.push(`${set.id}: 장면에 숫자·이모지`)
 }
 
 // 복구 코드 낱말: 두 글자, 중복 없음, 경우의 수 확보

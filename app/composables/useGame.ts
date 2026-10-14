@@ -1,4 +1,4 @@
-import { computed, effectScope, reactive, watch } from 'vue'
+import { computed, effectScope, reactive, ref, watch } from 'vue'
 import { SETS } from '../../shared/data/materials'
 import { PEOPLE } from '../../shared/data/people'
 import {
@@ -7,6 +7,7 @@ import {
 } from '../../shared/logic'
 import { normalizeNickname, randomNickname } from '../../shared/nickname'
 import { buildTimeline, quizFor } from '../../shared/journey'
+import { everyoneThanked, newScenes, thanksReply, type ThanksScene } from '../../shared/thanks'
 import { emptySave, type DayLog, type Journey, type JourneySource, type MysteryLog, type Save } from '../../shared/progress'
 
 export type { DayLog, Journey, JourneySource, MysteryLog, Save } from '../../shared/progress'
@@ -60,6 +61,7 @@ export function replaceSave(next: Save) {
   s.streak = next.streak
   s.mystery = next.mystery
   s.items = next.items
+  s.thanks = next.thanks ?? {}
   if (next.nickname) s.nickname = next.nickname
 }
 
@@ -76,6 +78,16 @@ export function onJourneyFinish(listener: () => void) {
 }
 
 export { buildTimeline }
+
+/** 보여 줄 감사 장면(세트 감사·엔딩). 화면 어디서 고마움을 전해도 app.vue의 ThanksScene이 띄운다 */
+const sceneQueue = ref<ThanksScene[]>([])
+
+export function useThanksScenes() {
+  return {
+    current: computed(() => sceneQueue.value[0]),
+    dismiss: () => sceneQueue.value.shift(),
+  }
+}
 
 export function useGame() {
   const s = getState()
@@ -230,6 +242,24 @@ export function useGame() {
     }))
   }
 
+  // ── 고마워요 ──
+  const thanked = (cardId: string) => !!s.thanks[cardId]
+  const allThanked = computed(() => everyoneThanked(new Set(Object.keys(s.thanks))))
+
+  /** 만난 사람에게 고마움을 전한다. 이미 전했거나 아직 못 만났으면 아무것도 하지 않는다. 답을 돌려준다 */
+  function thank(cardId: string): string | null {
+    if (!s.cards[cardId] || s.thanks[cardId]) return null
+    const before = new Set(Object.keys(s.thanks))
+    s.thanks[cardId] = todayKey
+    sceneQueue.value.push(...newScenes(before, new Set(Object.keys(s.thanks))))
+    return thanksReply(cardId)
+  }
+
+  /** 도감에서 엔딩을 다시 본다 */
+  function replayEnding() {
+    if (allThanked.value) sceneQueue.value.push({ type: 'ending' })
+  }
+
   const nickname = computed(() => s.nickname?.value ?? '')
   /** 닉네임을 바꾼다. 1~12자가 아니면 false */
   function setNickname(input: string): boolean {
@@ -263,5 +293,9 @@ export function useGame() {
     mysteryJourney,
     guessMystery,
     setProgress,
+    thanked,
+    thank,
+    allThanked,
+    replayEnding,
   }
 }

@@ -41,6 +41,10 @@ const metLabel = computed(() => `${withJosa(game.nickname.value, '이', '가')} 
       <p class="muted small">{{ metLabel }} <span class="mono">{{ game.ownedCount.value }}/{{ total }}</span>명</p>
       <div class="bar" aria-hidden="true"><span :style="{ width: `${percent}%` }" /></div>
       <NicknameEditor />
+      <button v-if="game.allThanked.value" class="btn ending-btn" @click="game.replayEnding()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z" /></svg>
+        엔딩 다시 보기
+      </button>
     </header>
 
     <DeviceTransfer />
@@ -86,7 +90,7 @@ const metLabel = computed(() => `${withJosa(game.nickname.value, '이', '가')} 
       </div>
       <div class="grid">
         <button v-for="p in list" :key="p.id" class="cell" :aria-label="game.owns(p.id) ? p.job : '아직 만나지 못한 사람'" @click="open = p.id">
-          <MiniCard :person-id="p.id" :locked="!game.owns(p.id)" :is-new="game.state.cards[p.id] === game.todayKey" />
+          <MiniCard :person-id="p.id" :locked="!game.owns(p.id)" :is-new="game.state.cards[p.id] === game.todayKey" :thanked="game.thanked(p.id)" />
         </button>
       </div>
     </section>
@@ -110,6 +114,7 @@ const metLabel = computed(() => `${withJosa(game.nickname.value, '이', '가')} 
 .title { font-size: 30px; }
 .small { margin: 0; font-size: 13px; }
 .h2 { margin: 0 0 10px; font-size: 15px; }
+.ending-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; color: var(--bad); }
 .bar { height: 8px; border-radius: 4px; background: var(--line); overflow: hidden; }
 .bar span { display: block; height: 100%; background: var(--accent); }
 
