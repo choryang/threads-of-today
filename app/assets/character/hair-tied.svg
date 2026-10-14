@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 640" width="512" height="640">
+<!-- hair-tied: 뒤로 묶은 머리 -->
+
+<circle cx="256" cy="98" r="40" fill="#4A3A33" stroke="#2A2A35" stroke-width="10" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M226 128 Q256 140 286 128" fill="none" stroke="#E0705F" stroke-width="12" stroke-linecap="round"/>
+<path d="M124 262 Q114 122 256 118 Q398 122 388 262 Q378 196 332 182 Q256 170 180 182 Q134 196 124 262 Z" fill="#4A3A33" stroke="#2A2A35" stroke-width="10" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M200 146 Q240 136 270 140" fill="none" stroke="#6E5A4E" stroke-width="10" stroke-linecap="round"/>
+</svg>

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 640" width="512" height="640">
+<!-- prop-box: 택배·화물 상자 -->
+
+<rect x="322" y="378" width="120" height="92" rx="10" fill="#D3A06A" stroke="#2A2A35" stroke-width="10" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M322 404 H442" stroke="#B07E48" stroke-width="8"/>
+<path d="M382 378 V404" stroke="#B07E48" stroke-width="14"/>
+<rect x="400" y="430" width="30" height="20" rx="3" fill="#F3F1EA" opacity=".85"/>
+</svg>

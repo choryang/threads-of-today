@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 640" width="512" height="640">
+<!-- prop-wrench: 렌치 -->
+
+<path d="M366 478 L420 392" stroke="#2A2A35" stroke-width="30" stroke-linecap="round"/>
+<path d="M366 478 L420 392" stroke="#8C9AAD" stroke-width="16" stroke-linecap="round"/>
+<path d="M420 360 A34 34 0 1 0 450 400 L430 396 L424 378 Z" fill="#8C9AAD" stroke="#2A2A35" stroke-width="8" stroke-linejoin="round" stroke-linecap="round"/>
+</svg>

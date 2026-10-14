@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 640" width="512" height="640">
+<!-- prop-cup: 컵 (커피·음료) -->
+
+<path d="M340 392 H396 L390 462 Q389 470 381 470 H355 Q347 470 346 462 Z" fill="#FFFFFF" stroke="#2A2A35" stroke-width="10" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M343 414 H393 L390 444 H346 Z" fill="#8B5A3C"/>
+<rect x="332" y="378" width="72" height="18" rx="7" fill="#F4F6FA" stroke="#2A2A35" stroke-linejoin="round" stroke-linecap="round" stroke-width="8"/>
+<path d="M356 360 Q364 350 356 340 M378 360 Q386 350 378 340" fill="none" stroke="#C9D2DE" stroke-width="7" stroke-linecap="round"/>
+</svg>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onBeforeUnmount, ref } from 'vue'
 import { PEOPLE } from '../../shared/data/people'
 import { PLACES } from '../../shared/data/places'
 import { thanksReply } from '../../shared/thanks'
@@ -13,6 +13,17 @@ const game = useGame()
 const met = computed(() => game.owns(props.personId))
 const thanked = computed(() => game.thanked(props.personId))
 const reply = computed(() => (thanked.value ? thanksReply(props.personId) : ''))
+
+// 고마워요를 누르면 잠깐 손을 흔들며 반가워한다
+const waving = ref(false)
+let waveTimer: ReturnType<typeof setTimeout> | undefined
+function thank() {
+  game.thank(props.personId)
+  waving.value = true
+  clearTimeout(waveTimer)
+  waveTimer = setTimeout(() => { waving.value = false }, 1800)
+}
+onBeforeUnmount(() => clearTimeout(waveTimer))
 </script>
 
 <template>
@@ -22,7 +33,7 @@ const reply = computed(() => (thanked.value ? thanksReply(props.personId) : ''))
       <span class="badge">{{ badgeOf(person) }}</span>
     </header>
     <div class="art">
-      <Character :person-id="personId" :size="150" bob />
+      <Character :person-id="personId" :size="150" bob :wave="waving" />
       <span v-if="isNew" class="new">NEW</span>
     </div>
     <div class="body">
@@ -30,7 +41,7 @@ const reply = computed(() => (thanked.value ? thanksReply(props.personId) : ''))
       <p class="place">{{ place.name }}<template v-if="place.country && !place.name.includes(place.country)"> · {{ place.country }}</template></p>
       <p class="story">{{ person.story }}</p>
       <div v-if="met" class="thanks" aria-live="polite">
-        <button v-if="!thanked" class="thank-btn" @click="game.thank(personId)">
+        <button v-if="!thanked" class="thank-btn" @click="thank">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z" /></svg>
           고마워요
         </button>

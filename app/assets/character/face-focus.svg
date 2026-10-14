@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 640" width="512" height="640">
+<!-- face-focus: 일에 집중한 얼굴 -->
+
+<ellipse cx="208" cy="272" rx="11" ry="13" fill="#2A2A35"/>
+<ellipse cx="304" cy="272" rx="11" ry="13" fill="#2A2A35"/>
+<circle cx="212" cy="267" r="4" fill="#fff"/><circle cx="308" cy="267" r="4" fill="#fff"/>
+<path d="M186 240 L226 250 M326 240 L286 250" stroke="#2A2A35" stroke-width="9" stroke-linecap="round"/>
+<ellipse cx="176" cy="306" rx="22" ry="12" fill="#FF8A8A" opacity=".35"/>
+<ellipse cx="336" cy="306" rx="22" ry="12" fill="#FF8A8A" opacity=".35"/>
+<path d="M242 308 Q256 304 270 308" fill="none" stroke="#2A2A35" stroke-width="9" stroke-linecap="round"/>
+</svg>

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 640" width="512" height="640">
+<!-- outfit-lab: 하얀 가운 -->
+<g class="sleeve-l"><path d="M196 386 Q170 404 158 432" fill="none" stroke="#2A2A35" stroke-width="56" stroke-linecap="round"/><path d="M196 386 Q170 404 158 432" fill="none" stroke="#F4F6FA" stroke-width="38" stroke-linecap="round"/></g><g class="sleeve-r"><path d="M316 386 Q342 404 354 432" fill="none" stroke="#2A2A35" stroke-width="56" stroke-linecap="round"/><path d="M316 386 Q342 404 354 432" fill="none" stroke="#F4F6FA" stroke-width="38" stroke-linecap="round"/></g>
+<path d="M190 356 Q256 382 322 356 Q340 450 334 528 Q332 552 306 552 H206 Q180 552 178 528 Q172 450 190 356 Z" fill="#F4F6FA" stroke="#2A2A35" stroke-width="10" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M232 368 L256 404 L280 368 Q256 380 232 368 Z" fill="#9EC3E8" stroke="#2A2A35" stroke-linejoin="round" stroke-linecap="round" stroke-width="7"/>
+<path d="M226 366 L256 420 L240 552 M286 366 L256 420 L272 552" fill="none" stroke="#C9D2DE" stroke-width="7"/>
+<path d="M194 470 H230 V500 H194 Z M282 470 H318 V500 H282 Z" fill="none" stroke="#C9D2DE" stroke-width="7"/>
+<path d="M296 420 V444" stroke="#3B6EA8" stroke-width="7" stroke-linecap="round"/>
+</svg>

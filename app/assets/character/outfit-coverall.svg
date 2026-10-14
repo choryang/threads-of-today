@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 640" width="512" height="640">
+<!-- outfit-coverall: 공장 작업복 (점프수트) -->
+<g class="sleeve-l"><path d="M196 386 Q170 404 158 432" fill="none" stroke="#2A2A35" stroke-width="56" stroke-linecap="round"/><path d="M196 386 Q170 404 158 432" fill="none" stroke="#4D6FA3" stroke-width="38" stroke-linecap="round"/></g><g class="sleeve-r"><path d="M316 386 Q342 404 354 432" fill="none" stroke="#2A2A35" stroke-width="56" stroke-linecap="round"/><path d="M316 386 Q342 404 354 432" fill="none" stroke="#4D6FA3" stroke-width="38" stroke-linecap="round"/></g><path d="M206 540 V588 H250 V540 Z" fill="#4D6FA3" stroke="#2A2A35" stroke-width="10" stroke-linejoin="round" stroke-linecap="round"/><path d="M262 540 V588 H306 V540 Z" fill="#4D6FA3" stroke="#2A2A35" stroke-width="10" stroke-linejoin="round" stroke-linecap="round"/><path d="M190 356 Q256 382 322 356 Q340 450 334 528 Q332 552 306 552 H206 Q180 552 178 528 Q172 450 190 356 Z" fill="#4D6FA3" stroke="#2A2A35" stroke-width="10" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M236 366 L256 392 L276 366" fill="#3E5C8C" stroke="#2A2A35" stroke-linejoin="round" stroke-linecap="round" stroke-width="7"/>
+<path d="M256 392 V548" stroke="#2F4870" stroke-width="7"/>
+<rect x="276" y="410" width="40" height="34" rx="6" fill="#3E5C8C" stroke="#2A2A35" stroke-linejoin="round" stroke-linecap="round" stroke-width="7"/>
+<path d="M178 500 H334" stroke="#2F4870" stroke-width="16"/>
+<rect x="244" y="490" width="24" height="20" rx="4" fill="#C9D2DE" stroke="#2A2A35" stroke-linejoin="round" stroke-linecap="round" stroke-width="6"/>
+</svg>

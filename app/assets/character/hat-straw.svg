@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 640" width="512" height="640">
+<!-- hat-straw: 밀짚모자 -->
+
+<ellipse cx="256" cy="176" rx="206" ry="40" fill="#E8C063" stroke="#2A2A35" stroke-width="10" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M162 178 Q160 74 256 70 Q352 74 350 178 Q256 196 162 178 Z" fill="#F5D77E" stroke="#2A2A35" stroke-width="10" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M164 146 Q256 162 348 146 L350 176 Q256 194 162 176 Z" fill="#E0705F"/>
+<path d="M150 186 Q256 206 362 186" fill="none" stroke="#C9A04A" stroke-width="6" opacity=".7"/>
+<path d="M210 94 Q240 84 268 86" fill="none" stroke="#FFF1BE" stroke-width="9" stroke-linecap="round"/>
+</svg>

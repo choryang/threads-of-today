@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 640" width="512" height="640">
+<!-- outfit-vest: 형광 안전 조끼 (항만·크레인·공항) -->
+
+<g class="sleeve-l"><path d="M196 386 Q170 404 158 432" fill="none" stroke="#2A2A35" stroke-width="56" stroke-linecap="round"/><path d="M196 386 Q170 404 158 432" fill="none" stroke="#5B6B85" stroke-width="38" stroke-linecap="round"/></g><g class="sleeve-r"><path d="M316 386 Q342 404 354 432" fill="none" stroke="#2A2A35" stroke-width="56" stroke-linecap="round"/><path d="M316 386 Q342 404 354 432" fill="none" stroke="#5B6B85" stroke-width="38" stroke-linecap="round"/></g>
+<path d="M190 356 Q256 382 322 356 Q340 450 334 528 Q332 552 306 552 H206 Q180 552 178 528 Q172 450 190 356 Z" fill="#5B6B85" stroke="#2A2A35" stroke-width="10" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M190 356 Q174 450 180 528 Q182 550 206 550 H236 V404 L222 368 Q204 364 190 356 Z" fill="#F28C28" stroke="#2A2A35" stroke-width="10" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M322 356 Q338 450 332 528 Q330 550 306 550 H276 V404 L290 368 Q308 364 322 356 Z" fill="#F28C28" stroke="#2A2A35" stroke-width="10" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M182 460 H236 M276 460 H330" stroke="#F3F1EA" stroke-width="16"/>
+<path d="M180 500 H236 M276 500 H332" stroke="#F3F1EA" stroke-width="16"/>
+</svg>

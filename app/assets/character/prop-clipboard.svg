@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 640" width="512" height="640">
+<!-- prop-clipboard: 클립보드 -->
+
+<rect x="328" y="360" width="88" height="112" rx="10" fill="#C8955A" stroke="#2A2A35" stroke-width="8" stroke-linejoin="round" stroke-linecap="round"/>
+<rect x="340" y="378" width="64" height="84" rx="4" fill="#FFFFFF"/>
+<rect x="352" y="350" width="40" height="20" rx="6" fill="#8C9AAD" stroke="#2A2A35" stroke-width="8" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M350 396 H394 M350 416 H394 M350 436 H380" stroke="#9AA6B6" stroke-width="7" stroke-linecap="round"/>
+</svg>

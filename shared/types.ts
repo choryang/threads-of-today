@@ -20,9 +20,24 @@ export interface Place {
   continent: Continent
 }
 
+export type Outfit =
+  | 'farm' | 'coverall' | 'vest' | 'sailor' | 'miner'
+  | 'lab' | 'cleanroom' | 'apron' | 'office' | 'rider'
+
+export type Hair = 'short' | 'bob' | 'tied' | 'curly' | 'gray'
+
+/** glad는 "고마워요"를 눌렀을 때 잠깐 짓는 얼굴로 아껴 둔다 */
+export type Face = 'smile' | 'focus' | 'sleepy' | 'glad'
+
 export interface Look {
   hat: Hat
   prop: Prop
+  outfit: Outfit
+  /** 사람 id로 고르게 섞어 정한다 (people.ts) */
+  hair: Hair
+  face: Face
+  /** prop이 drop일 때 방울 색. 없으면 기름(검은색) */
+  tint?: string
 }
 
 export interface Person {

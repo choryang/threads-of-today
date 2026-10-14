@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 640" width="512" height="640">
+<!-- prop-flask: 실험 플라스크 -->
+
+<path d="M356 352 H388 V392 L420 452 Q424 466 410 466 H334 Q320 466 324 452 L356 392 Z" fill="#E9F3FF" stroke="#2A2A35" stroke-width="8" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M336 432 H408 L418 452 Q420 460 412 460 H332 Q324 460 326 452 Z" fill="#7FC4B8"/>
+<rect x="350" y="344" width="44" height="14" rx="5" fill="#C9D2DE" stroke="#2A2A35" stroke-width="8" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="360" cy="446" r="5" fill="#fff" opacity=".8"/><circle cx="384" cy="440" r="4" fill="#fff" opacity=".8"/>
+</svg>

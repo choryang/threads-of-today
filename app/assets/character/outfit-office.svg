@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 640" width="512" height="640">
+<!-- outfit-office: 셔츠 + 카디건, 사원증 -->
+<g class="sleeve-l"><path d="M196 386 Q170 404 158 432" fill="none" stroke="#2A2A35" stroke-width="56" stroke-linecap="round"/><path d="M196 386 Q170 404 158 432" fill="none" stroke="#9A7FB8" stroke-width="38" stroke-linecap="round"/></g><g class="sleeve-r"><path d="M316 386 Q342 404 354 432" fill="none" stroke="#2A2A35" stroke-width="56" stroke-linecap="round"/><path d="M316 386 Q342 404 354 432" fill="none" stroke="#9A7FB8" stroke-width="38" stroke-linecap="round"/></g><path d="M190 356 Q256 382 322 356 Q340 450 334 528 Q332 552 306 552 H206 Q180 552 178 528 Q172 450 190 356 Z" fill="#F4F6FA" stroke="#2A2A35" stroke-width="10" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M190 356 Q174 450 180 528 Q182 550 206 550 H238 L232 380 Q206 368 190 356 Z" fill="#9A7FB8" stroke="#2A2A35" stroke-width="10" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M322 356 Q338 450 332 528 Q330 550 306 550 H274 L280 380 Q306 368 322 356 Z" fill="#9A7FB8" stroke="#2A2A35" stroke-width="10" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M230 368 L256 392 L282 368" fill="none" stroke="#C9D2DE" stroke-width="8"/>
+<path d="M236 372 L256 450 L276 372" fill="none" stroke="#E0705F" stroke-width="6"/>
+<rect x="240" y="446" width="32" height="40" rx="5" fill="#FFFFFF" stroke="#2A2A35" stroke-linejoin="round" stroke-linecap="round" stroke-width="6"/>
+<rect x="246" y="454" width="20" height="12" rx="2" fill="#B9D4F5"/>
+</svg>

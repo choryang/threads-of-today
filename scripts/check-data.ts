@@ -1,4 +1,5 @@
 /* 데이터 무결성 검사: npx tsx scripts/check-data.ts */
+import { existsSync } from 'node:fs'
 import { LINK_RULES, MATERIAL_LIST, PRODUCTS, SETS } from '../shared/data/materials'
 import { PEOPLE, PEOPLE_LIST } from '../shared/data/people'
 import { PLACES } from '../shared/data/places'
@@ -25,6 +26,11 @@ for (const person of PEOPLE_LIST) {
   if (personIds.has(person.id)) errors.push(`사람 id ${person.id} 중복`)
   personIds.add(person.id)
   if (!PLACES[person.placeId]) errors.push(`${person.id}: 장소 ${person.placeId} 없음`)
+  const { outfit, hair, face, prop, tint } = person.look
+  for (const name of [`outfit-${outfit}`, `hair-${hair}`, `face-${face}`, `prop-${prop}`]) {
+    if (!existsSync(new URL(`../app/assets/character/${name}.svg`, import.meta.url))) errors.push(`${person.id}: 캐릭터 파츠 ${name}.svg 없음`)
+  }
+  if (tint && prop !== 'drop') errors.push(`${person.id}: tint는 prop이 drop일 때만 씀`)
 }
 for (const m of MATERIAL_LIST) {
   for (const pid of m.stages) {
