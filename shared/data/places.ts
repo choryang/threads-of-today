@@ -25,6 +25,7 @@ const list: Place[] = [
   { id: 'kr-garak', name: '서울 가락시장', country: '대한민국', continent: 'korea' },
   { id: 'kr-daejeo', name: '부산 대저', country: '대한민국', continent: 'korea' },
   { id: 'kr-ulleung', name: '울릉도', country: '대한민국', continent: 'korea' },
+  { id: 'kr-town', name: '우리 동네', country: '대한민국', continent: 'korea' },
 
   // 아시아
   { id: 'cn', name: '중국', country: '중국', continent: 'asia' },

@@ -6,6 +6,7 @@ import dictionary from '../shared/data/dictionary.json'
 import { EVENTS, HIDDEN_RULES } from '../shared/data/journey-extras'
 import { SYNONYM_GROUPS } from '../shared/data/synonyms'
 import { SET_THANKS_SCENES, THANKS_BY_PERSON } from '../shared/data/thanks'
+import { CLOSINGS, CLOSING_PEOPLE, closingKind, type ClosingKind } from '../shared/data/shops'
 import { thanksRepliesOf } from '../shared/thanks'
 import { buildTimeline, quizzesOf, resolveStages } from '../shared/journey'
 import { looksFactual } from '../shared/safety'
@@ -81,6 +82,21 @@ for (const rule of HIDDEN_RULES) {
   else reachable.add(rule.cardId)
   if (rule.materialIds) for (const mid of rule.materialIds) if (!meets.includes(mid)) errors.push(`숨은 만남 ${rule.cardId}: 재료 ${mid} 여정에는 ${rule.afterPersonIds.join('/')}가 없음`)
 }
+
+// 여정 끝의 가게·사무실 사람: stage 카드이고, 그 종류의 물건이 대표 물건이나 사전에 실제로 있어야 얻을 수 있다
+const kindsInUse = new Set<ClosingKind>([
+  ...PRODUCTS.map((p) => closingKind(p.name, p.materialIds)),
+  ...(dictionary as DictEntry[]).filter((e) => e.materialIds.length).map((e) => closingKind(e.name, e.materialIds)),
+])
+for (const [kind, closing] of Object.entries(CLOSINGS) as Array<[ClosingKind, (typeof CLOSINGS)[ClosingKind]]>) {
+  if (!kindsInUse.has(kind)) errors.push(`마지막 장면 ${kind}: 이 종류의 물건이 대표 물건·사전에 없음`)
+  for (const id of [...closing.shop, ...closing.office]) if (kindsInUse.has(kind)) reachable.add(id)
+}
+for (const id of CLOSING_PEOPLE) {
+  if (!PEOPLE[id]) errors.push(`마지막 장면: 사람 ${id} 없음`)
+  else if (PEOPLE[id]!.kind !== 'stage') errors.push(`마지막 장면: ${id}는 stage 카드가 아님`)
+}
+reachable.add('trade-clerk') // 수입 재료가 지나온 여정이면 늘 후보에 들어간다
 
 for (const s of SETS) {
   for (const id of s.memberIds) if (!reachable.has(id)) errors.push(`${s.id}: 멤버 ${id}를 얻을 수 없음`)

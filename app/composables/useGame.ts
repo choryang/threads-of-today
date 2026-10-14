@@ -151,7 +151,7 @@ export function useGame() {
     if (!s.items[item.name]) s.items[item.name] = todayKey
     const saved = day.journeys[day.journeys.length - 1]!
     // 첫 번째 사람은 여정을 시작하자마자 만난다
-    const first = buildTimeline(saved.materialIds, saved.id)[0]
+    const first = buildTimeline(saved.materialIds, saved.id, saved.name)[0]
     if (first?.type === 'stage') saved.newCards.push(...collect(first.personId))
     return saved
   }
@@ -166,7 +166,7 @@ export function useGame() {
 
   /** 타임라인 다음 칸을 펼친다. 사람 칸이면 카드를 얻는다. */
   function revealNext(journey: Journey): string[] {
-    const timeline = buildTimeline(journey.materialIds, journey.id)
+    const timeline = buildTimeline(journey.materialIds, journey.id, journey.name)
     const item = timeline[journey.step]
     if (!item) return []
     if (item.type === 'quiz' && journey.quiz[item.materialId] === undefined) return []

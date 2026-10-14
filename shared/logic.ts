@@ -52,6 +52,8 @@ export function sanitizeMaterialIds(ids: unknown): string[] {
 export interface JourneyRef {
   materialIds: string[]
   id?: string
+  /** 물건 이름. 있으면 여정 끝의 가게·사무실 사람까지 센다 */
+  name?: string
 }
 
 export function countriesOf(personIds: Iterable<string>): string[] {
@@ -66,7 +68,7 @@ export function countriesOf(personIds: Iterable<string>): string[] {
 
 export function dayStats(journeys: JourneyRef[]) {
   const people = new Set<string>()
-  for (const j of journeys) for (const s of timelinePeople(j.materialIds, j.id)) people.add(s.personId)
+  for (const j of journeys) for (const s of timelinePeople(j.materialIds, j.id, j.name)) people.add(s.personId)
   return { people: [...people], countries: countriesOf(people) }
 }
 
@@ -74,7 +76,7 @@ export function dayStats(journeys: JourneyRef[]) {
 export function findLinkCards(journeys: JourneyRef[]): string[] {
   const materialsByPerson = new Map<string, Set<string>>()
   for (const j of journeys) {
-    for (const { materialId, personId } of timelinePeople(j.materialIds, j.id)) {
+    for (const { materialId, personId } of timelinePeople(j.materialIds, j.id, j.name)) {
       const set = materialsByPerson.get(personId) ?? new Set<string>()
       set.add(materialId)
       materialsByPerson.set(personId, set)

@@ -363,6 +363,18 @@ const list: Person[] = [
   p('squid-dryer', '오징어 말리는 사람', 'kr-ulleung', '밤새 잡아 온 오징어를 햇볕에 말려요.', 'scarf', 'fish'),
   p('squid-researcher', '수산 자원 연구원', 'kr', '바닷물이 평소보다 따뜻해지면 오징어 떼가 흩어져요. 우리 바다의 오징어가 왜 줄었는지 살펴요.', 'none', 'fish', 'rare', 'quiz'),
 
+  // ── 손에 닿기 직전: 가게·사무실 사람들 (여정 맨 끝, shared/data/shops.ts) ──
+  p('barista', '바리스타', 'kr-town', '원두를 갈아 에스프레소를 내리고 우유 거품을 올려요. 오늘의 첫 잔을 건네는 사람이에요.', 'none', 'cup'),
+  p('cvs-clerk', '편의점 직원', 'kr-town', '새벽에 들어온 물건을 진열하고 날짜가 지난 건 없는지 살펴요. 밤에도 불을 켜 두고 기다려요.', 'cap', 'box'),
+  p('mart-cashier', '마트 계산원', 'kr-town', '바코드를 찍고, 장바구니에 담긴 물건을 하나하나 건네요.', 'cap', 'basket'),
+  p('delivery-rider', '배달 라이더', 'kr-town', '갓 만든 음식이 식기 전에 오토바이로 골목을 달려 문 앞까지 가져다줘요.', 'helmet', 'box'),
+  p('clothing-clerk', '옷가게 직원', 'kr-town', '옷을 개어 크기별로 정리하고, 잘 맞는 치수를 함께 찾아 줘요.', 'none', 'spool'),
+  p('phone-clerk', '휴대폰 매장 직원', 'kr-town', '새 휴대폰을 켜고 예전 휴대폰의 사진과 연락처를 옮겨 줘요.', 'none', 'phone'),
+  p('trade-clerk', '무역회사 수입 담당', 'kr-seoul', '배에 실린 물건이 항구에 닿기 전에 수입 서류를 챙기고 통관 준비를 해요.', 'none', 'clipboard'),
+  p('merch-md', '상품 MD', 'kr-seoul', '매장에 어떤 물건을 놓을지 골라요. 산지와 공장을 오가며 맛과 품질을 직접 확인해요.', 'none', 'magnifier'),
+  p('dispatcher', '물류 배차 담당자', 'kr-gyeonggi', '오늘 나갈 상자들을 보고 어느 차가 어느 길로 갈지 정해요.', 'headset', 'clipboard'),
+  p('cs-agent', '고객센터 상담원', 'kr-seoul', '주문한 물건이 어디쯤 왔는지, 어떻게 쓰는지 묻는 전화에 하나하나 답해요.', 'headset', 'phone'),
+
   // ── 숨은 만남 (에픽, 여정 중 아주 가끔) ──
   p('ship-cook', '배 위의 요리사', 'sea', '몇 주씩 바다 위에 있는 선원들의 하루 세 끼를 책임져요. 흔들리는 주방에서도 국을 끓여요.', 'chef', 'cup', 'epic', 'hidden'),
   p('reefer-tech', '냉동 컨테이너 기술자', 'sea', '얼리거나 차갑게 실어야 하는 화물이 상하지 않게 냉동 컨테이너의 온도를 살펴요.', 'beanie', 'wrench', 'epic', 'hidden'),

@@ -71,10 +71,20 @@ export const THANKS_REPLIES: Record<ThanksGroup, string[]> = {
 
 /** 직업에 딱 맞는 답이 따로 있는 사람 (가게·사무실 사람들) */
 export const THANKS_BY_PERSON: Record<string, string[]> = {
+  barista: ['오늘 첫 잔이 입에 맞았다니 다행이에요.', '다음엔 우유 거품을 조금 더 올려 줄게요.'],
+  'cvs-clerk': ['밤새 불 켜 두길 잘했네요. 고마워요.', '내일 아침에도 채워 둘게요. 또 와요.'],
+  'mart-cashier': ['장바구니가 무겁죠? 조심히 들어가요.', '계산대에서 듣는 고맙다는 말이 제일 좋아요.'],
+  'delivery-rider': ['식기 전에 도착해서 다행이에요.', '오늘 마지막 배달이 기분 좋게 끝났어요.'],
+  'clothing-clerk': ['잘 맞는 옷을 찾아서 저도 기뻐요.', '다음 계절 옷도 미리 개어 둘게요.'],
+  'phone-clerk': ['사진이랑 연락처, 하나도 빠짐없이 옮겨 뒀어요.', '쓰다가 모르는 게 있으면 또 들러요.'],
+  'trade-clerk': ['서류 한 장 한 장이 누군가의 하루였네요.', '다음 배도 늦지 않게 챙길게요.'],
+  'merch-md': ['고른 물건이 마음에 들었다니 다행이에요.', '다음엔 더 좋은 걸 찾아 올게요.'],
+  dispatcher: ['오늘 길을 잘 골랐나 봐요. 고마워요.', '다음 상자도 가장 빠른 길로 보낼게요.'],
+  'cs-agent': ['전화로만 듣던 목소리, 직접 들으니 반갑네요.', '궁금한 게 생기면 언제든 전화해요.'],
 }
 
-const SHOP_IDS = ['courier']
-const OFFICE_IDS = ['grain-trader']
+const SHOP_IDS = ['barista', 'cvs-clerk', 'mart-cashier', 'delivery-rider', 'clothing-clerk', 'phone-clerk', 'courier']
+const OFFICE_IDS = ['trade-clerk', 'merch-md', 'dispatcher', 'cs-agent', 'grain-trader']
 
 /** 사람 카드가 어느 답 묶음을 쓰는지 */
 export function thanksGroupOf(p: Person): ThanksGroup {

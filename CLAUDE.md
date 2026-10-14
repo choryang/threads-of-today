@@ -20,6 +20,8 @@ shared/                 앱과 서버가 상대 경로로 함께 import (Nuxt �
   data/materials.ts     재료 여정(stages = 사람 id 순서), 출발지 변형(originHead, origins), 퀴즈(quiz + extraQuizzes), 대표 물건(PRODUCTS), 연결 규칙, 세트
   data/synonyms.ts      동의어 묶음 (첫 단어가 대표 표기)
   data/journey-extras.ts 여정 이벤트(EVENTS, '이야기')·숨은 만남 규칙(HIDDEN_RULES)
+  data/shops.ts         여정 마지막 장면의 가게·사무실 사람. closingKind(물건 이름, 재료)로 종류를 정한다
+  data/thanks.ts        고마워요 답·세트 감사 장면·엔딩 문구
   data/dictionary.json  미리 만든 물건 사전 (scripts/build-dictionary.ts가 생성). 서버에서만 import
   safety.ts             looksFactual: AI 문구에 숫자·나라 이름이 섞였는지 검사
   progress.ts           Save 타입, mergeSaves(카드·물건 합집합, 날짜 기록 30일), sanitizeSave(서버 입력 검사)

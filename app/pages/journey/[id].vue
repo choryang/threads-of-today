@@ -12,7 +12,7 @@ import { renderVoice } from '../../../shared/voice'
 const route = useRoute()
 const game = useGame()
 const journey = computed(() => game.findJourney(String(route.params.id)))
-const timeline = computed(() => (journey.value ? buildTimeline(journey.value.materialIds, journey.value.id) : []))
+const timeline = computed(() => (journey.value ? buildTimeline(journey.value.materialIds, journey.value.id, journey.value.name) : []))
 const current = computed(() => (journey.value ? timeline.value[journey.value.step] : undefined))
 const voice = computed(() => renderVoice(journey.value?.voice, game.nickname.value))
 const isLast = computed(() => !!journey.value && journey.value.step >= timeline.value.length - 1)

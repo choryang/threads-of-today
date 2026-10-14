@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { MATERIALS } from '../shared/data/materials'
-import { buildTimeline, quizFor, quizzesOf } from '../shared/journey'
+import { buildTimeline, closingPeople, quizFor, quizzesOf } from '../shared/journey'
+import { closingKind } from '../shared/data/shops'
 import { dayStats, findLinkCards } from '../shared/logic'
 
 const ids = (n: number) => Array.from({ length: n }, (_, i) => `2026-10-14-1-${i.toString(36).padStart(4, '0')}`)
@@ -43,4 +44,27 @@ test('통계·연결 카드는 그 여정의 실제 경로로 센다', () => {
   assert.ok(dayStats([{ materialIds: ['coffee'], id }]).countries.includes('콜롬비아'))
   assert.ok(!dayStats([{ materialIds: ['coffee'] }]).countries.includes('콜롬비아'))
   assert.ok(findLinkCards([{ materialIds: ['cobalt', 'lithium'] }]).includes('link-cn-refinery'))
+})
+
+test('마지막 장면: 물건 종류에 맞는 가게 사람이 여정 맨 끝에 나온다', () => {
+  assert.equal(closingKind('아이스 아메리카노', ['coffee', 'plastic']), 'cafe')
+  assert.equal(closingKind('카페라떼', ['coffee', 'milk', 'pulp']), 'cafe')
+  assert.equal(closingKind('커피우유', ['milk', 'coffee', 'sugar']), 'cvs')
+  assert.equal(closingKind('참치마요 삼각김밥', ['rice', 'laver', 'tuna', 'plastic']), 'cvs')
+  assert.equal(closingKind('스마트폰', ['cobalt', 'lithium', 'chip', 'assembly', 'plastic']), 'electronics')
+  assert.equal(closingKind('면 티셔츠', ['cotton']), 'clothes')
+  assert.equal(closingKind('고무장갑', ['rubber']), 'goods')
+  assert.equal(closingKind('후라이드 치킨', ['chicken', 'wheat', 'soybean']), 'delivery')
+  assert.equal(closingKind('사과', ['apple']), 'mart')
+  assert.equal(closingKind('나무 책상', ['wood', 'steel']), 'goods')
+
+  const id = '2026-10-15-1-abcd'
+  const t = buildTimeline(['coffee'], id, '아이스 아메리카노')
+  const last = t[t.length - 1]
+  assert.equal(last?.type === 'stage' && last.personId, 'barista')
+  // 커피는 수입 재료라 가게 사람 앞에 무역회사 직원이 나온다
+  assert.deepEqual(closingPeople('아이스 아메리카노', ['coffee'], id, true), ['trade-clerk', 'barista'])
+  // 물건 이름이 없거나 예전 여정 id면 그대로
+  assert.deepEqual(buildTimeline(['coffee'], id).length, t.length - 2)
+  assert.deepEqual(buildTimeline(['coffee'], '2026-10-14-1', '아메리카노'), buildTimeline(['coffee']))
 })

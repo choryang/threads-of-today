@@ -3,11 +3,14 @@
  * 무작위는 여정 id를 시드로 써서, 새로고침하거나 다른 기기에서 열어도 같은 여정이 나온다.
  * 새 여정 id는 '2026-10-14-1-k3x9'처럼 무작위 꼬리가 붙는다. 꼬리가 없는 예전 id(2026-10-14-1, 2026-10-14-1abcd)는
  * 기본 경로 그대로 둬서, 이 기능이 들어가기 전에 시작한 여정이 중간에 바뀌지 않게 한다.
+ * 물건 이름을 넘기면 여정 맨 끝에 손에 닿기 직전의 가게·사무실 사람을 붙인다(shared/data/shops.ts). 끝에만 붙어서
+ * 이미 진행 중인 여정의 앞부분은 바뀌지 않는다.
  */
 import { EVENTS, HIDDEN_RULES } from './data/journey-extras'
 import { MATERIALS } from './data/materials'
 import { PEOPLE } from './data/people'
 import { PLACES } from './data/places'
+import { CLOSINGS, IMPORT_OFFICE, closingKind } from './data/shops'
 import { hash, mix32, seeded } from './random'
 import type { Material, Origin, Quiz } from './types'
 
@@ -53,7 +56,20 @@ export function resolveStages(m: Material, rand: (() => number) | null): { stage
 
 const isSea = (personId: string) => PLACES[PEOPLE[personId]?.placeId ?? '']?.continent === 'sea'
 
-export function buildTimeline(materialIds: string[], journeyId?: string): TimelineItem[] {
+/** 여정 끝의 가게·사무실 사람. 사무실 사람(있으면) 다음 가게 사람 */
+export function closingPeople(itemName: string, materialIds: string[], journeyId: string, imported: boolean): string[] {
+  const closing = CLOSINGS[closingKind(itemName, materialIds)]
+  const offices = imported ? [IMPORT_OFFICE, ...closing.office] : closing.office
+  const pick = (list: string[], salt: string) => list[hash(`closing:${salt}:${journeyId}`) % list.length]!
+  return [...(offices.length ? [pick(offices, 'office')] : []), pick(closing.shop, 'shop')]
+}
+
+const isAbroad = (personId: string) => {
+  const place = PLACES[PEOPLE[personId]?.placeId ?? '']
+  return !!place?.country && place.country !== '대한민국'
+}
+
+export function buildTimeline(materialIds: string[], journeyId?: string, itemName?: string): TimelineItem[] {
   const rand = journeyRandom(journeyId)
   const items: TimelineItem[] = []
   let events = 0
@@ -95,6 +111,13 @@ export function buildTimeline(materialIds: string[], journeyId?: string): Timeli
     const quizzes = quizzesOf(m)
     if (quizzes.length) items.push({ type: 'quiz', materialId, quizIndex: rand ? Math.floor(rand() * quizzes.length) : 0 })
   })
+
+  const known = materialIds.filter((id) => MATERIALS[id])
+  const lastMaterial = known[known.length - 1]
+  if (rand && itemName && journeyId && lastMaterial) {
+    const imported = items.some((t) => t.type === 'stage' && isAbroad(t.personId))
+    for (const personId of closingPeople(itemName, materialIds, journeyId, imported)) items.push({ type: 'stage', materialId: lastMaterial, personId })
+  }
   return items
 }
 
@@ -106,8 +129,8 @@ export function quizFor(materialIds: string[], journeyId: string | undefined, ma
 }
 
 /** 여정에서 만나는 사람(단계 + 숨은 만남) */
-export function timelinePeople(materialIds: string[], journeyId?: string): Array<{ materialId: string; personId: string }> {
-  return buildTimeline(materialIds, journeyId).flatMap((t) =>
+export function timelinePeople(materialIds: string[], journeyId?: string, itemName?: string): Array<{ materialId: string; personId: string }> {
+  return buildTimeline(materialIds, journeyId, itemName).flatMap((t) =>
     t.type === 'stage' || t.type === 'hidden' ? [{ materialId: t.materialId, personId: t.personId }] : [],
   )
 }
