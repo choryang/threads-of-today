@@ -22,6 +22,7 @@ shared/                 앱과 서버가 상대 경로로 함께 import (Nuxt �
   data/journey-extras.ts 여정 이벤트(EVENTS, '이야기')·숨은 만남 규칙(HIDDEN_RULES)
   data/shops.ts         여정 마지막 장면의 가게·사무실 사람. closingKind(물건 이름, 재료)로 종류를 정한다
   data/thanks.ts        고마워요 답·세트 감사 장면·엔딩 문구
+  data/mystery.ts       미스터리 힌트 1·2번(대표 물건별 쓰임새 한 줄·분류). 대표 물건을 추가하면 여기도 채운다(check:data)
   data/dictionary.json  미리 만든 물건 사전 (scripts/build-dictionary.ts가 생성). 서버에서만 import
   safety.ts             looksFactual: AI 문구에 숫자·나라 이름이 섞였는지 검사
   progress.ts           Save 타입, mergeSaves(카드·물건 합집합, 날짜 기록 30일), sanitizeSave(서버 입력 검사)
@@ -32,6 +33,7 @@ shared/                 앱과 서버가 상대 경로로 함께 import (Nuxt �
   journey.ts            buildTimeline(materialIds, journeyId): 여정 id 시드로 출발지·이야기·숨은 만남·퀴즈 변형. '-꼬리' 없는 예전 id는 기본 경로
   random.ts             hash / mix32 / seeded
   logic.ts              sanitizeMaterialIds / dayStats(여정별 실제 경로) / findLinkCards / 미스터리 등 순수 함수
+  mystery.ts            미스터리 힌트 5개. 3·4번은 보기의 다른 물건과 겹치지 않는 사람·출발지를 고른다
   thanks.ts             고마워요 답(카드 id 시드)·세트 감사 장면·엔딩 판정. 문구는 data/thanks.ts
 server/
   api/decompose.post.ts 텍스트·사진 → 재료 id. 로컬 매칭 → 공유 캐시 → (IP별 하루 한도 안에서) Claude → 캐시 저장

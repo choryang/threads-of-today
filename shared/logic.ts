@@ -125,14 +125,3 @@ export function mysteryOptions(key: string): Product[] {
     .map((x) => x.p)
 }
 
-/** 점점 구체적으로 드러나는 힌트. 마지막 힌트는 재료 이름. */
-export function mysteryHints(product: Product): string[] {
-  const stats = dayStats([{ materialIds: product.materialIds }])
-  const hints = [`재료 ${product.materialIds.length}가지, ${stats.countries.length}개 나라를 거쳐 와요.`]
-  for (const mid of product.materialIds.slice(0, 3)) {
-    const first = PEOPLE[MATERIALS[mid]!.stages[0]!]!
-    hints.push(`이 물건의 시작에는 ${PLACES[first.placeId]!.name}의 ${withJosa(first.job, '이', '가')} 있어요.`)
-  }
-  hints.push(`재료: ${product.materialIds.map((id) => MATERIALS[id]!.name).join(', ')}`)
-  return hints
-}

@@ -2,9 +2,10 @@ import { computed, effectScope, reactive, ref, watch } from 'vue'
 import { SETS } from '../../shared/data/materials'
 import { PEOPLE } from '../../shared/data/people'
 import {
-  DAILY_LIMIT, completedSets, dateKey, findLinkCards, mysteryHints, mysteryProduct, previousDateKey,
+  DAILY_LIMIT, completedSets, dateKey, findLinkCards, mysteryOptions, mysteryProduct, previousDateKey,
   type Decomposed,
 } from '../../shared/logic'
+import { mysteryHints } from '../../shared/mystery'
 import { normalizeNickname, randomNickname } from '../../shared/nickname'
 import { buildTimeline, quizFor } from '../../shared/journey'
 import { everyoneThanked, sceneKey, thanksReply, unseenScenes, type ThanksScene } from '../../shared/thanks'
@@ -215,7 +216,7 @@ export function useGame() {
 
   // ── 오늘의 미스터리 ──
   const mysteryAnswer = mysteryProduct(todayKey)
-  const mysteryHintList = mysteryHints(mysteryAnswer)
+  const mysteryHintList = mysteryHints(mysteryAnswer, mysteryOptions(todayKey).filter((p) => p.id !== mysteryAnswer.id))
   const mystery = computed<MysteryLog>(() => s.mystery[todayKey] ?? { revealed: 1, guesses: [], solved: false, finished: false })
 
   function guessMystery(productId: string) {

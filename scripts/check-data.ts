@@ -12,7 +12,9 @@ import { buildTimeline, quizzesOf, resolveStages } from '../shared/journey'
 import { looksFactual } from '../shared/safety'
 import { CODE_WORDS } from '../shared/recovery'
 import { NICKNAME_MAX, NICKNAME_PARTS } from '../shared/nickname'
-import { dayStats, findLinkCards, journeyMaterialIds, mysteryHints, mysteryOptions, mysteryProduct } from '../shared/logic'
+import { dayStats, findLinkCards, journeyMaterialIds, mysteryOptions, mysteryProduct } from '../shared/logic'
+import { MYSTERY_HINT_COUNT, middleCandidates, mysteryHints } from '../shared/mystery'
+import { MYSTERY_INFO } from '../shared/data/mystery'
 import { createMatcher, match, productEntries, type DictEntry } from '../shared/match'
 
 const errors: string[] = []
@@ -194,7 +196,29 @@ for (let i = 0; i < N; i++) {
 for (const old of ['2026-10-14-1', '2026-10-14-1abcd']) if (JSON.stringify(buildTimeline(['coffee', 'cacao'], old)) !== JSON.stringify(buildTimeline(['coffee', 'cacao']))) errors.push(`예전 여정 id ${old}는 기본 경로여야 함`)
 if (resolveStages(MATERIAL_LIST.find((m) => m.id === 'coffee')!, null).stages[0] !== 'coffee-picker') errors.push('기본 출발지 오류')
 console.log(`여정 ${N}개(커피·카카오·연어): 이벤트 ${Math.round((withEvent / N) * 100)}%, 숨은 만남 ${Math.round((withHidden / N) * 100)}%, 커피 첫 사람`, originCount)
-console.log('오늘 미스터리', mysteryProduct('2026-10-14').name, mysteryHints(mysteryProduct('2026-10-14')))
+// 미스터리 힌트: 모든 대표 물건이 힌트 5개, 1~4번에 정답 이름(물건 이름·별칭)이 없을 것. 날짜별 보기 조합으로도 확인
+const answerWords = (p: (typeof PRODUCTS)[number]) => [...new Set([p.name, ...p.aliases].flatMap((w) => [w, w.replace(/\s+/g, '')]).filter((w) => w.length >= 2))]
+function checkHints(p: (typeof PRODUCTS)[number], hints: string[], where: string) {
+  if (hints.length !== MYSTERY_HINT_COUNT || hints.some((h) => !h)) errors.push(`미스터리 ${p.id}${where}: 힌트가 ${MYSTERY_HINT_COUNT}개가 아님 ${JSON.stringify(hints)}`)
+  for (const [i, h] of hints.slice(0, 4).entries()) {
+    const word = answerWords(p).find((w) => h.replace(/\s+/g, '').includes(w.replace(/\s+/g, '')))
+    if (word) errors.push(`미스터리 ${p.id}${where}: 힌트 ${i + 1}에 정답 이름 '${word}' — ${h}`)
+  }
+}
+for (const p of PRODUCTS) {
+  if (!MYSTERY_INFO[p.id]) errors.push(`미스터리 ${p.id}: 쓰임새·분류 데이터 없음`)
+  if (!middleCandidates(p).length) errors.push(`미스터리 ${p.id}: 힌트 3에 쓸 중간 사람이 없음`)
+  checkHints(p, mysteryHints(p), '')
+}
+for (const id of Object.keys(MYSTERY_INFO)) if (!PRODUCTS.find((p) => p.id === id)) errors.push(`미스터리 데이터 ${id}: 대표 물건에 없음`)
+for (let i = 0; i < 120; i++) {
+  const d = new Date(2026, 9, 15 + i)
+  const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  const answer = mysteryProduct(key)
+  checkHints(answer, mysteryHints(answer, mysteryOptions(key).filter((o) => o.id !== answer.id)), ` (${key})`)
+}
+const today = mysteryProduct('2026-10-15')
+console.log('오늘 미스터리', today.name, mysteryHints(today, mysteryOptions('2026-10-15').filter((o) => o.id !== today.id)))
 if (errors.length) {
   console.error('\n오류', errors.length, '건\n' + errors.join('\n'))
   process.exit(1)
