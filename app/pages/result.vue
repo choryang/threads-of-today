@@ -4,6 +4,8 @@ import { PEOPLE } from '../../shared/data/people'
 import { dayStats } from '../../shared/logic'
 
 const game = useGame()
+/** 공유 이미지에는 오늘 지나온 실만 */
+const todayThreads = useTapestry({ todayOnly: true })
 const cardEl = ref<HTMLElement | null>(null)
 const busy = ref(false)
 const message = ref('')
@@ -111,6 +113,10 @@ async function save(share: boolean) {
             <Character v-for="id in faces" :key="id" :person-id="id" :size="54" />
           </div>
 
+          <div v-if="todayThreads.threads.length" class="s-threads">
+            <ThreadsTapestry :layout="todayThreads" :nickname="game.nickname.value" :interactive="false" :animate="false" variant="paper" />
+          </div>
+
           <div class="stamps">
             <span v-for="(c, i) in stats.countries" :key="c" class="stamp" :style="{ transform: stampTilt(i) }">{{ c }}</span>
           </div>
@@ -150,6 +156,7 @@ async function save(share: boolean) {
 .s-date { margin: 0; font-size: 12px; color: #4a4a4a; }
 .s-title { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 30px; line-height: 1.3; }
 .s-title em { font-style: normal; color: #b8462f; }
+.s-threads { width: 100%; max-width: 280px; align-self: center; }
 .faces { display: flex; flex-wrap: wrap; gap: 2px; }
 .stamps { display: flex; flex-wrap: wrap; gap: 10px 8px; padding: 4px 2px; }
 .stamp {

@@ -35,6 +35,7 @@ shared/                 앱과 서버가 상대 경로로 함께 import (Nuxt �
   logic.ts              sanitizeMaterialIds / dayStats(여정별 실제 경로) / findLinkCards / 미스터리 등 순수 함수
   mystery.ts            미스터리 힌트 5개. 3·4번은 보기의 다른 물건과 겹치지 않는 사람·출발지를 고른다
   thanks.ts             고마워요 답(카드 id 시드)·세트 감사 장면·엔딩 판정. 문구는 data/thanks.ts
+  threads.ts            나의 실타래: 재료별 누적(backfillThreads·addJourneyToThreads)과 나라 매듭 방사형 배치(buildTapestry)
 server/
   api/decompose.post.ts 텍스트·사진 → 재료 id. 로컬 매칭 → 공유 캐시 → (IP별 하루 한도 안에서) Claude → 캐시 저장
   api/profile/          index(익명 id·복구 코드 발급) · sync · restore
@@ -49,7 +50,7 @@ app/
   composables/useGame.ts  게임 상태·규칙 (effectScope로 저장 watch, 하루 여정 3번, 미스터리 보너스, 닉네임)
   composables/useSync.ts  서버 동기화·복구 코드로 이어 하기 (plugins/sync.client.ts가 호출)
   components/             NicknameEditor(홈·도감) · DeviceTransfer(도감 "다른 기기에서 이어 하기")
-  pages/                  index(입력 3방식) · journey/[id] · mystery · dex · result(html-to-image 공유)
+  pages/                  index(입력 3방식) · journey/[id] · mystery · threads(나의 실타래) · dex · result(html-to-image 공유)
   utils/character.ts      모자(hat)·소품(prop) 파츠를 조합한 SVG 콩 캐릭터
 scripts/check-data.ts     데이터 검사. 모든 변경 후 반드시 통과시킬 것
 scripts/build-dictionary.ts  data/seeds/*.txt → Message Batches API → dictionary.json + data/review/dictionary.csv (--dry-run, --limit, --resume)

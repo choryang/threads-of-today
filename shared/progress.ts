@@ -7,9 +7,10 @@
  *    같은 날의 여정은 id로 짝짓고, 더 많이 진행한 쪽을 남긴다.
  *  - 연속 기록: 마지막 날이 더 최근인 쪽. 같으면 큰 값.
  *  - 닉네임: updatedAt이 더 최근인 쪽.
+ *  - 재료별 누적(threads): 같은 재료는 떠난 횟수가 큰 쪽, 처음 떠난 날은 이른 쪽.
  *  - 본 감사 장면(seenScenes): 합집합. 한 기기에서 본 장면은 다른 기기에서 다시 띄우지 않는다.
  */
-import { SETS } from './data/materials'
+import { MATERIALS, SETS } from './data/materials'
 import { PEOPLE } from './data/people'
 import { normalizeNickname } from './nickname'
 
@@ -49,6 +50,14 @@ export interface Nickname {
   updatedAt: number
 }
 
+/** 재료 하나의 누적 기록 ('나의 실타래'의 실 한 가닥) */
+export interface ThreadStat {
+  /** 이 재료가 들어간 여정을 마친 횟수 */
+  count: number
+  /** 처음 마친 날 */
+  first: string
+}
+
 export interface Save {
   v: 1
   cards: Record<string, string>
@@ -61,6 +70,8 @@ export interface Save {
   thanks: Record<string, string>
   /** 이미 보여 준 감사 장면: 세트 id 또는 'ending'. 다른 기기와 합쳐져 세트가 완성되면 도감을 열 때 못 본 장면을 띄운다 */
   seenScenes: string[]
+  /** 재료 id → 누적 기록. 날짜별 기록(days)은 30일만 남아서 실타래는 이걸로 그린다 */
+  threads: Record<string, ThreadStat>
   nickname?: Nickname
 }
 
@@ -69,7 +80,7 @@ const LIMITS = { items: 2000, journeysPerDay: 12, name: 40, voice: 80, guesses: 
 const DATE = /^\d{4}-\d{2}-\d{2}$/
 
 export function emptySave(): Save {
-  return { v: 1, cards: {}, days: {}, streak: { last: '', count: 0 }, mystery: {}, items: {}, thanks: {}, seenScenes: [] }
+  return { v: 1, cards: {}, days: {}, streak: { last: '', count: 0 }, mystery: {}, items: {}, thanks: {}, seenScenes: [], threads: {} }
 }
 
 /** todayKey를 포함해 최근 days일의 날짜 키인지 */
@@ -82,6 +93,15 @@ function isRecent(key: string, todayKey: string, days = KEEP_DAYS): boolean {
 
 const earlier = (a: string | undefined, b: string | undefined) => (!a ? b! : !b ? a : a < b ? a : b)
 const union = (a: string[], b: string[]) => [...new Set([...a, ...b])]
+
+function mergeThreads(a: Record<string, ThreadStat>, b: Record<string, ThreadStat>): Record<string, ThreadStat> {
+  const out: Record<string, ThreadStat> = { ...a }
+  for (const [id, t] of Object.entries(b)) {
+    const x = out[id]
+    out[id] = x ? { count: Math.max(x.count, t.count), first: earlier(x.first, t.first) } : { ...t }
+  }
+  return out
+}
 
 function mergeRecordOfDates(a: Record<string, string>, b: Record<string, string>): Record<string, string> {
   const out: Record<string, string> = { ...a }
@@ -144,6 +164,7 @@ export function mergeSaves(a: Save, b: Save, todayKey: string): Save {
     // 예전 기록에는 thanks가 없을 수 있다
     thanks: mergeRecordOfDates(a.thanks ?? {}, b.thanks ?? {}),
     seenScenes: union(a.seenScenes ?? [], b.seenScenes ?? []),
+    threads: mergeThreads(a.threads ?? {}, b.threads ?? {}),
     days: pickRecent(days, todayKey),
     mystery: pickRecent(mystery, todayKey),
     streak,
@@ -185,6 +206,13 @@ export function sanitizeSave(raw: unknown, todayKey: string): Save {
   if (isObj(raw.cards)) for (const [id, d] of Object.entries(raw.cards)) if (PEOPLE[id] && typeof d === 'string' && DATE.test(d)) s.cards[id] = d
   if (isObj(raw.thanks)) {
     for (const [id, d] of Object.entries(raw.thanks)) if (s.cards[id] && typeof d === 'string' && DATE.test(d)) s.thanks[id] = d
+  }
+  if (isObj(raw.threads)) {
+    for (const [id, t] of Object.entries(raw.threads)) {
+      if (!MATERIALS[id] || !isObj(t) || typeof t.first !== 'string' || !DATE.test(t.first)) continue
+      if (!Number.isInteger(t.count) || t.count < 1) continue
+      s.threads[id] = { count: Math.min(t.count, 1_000_000), first: t.first }
+    }
   }
   s.seenScenes = strList(raw.seenScenes, SETS.length + 1).filter((id) => id === 'ending' || SETS.some((set) => set.id === id))
   if (isObj(raw.items)) {

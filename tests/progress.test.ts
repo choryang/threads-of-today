@@ -63,6 +63,24 @@ test('고마움: 합집합으로 합치고 먼저 전한 날을 남긴다. 예�
   assert.deepEqual(mergeSaves(old as Save, a, TODAY).thanks, { [p1!]: '2026-10-12' })
 })
 
+test('재료별 누적: 같은 재료는 횟수 큰 쪽·처음 날짜는 이른 쪽, 예전 기록과도 합쳐진다', () => {
+  const a: Save = { ...emptySave(), threads: { coffee: { count: 5, first: '2026-09-01' }, rice: { count: 1, first: '2026-10-10' } } }
+  const b: Save = { ...emptySave(), threads: { coffee: { count: 3, first: '2026-08-20' }, milk: { count: 2, first: '2026-10-01' } } }
+  assert.deepEqual(mergeSaves(a, b, TODAY).threads, {
+    coffee: { count: 5, first: '2026-08-20' },
+    rice: { count: 1, first: '2026-10-10' },
+    milk: { count: 2, first: '2026-10-01' },
+  })
+  const old = { ...emptySave() } as Partial<Save>
+  delete old.threads
+  assert.deepEqual(mergeSaves(old as Save, a, TODAY).threads, a.threads)
+})
+
+test('검사: 재료별 누적은 아는 재료·양의 정수·날짜 형식만', () => {
+  const s = sanitizeSave({ threads: { coffee: { count: 2, first: TODAY }, nope: { count: 1, first: TODAY }, rice: { count: 0, first: TODAY }, milk: { count: 1.5, first: TODAY }, egg: { count: 1, first: 'x' } } }, TODAY)
+  assert.deepEqual(s.threads, { coffee: { count: 2, first: TODAY } })
+})
+
 test('본 감사 장면: 합집합, 모르는 장면 id는 버린다', () => {
   const a: Save = { ...emptySave(), seenScenes: ['set-sea'] }
   const b: Save = { ...emptySave(), seenScenes: ['set-soil', 'set-sea'] }

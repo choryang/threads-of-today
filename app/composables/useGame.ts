@@ -8,6 +8,7 @@ import {
 import { mysteryHints } from '../../shared/mystery'
 import { normalizeNickname, randomNickname } from '../../shared/nickname'
 import { buildTimeline, quizFor } from '../../shared/journey'
+import { addJourneyToThreads, backfillThreads } from '../../shared/threads'
 import { everyoneThanked, sceneKey, thanksReply, unseenScenes, type ThanksScene } from '../../shared/thanks'
 import { emptySave, type DayLog, type Journey, type JourneySource, type MysteryLog, type Save } from '../../shared/progress'
 
@@ -23,7 +24,11 @@ function load(): Save {
     const raw = window.localStorage.getItem(KEY)
     if (!raw) return emptySave()
     const parsed = JSON.parse(raw)
-    return parsed?.v === 1 ? { ...emptySave(), ...parsed } : emptySave()
+    if (parsed?.v !== 1) return emptySave()
+    const save: Save = { ...emptySave(), ...parsed }
+    // 실타래 기능 전의 기록: 남은 30일 기록과 분해해 본 물건으로 재료별 누적을 채운다
+    if (!parsed.threads) save.threads = backfillThreads(save)
+    return save
   } catch {
     return emptySave()
   }
@@ -64,6 +69,7 @@ export function replaceSave(next: Save) {
   s.items = next.items
   s.thanks = next.thanks ?? {}
   s.seenScenes = next.seenScenes ?? []
+  s.threads = next.threads ?? {}
   if (next.nickname) s.nickname = next.nickname
 }
 
@@ -205,6 +211,8 @@ export function useGame() {
       gained.push(...collect(cardId))
     }
     journey.newCards.push(...gained)
+    if (!s.threads) s.threads = {}
+    addJourneyToThreads(s.threads, journey.materialIds, dayKey)
 
     if (s.streak.last !== todayKey) {
       s.streak.count = s.streak.last === previousDateKey(todayKey) ? s.streak.count + 1 : 1

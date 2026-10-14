@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { SETS } from '../../shared/data/materials'
-import { PEOPLE_LIST } from '../../shared/data/people'
 import { endingLines, setSceneLines } from '../../shared/thanks'
 
 /** 세트 감사 장면과 엔딩. 고마움을 전해 새로 열리면 한 번 뜨고, 엔딩은 도감에서 다시 볼 수 있다 */
 const { current, dismiss } = useThanksScenes()
 const game = useGame()
+const tapestry = useTapestry()
 
 const set = computed(() => {
   const scene = current.value
@@ -17,12 +17,14 @@ const lines = computed(() => {
   if (current.value?.type === 'ending') return endingLines(game.nickname.value)
   return set.value ? setSceneLines(set.value.id) : []
 })
-/** 엔딩에는 모든 사람이 모인다 */
-const everyone = PEOPLE_LIST.map((p) => p.id)
 </script>
 
 <template>
   <div v-if="current" class="scene" :class="current.type" role="dialog" aria-modal="true" :aria-label="current.type === 'ending' ? '엔딩' : '세트 감사 장면'">
+    <!-- 엔딩: 완성된 실타래를 배경에 크게 깐다 -->
+    <div v-if="current.type === 'ending'" class="ending-bg" aria-hidden="true">
+      <ThreadsTapestry :layout="tapestry" :nickname="game.nickname.value" :interactive="false" :labels="false" />
+    </div>
     <div class="inner">
       <template v-if="current.type === 'set' && set">
         <p class="mono kicker">THANK YOU</p>
@@ -31,11 +33,7 @@ const everyone = PEOPLE_LIST.map((p) => p.id)
           <Character v-for="id in setPeople" :key="id" :person-id="id" :size="56" bob />
         </div>
       </template>
-      <template v-else>
-        <div class="crowd all" aria-hidden="true">
-          <Character v-for="id in everyone" :key="id" :person-id="id" :size="34" />
-        </div>
-      </template>
+
       <div class="lines">
         <p v-for="(line, i) in lines" :key="i" :style="{ animationDelay: `${0.3 + i * 0.9}s` }">{{ line }}</p>
       </div>
@@ -56,7 +54,9 @@ const everyone = PEOPLE_LIST.map((p) => p.id)
 .kicker { margin: 0; color: var(--accent); font-size: 12px; }
 .title { margin: 0; font-size: 26px; }
 .crowd { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; }
-.crowd.all { gap: 0; opacity: 0.85; }
+.ending-bg { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; opacity: 0.4; pointer-events: none; overflow: hidden; }
+.ending-bg > * { width: min(140vw, 140vh); flex-shrink: 0; }
+.inner { position: relative; }
 .lines { display: flex; flex-direction: column; gap: 10px; }
 .lines p { margin: 0; font-size: 17px; line-height: 1.7; opacity: 0; animation: fade-in 0.8s ease-out forwards; }
 .ending .lines p { font-size: 18px; }
