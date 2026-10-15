@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>오늘의 마음</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:inherit;text-decoration:none}a:hover{color:inherit}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #FFFFFF; color: #14161A; font-family: 'Noto Sans KR', sans-serif; display: flex; flex-direction: column; padding: 64px 24px 32px">
+  <span style="font-size: 13px; color: #6B7079">10월 15일 목요일</span>
+  <h1 style="margin: 8px 0 0; font-size: 26px; font-weight: 700; line-height: 1.35; letter-spacing: -0.01em">오늘 하루, 어땠어요?</h1>
+
+  <div role="group" aria-label="오늘의 마음. 위로 갈수록 에너지가 높고, 오른쪽으로 갈수록 편안해요" style="margin-top: 28px; position: relative; width: 342px; height: 342px; border-radius: 24px; background: #F5F6F8; overflow: hidden">
+    <div aria-hidden="true" style="position: absolute; left: 0; top: 0; width: 171px; height: 171px; background: #E0528A; opacity: 0.06"></div>
+    <div aria-hidden="true" style="position: absolute; left: 171px; top: 0; width: 171px; height: 171px; background: #F2B33D; opacity: 0.09"></div>
+    <div aria-hidden="true" style="position: absolute; left: 0; top: 171px; width: 171px; height: 171px; background: #4C7BD9; opacity: 0.06"></div>
+    <div aria-hidden="true" style="position: absolute; left: 171px; top: 171px; width: 171px; height: 171px; background: #3FAE84; opacity: 0.08"></div>
+    <div aria-hidden="true" style="position: absolute; left: 171px; top: 16px; bottom: 16px; width: 1px; background: #E8EAEE"></div>
+    <div aria-hidden="true" style="position: absolute; top: 171px; left: 16px; right: 16px; height: 1px; background: #E8EAEE"></div>
+    <span aria-hidden="true" style="position: absolute; left: 0; right: 0; top: 10px; text-align: center; font-size: 11px; color: #8A8F98">에너지 높음</span>
+    <span aria-hidden="true" style="position: absolute; left: 0; right: 0; bottom: 10px; text-align: center; font-size: 11px; color: #8A8F98">에너지 낮음</span>
+    <span aria-hidden="true" style="position: absolute; left: 12px; top: 163px; font-size: 11px; color: #8A8F98">불편한</span>
+    <span aria-hidden="true" style="position: absolute; right: 12px; top: 163px; font-size: 11px; color: #8A8F98">편안한</span>
+    <sc-for list="{{moods}}" as="m" hint-placeholder-count="8">
+      <button onClick="{{m.pick}}" aria-pressed="{{m.pressed}}" style="{{m.btnStyle}}">
+        <span aria-hidden="true" style="{{m.dotStyle}}"></span>
+        <span style="{{m.labelStyle}}">{{m.label}}</span>
+      </button>
+    </sc-for>
+  </div>
+
+  <div style="margin-top: 24px; display: flex; flex-direction: column; gap: 6px">
+    <span style="font-size: 22px; font-weight: 700">{{current}}</span>
+    <span style="font-size: 15px; color: #6B7079">{{hint}}</span>
+  </div>
+
+  <a href="V2Item.dc.html" style="margin-top: auto; height: 56px; border-radius: 16px; background: #14161A; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 17px; font-weight: 700">다음</a>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+var MOODS = [
+  { label: '억울했어요', x: 70, y: 70, c: '#E0528A', hint: '아무도 믿어 주지 않은 날' },
+  { label: '불안했어요', x: 104, y: 128, c: '#E0528A', hint: '내 자리가 흔들리는 날' },
+  { label: '기뻤어요', x: 262, y: 66, c: '#F2B33D', hint: '좋은 일이 생긴 날' },
+  { label: '설렜어요', x: 226, y: 124, c: '#F2B33D', hint: '무언가를 시작하거나 기다리는 날' },
+  { label: '외로웠어요', x: 108, y: 218, c: '#4C7BD9', hint: '멀리 있거나, 혼자라고 느낀 날' },
+  { label: '지쳤어요', x: 66, y: 276, c: '#4C7BD9', hint: '끝없는 일을 버틴 날' },
+  { label: '뿌듯했어요', x: 252, y: 214, c: '#3FAE84', hint: '작은 것을 지켜낸 날' },
+  { label: '그냥 그랬어요', x: 220, y: 276, c: '#3FAE84', hint: '평범한 하루의 작은 장면' }
+];
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { mood: 0 }; }
+  renderVals() {
+    var self = this, cur = this.state.mood;
+    return {
+      current: MOODS[cur].label,
+      hint: MOODS[cur].hint,
+      moods: MOODS.map(function (m, i) {
+        var on = i === cur, size = on ? 22 : 14;
+        return {
+          label: m.label,
+          pressed: on ? 'true' : 'false',
+          pick: function () { self.setState({ mood: i }); },
+          btnStyle: 'position: absolute; left: ' + (m.x - 44) + 'px; top: ' + (m.y - 24) + 'px; width: 88px; height: 64px; padding: 0; border: 0; background: transparent; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; font-family: inherit',
+          dotStyle: 'width: ' + size + 'px; height: ' + size + 'px; border-radius: 50%; background: ' + m.c + '; box-shadow: ' + (on ? '0 0 0 6px ' + m.c + '33' : 'none') + '; transition: all .2s',
+          labelStyle: 'font-size: 13px; white-space: nowrap; transition: all .2s; ' + (on ? 'color: #14161A; font-weight: 700' : 'color: #6B7079; font-weight: 500')
+        };
+      })
+    };
+  }
+}
+</script>
+</body>
+</html>

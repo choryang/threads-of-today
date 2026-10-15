@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>나와 이어진 사람들</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:inherit;text-decoration:none}a:hover{color:inherit}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #FFFFFF; color: #14161A; font-family: 'Noto Sans KR', sans-serif; display: flex; flex-direction: column; padding: 64px 24px 32px">
+  <span style="font-size: 13px; color: #6B7079">10월 · 다섯 가닥</span>
+  <h1 style="margin: 8px 0 0; font-size: 26px; font-weight: 700; line-height: 1.35; letter-spacing: -0.01em">나와 이어진 사람들</h1>
+
+  <svg role="img" aria-label="나를 가운데 두고, 방향과 거리에 따라 이어진 다섯 사람이 붉은 실로 연결되어 있어요" width="342" height="342" viewBox="0 0 342 342" style="margin-top: 20px; background: #F5F6F8; border-radius: 24px">
+    <g fill="none" stroke="#E3E6EB" stroke-width="1">
+      <circle cx="171" cy="171" r="{{r1}}"></circle>
+      <circle cx="171" cy="171" r="{{r2}}"></circle>
+      <circle cx="171" cy="171" r="{{r3}}"></circle>
+    </g>
+    <text x="175" y="{{l1}}" font-size="10" fill="#A3A8B0">1,000km</text>
+    <text x="175" y="{{l2}}" font-size="10" fill="#A3A8B0">5,000km</text>
+    <text x="175" y="{{l3}}" font-size="10" fill="#A3A8B0">10,000km</text>
+    <text x="171" y="18" font-size="10" fill="#A3A8B0" text-anchor="middle">북</text>
+    <sc-for list="{{people}}" as="p" hint-placeholder-count="5">
+      <path d="{{p.line}}" fill="none" stroke="{{p.c}}" stroke-width="1.5" stroke-linecap="round" opacity="{{p.op}}"></path>
+    </sc-for>
+    <sc-for list="{{people}}" as="p" hint-placeholder-count="5">
+      <circle cx="{{p.x}}" cy="{{p.y}}" r="7" fill="{{p.c}}" stroke="#FFFFFF" stroke-width="2.5"></circle>
+      <text x="{{p.tx}}" y="{{p.ty}}" font-size="12" font-weight="700" fill="#14161A" text-anchor="{{p.anchor}}">{{p.name}}</text>
+    </sc-for>
+    <circle cx="171" cy="171" r="6" fill="#14161A"></circle>
+    <text x="171" y="194" font-size="11" font-weight="700" fill="#14161A" text-anchor="middle">나</text>
+  </svg>
+
+  <ul style="list-style: none; margin: 16px 0 0; padding: 0">
+    <sc-for list="{{people}}" as="p" hint-placeholder-count="5">
+      <li style="display: flex; align-items: center; gap: 12px; height: 48px; border-bottom: 1px solid #E8EAEE">
+        <span aria-hidden="true" style="{{p.dot}}"></span>
+        <span style="flex: 1; min-width: 0; font-size: 15px"><span style="font-weight: 700">{{p.name}}</span> <span style="color: #6B7079; font-size: 13px">{{p.place}}</span></span>
+        <span style="font-size: 13px; color: #6B7079">{{p.date}}</span>
+      </li>
+    </sc-for>
+  </ul>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+var HOME = { lat: 37.57, lng: 126.98 };
+var C = { red: '#E0528A', yellow: '#F2B33D', blue: '#4C7BD9', green: '#3FAE84' };
+var PEOPLE = [
+  { name: '알마즈', place: '에티오피아 시다마', date: '10월 15일', lat: 6.75, lng: 38.45, c: C.red, op: 1 },
+  { name: '도현', place: '서울', date: '10월 14일', near: 300, c: C.blue, op: 0.8 },
+  { name: '궈량', place: '바다 위', date: '10월 12일', lat: 5, lng: 85, c: C.blue, op: 0.65 },
+  { name: '민서', place: '우리 동네', date: '10월 11일', near: 100, c: C.red, op: 0.55 },
+  { name: '로버트', place: '미국 대평원', date: '10월 9일', lat: 38.5, lng: -98, c: C.green, op: 0.45 }
+];
+var rad = function (d) { return d * Math.PI / 180; };
+function geo(p) {
+  var f1 = rad(HOME.lat), f2 = rad(p.lat), dl = rad(p.lng - HOME.lng);
+  var b = Math.atan2(Math.sin(dl) * Math.cos(f2), Math.cos(f1) * Math.sin(f2) - Math.sin(f1) * Math.cos(f2) * Math.cos(dl));
+  var a = Math.sin((f2 - f1) / 2) * Math.sin((f2 - f1) / 2) + Math.cos(f1) * Math.cos(f2) * Math.sin(dl / 2) * Math.sin(dl / 2);
+  return { b: b, d: 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)) };
+}
+var R = function (d) { return 26 + 124 * Math.log(1 + d / 300) / Math.log(1 + 12000 / 300); };
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      r1: R(1000).toFixed(1), r2: R(5000).toFixed(1), r3: R(10000).toFixed(1),
+      l1: (171 - R(1000) - 3).toFixed(1), l2: (171 - R(5000) - 3).toFixed(1), l3: (171 - R(10000) - 3).toFixed(1),
+      people: PEOPLE.map(function (p) {
+        var g = p.near !== undefined ? { b: rad(p.near), d: 0 } : geo(p);
+        var r = p.near !== undefined ? 22 : R(g.d);
+        var x = 171 + r * Math.sin(g.b), y = 171 - r * Math.cos(g.b);
+        var mx = (171 + x) / 2 - (y - 171) * 0.12, my = (171 + y) / 2 + (x - 171) * 0.12;
+        var right = x >= 171;
+        return {
+          name: p.name, place: p.place, date: p.date, c: p.c, op: p.op,
+          x: x.toFixed(1), y: y.toFixed(1),
+          line: 'M171 171 Q ' + mx.toFixed(1) + ' ' + my.toFixed(1) + ' ' + x.toFixed(1) + ' ' + y.toFixed(1),
+          tx: (x + (right ? 12 : -12)).toFixed(1), ty: (y + 4).toFixed(1), anchor: right ? 'start' : 'end',
+          dot: 'width: 10px; height: 10px; border-radius: 5px; flex-shrink: 0; background: ' + p.c
+        };
+      })
+    };
+  }
+}
+</script>
+</body>
+</html>

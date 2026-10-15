@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>같은 순간, 다른 시각</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:inherit;text-decoration:none}a:hover{color:inherit}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #FFFFFF; color: #14161A; font-family: 'Noto Sans KR', sans-serif; display: flex; flex-direction: column; padding: 64px 24px 32px">
+  <span style="font-size: 13px; color: #6B7079">아이스 아메리카노를 따라</span>
+  <h1 style="margin: 8px 0 0; font-size: 26px; font-weight: 700; line-height: 1.35; letter-spacing: -0.01em">같은 순간,<br>다른 시각에서</h1>
+
+  <svg role="img" aria-label="하루 24시간 띠 위에 서울과 시다마의 지금 시각이 있고, 붉은 실이 두 곳을 잇고 있어요" width="342" height="380" viewBox="0 0 342 380" style="margin-top: 28px; overflow: visible">
+    <defs>
+      <linearGradient id="v2-day" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stop-color="#39405E"></stop>
+        <stop offset="0.2" stop-color="#39405E"></stop>
+        <stop offset="0.27" stop-color="#B8A9C9"></stop>
+        <stop offset="0.34" stop-color="#EFE3C2"></stop>
+        <stop offset="0.68" stop-color="#EFE3C2"></stop>
+        <stop offset="0.76" stop-color="#E9B79D"></stop>
+        <stop offset="0.82" stop-color="#6F6E8E"></stop>
+        <stop offset="0.88" stop-color="#39405E"></stop>
+        <stop offset="1" stop-color="#39405E"></stop>
+      </linearGradient>
+    </defs>
+    <rect x="0" y="292" width="342" height="12" rx="6" fill="url(#v2-day)"></rect>
+    <text x="0" y="326" font-size="11" fill="#8A8F98">0시</text>
+    <text x="85" y="326" font-size="11" fill="#8A8F98" text-anchor="middle">6시</text>
+    <text x="171" y="326" font-size="11" fill="#8A8F98" text-anchor="middle">12시</text>
+    <text x="256" y="326" font-size="11" fill="#8A8F98" text-anchor="middle">18시</text>
+    <text x="342" y="326" font-size="11" fill="#8A8F98" text-anchor="end">24시</text>
+
+    <path d="{{arc}}" fill="none" stroke="#E0528A" stroke-width="2" stroke-linecap="round" stroke-dasharray="{{dash}}" style="{{arcStyle}}"></path>
+    <sc-for list="{{hands}}" as="h" hint-placeholder-count="12">
+      <circle cx="{{h.x}}" cy="{{h.y}}" r="3" fill="#E0528A" style="{{h.style}}"></circle>
+    </sc-for>
+
+    <circle cx="{{xE}}" cy="298" r="8" fill="#FFFFFF" stroke="#E0528A" stroke-width="3"></circle>
+    <circle cx="{{xS}}" cy="298" r="8" fill="#14161A"></circle>
+    <text x="{{xE}}" y="352" font-size="13" font-weight="700" fill="#14161A" text-anchor="middle">시다마</text>
+    <text x="{{xE}}" y="370" font-size="12" fill="#6B7079" text-anchor="middle">{{tE}}</text>
+    <text x="{{xS}}" y="352" font-size="13" font-weight="700" fill="#14161A" text-anchor="middle">나 · 서울</text>
+    <text x="{{xS}}" y="370" font-size="12" fill="#6B7079" text-anchor="middle">{{tS}}</text>
+  </svg>
+
+  <p style="margin: 40px 0 0; font-size: 16px; line-height: 1.7; color: #3F434A">{{sentence}}</p>
+
+  <a href="V2Person.dc.html" style="margin-top: auto; height: 56px; border-radius: 16px; background: #14161A; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 17px; font-weight: 700">알마즈 만나기</a>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+function clock(tz) {
+  var parts = new Intl.DateTimeFormat('en-US', { timeZone: tz, hour: 'numeric', minute: '2-digit', hour12: false }).formatToParts(new Date());
+  var h = 0, m = 0;
+  parts.forEach(function (p) { if (p.type === 'hour') h = Number(p.value) % 24; if (p.type === 'minute') m = Number(p.value); });
+  return { h: h, m: m };
+}
+function label(c) {
+  var hh = c.h % 12 === 0 ? 12 : c.h % 12;
+  return (c.h < 12 ? '오전 ' : '오후 ') + hh + ':' + (c.m < 10 ? '0' : '') + c.m;
+}
+var X = function (c) { return (c.h + c.m / 60) / 24 * 342; };
+var N = 12;
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { p: 0 }; }
+  componentDidMount() {
+    var self = this;
+    this.timer = setInterval(function () { var p = self.state.p + 0.015; self.setState({ p: p > 1.5 ? 0 : p }); }, 50);
+  }
+  componentWillUnmount() { clearInterval(this.timer); }
+  renderVals() {
+    var s = clock('Asia/Seoul'), e = clock('Africa/Addis_Ababa');
+    var xS = X(s), xE = X(e), y = 292, cx = (xS + xE) / 2, cy = y - 230;
+    var pt = function (t) { var a = (1 - t) * (1 - t), b = 2 * (1 - t) * t, c = t * t; return { x: a * xS + b * cx + c * xE, y: a * y + b * cy + c * y }; };
+    var len = 0, prev = pt(0);
+    for (var i = 1; i <= 40; i++) { var q = pt(i / 40); len += Math.hypot(q.x - prev.x, q.y - prev.y); prev = q; }
+    var p = Math.min(this.state.p, 1);
+    var diff = ((s.h - e.h) + 24) % 24;
+    return {
+      xS: xS.toFixed(1), xE: xE.toFixed(1), tS: label(s), tE: label(e),
+      arc: 'M' + xS.toFixed(1) + ' ' + y + ' Q ' + cx.toFixed(1) + ' ' + cy + ' ' + xE.toFixed(1) + ' ' + y,
+      dash: len.toFixed(0),
+      arcStyle: 'stroke-dashoffset: ' + (len * (1 - p)).toFixed(1),
+      hands: Array.from({ length: N }, function (_, k) {
+        var t = (k + 1) / (N + 1), q = pt(t);
+        return { x: q.x.toFixed(1), y: q.y.toFixed(1), style: 'opacity: ' + (p >= t ? 1 : 0) + '; transition: opacity .3s' };
+      }),
+      sentence: '지금 서울은 ' + label(s) + ', 시다마는 ' + label(e) + '. ' + diff + '시간 떨어진 그곳까지, 열네 사람의 손이 당신의 커피를 이어 주었어요.'
+    };
+  }
+}
+</script>
+</body>
+</html>
