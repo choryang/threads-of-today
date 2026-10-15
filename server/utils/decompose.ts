@@ -12,7 +12,7 @@ export interface DecomposeInput {
 
 export type DecomposeResult =
   | ({ ok: true; source: 'ai' | 'local'; via?: string } & Decomposed)
-  | { ok: false; message: string }
+  | { ok: false; message: string; limited?: true }
 
 const MATERIAL_GUIDE = MATERIAL_LIST.map((m) => `- ${m.id}: ${m.name}`).join('\n')
 

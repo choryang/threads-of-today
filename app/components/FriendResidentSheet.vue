@@ -59,8 +59,7 @@ function startHint() {
   const p = hint.value
   if (!p) return
   const journey = game.startJourney({ name: p.name, materialIds: [...p.materialIds] }, 'pick')
-  if (journey) router.push(`/journey/${journey.id}`)
-  else message.value = '오늘의 여정을 모두 떠났어요. 내일 만나러 가요'
+  router.push(`/journey/${journey.id}`)
 }
 </script>
 

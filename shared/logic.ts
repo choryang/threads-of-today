@@ -6,7 +6,6 @@ import { PLACES } from './data/places'
 import type { CardSet, Product } from './types'
 
 
-export const DAILY_LIMIT = 3
 export const MAX_MATERIALS = 5
 
 export interface Decomposed {

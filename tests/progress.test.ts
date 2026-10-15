@@ -187,3 +187,10 @@ test('단짝 연출을 본 주민(bestSeen): 합집합, 모르는 사람·연결
   assert.deepEqual(sanitizeSave({ bestSeen: ['barista', 'nobody', 'link-sea-crew', 3, 'barista'] }, TODAY).bestSeen, ['barista'])
   assert.deepEqual(sanitizeSave({}, TODAY).bestSeen, [])
 })
+
+test('하루 여정 횟수 제한이 없어서 하루 여정 20개도 동기화에서 버리지 않는다 (상한 60)', () => {
+  const journeys = Array.from({ length: 20 }, (_, i) => ({ id: `${TODAY}-${i + 1}-ab`, name: '커피', source: 'pick', materialIds: ['coffee'], step: 0, quiz: {}, newCards: [], done: false }))
+  assert.equal(sanitizeSave({ days: { [TODAY]: { journeys, linkCards: [] } } }, TODAY).days[TODAY]!.journeys.length, 20)
+  const many = Array.from({ length: 80 }, (_, i) => ({ ...journeys[0]!, id: `${TODAY}-${i + 1}-ab` }))
+  assert.equal(sanitizeSave({ days: { [TODAY]: { journeys: many, linkCards: [] } } }, TODAY).days[TODAY]!.journeys.length, 60)
+})

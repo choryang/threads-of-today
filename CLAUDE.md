@@ -80,7 +80,7 @@ server/
   utils/decompose.ts    Claude Messages API 호출. SYSTEM·buildTool을 사전 스크립트와 공유. voice/twist는 looksFactual로 거름
                         주재료가 목록에 없으면 대신하지 않고 missing_ingredients로 받는다 → 화면에 "○○의 여정은 아직 준비 중이에요"
 app/
-  composables/useGame.ts  게임 상태·규칙 (effectScope로 저장 watch, 하루 여정 3번, 미스터리 보너스, 닉네임)
+  composables/useGame.ts  게임 상태·규칙 (effectScope로 저장 watch, 여정 횟수 제한 없음(AI 입력만 서버가 IP별 하루 한도), 미스터리 보너스, 닉네임)
   composables/useTodayMeets.ts 모두의 오늘 보내기(모아서·하루 한 번)·읽기. plugins/meet.client.ts가 useGame의 onMeet에 붙인다
   composables/usePanZoom.ts 마을 지도 끌기·두 손가락·휠 확대(라이브러리 없이), 8px 이상 끌면 클릭 무시.
                           보기(위치·배율)는 반응형이 아니다: rAF로 한 프레임에 한 번 VillageMap의 paint()가 지도 요소에 직접 쓴다.

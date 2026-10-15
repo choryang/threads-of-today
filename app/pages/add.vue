@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, nextTick, ref } from 'vue'
+import { computed, nextTick, onMounted, ref } from 'vue'
 import { MATERIALS, PRODUCTS } from '../../shared/data/materials'
-import type { Decomposed } from '../../shared/logic'
+import { seoulDateKey, type Decomposed } from '../../shared/logic'
 import type { Journey, JourneySource } from '../composables/useGame'
 import { PEOPLE } from '../../shared/data/people'
 import { PLACES } from '../../shared/data/places'
@@ -11,7 +11,7 @@ import { matchLocal } from '../utils/local-match'
 import { productIconSvg } from '../utils/product-icon'
 import { renderVoice } from '../../shared/voice'
 
-type ApiResult = ({ ok: true; source: 'ai' | 'local' } & Decomposed) | { ok: false; message: string }
+type ApiResult = ({ ok: true; source: 'ai' | 'local' } & Decomposed) | { ok: false; message: string; limited?: boolean }
 
 /** 처음에 보이는 타일 수 (390px 폭에서 3줄) */
 const FIRST_TILES = 9
@@ -27,6 +27,28 @@ const loading = ref(false)
 const error = ref('')
 const preview = ref<(Decomposed & { source: JourneySource }) | null>(null)
 const photoUrl = ref('')
+
+/**
+ * 직접 쓰기·사진(AI)의 오늘 한도를 다 썼는지. 서버가 limited로 알려 주면 이 기기에 서울 날짜로 적어 두고 그날만 안내한다.
+ * 물건 고르기는 한도와 상관없이 계속된다.
+ */
+const AI_LIMIT_KEY = 'my-day-people:ai-limit'
+const aiLimited = ref(false)
+onMounted(() => {
+  try {
+    aiLimited.value = window.localStorage.getItem(AI_LIMIT_KEY) === seoulDateKey()
+  } catch {
+    // 저장소를 못 쓰면 서버가 다시 알려 줄 때 안내한다
+  }
+})
+function markAiLimited() {
+  aiLimited.value = true
+  try {
+    window.localStorage.setItem(AI_LIMIT_KEY, seoulDateKey())
+  } catch {
+    // 이번 방문 동안만
+  }
+}
 
 const tiles = computed(() => (showAll.value ? PRODUCTS : PRODUCTS.slice(0, FIRST_TILES)))
 const previewVoice = computed(() => renderVoice(preview.value?.voice, game.nickname.value))
@@ -76,6 +98,7 @@ async function ask(body: Record<string, unknown>, source: JourneySource) {
   try {
     const res = await $fetch<ApiResult>('/api/decompose', { method: 'POST', body })
     if (res.ok) preview.value = { name: res.name, materialIds: res.materialIds, twist: res.twist, voice: res.voice, missing: res.missing, source }
+    else if (res.limited) markAiLimited()
     else error.value = res.message
   } catch {
     error.value = '연결이 불안정해요. 잠시 후 다시 시도해 주세요.'
@@ -138,7 +161,7 @@ function startFirst() {
   const p = PRODUCTS.find((x) => x.id === FIRST_PRODUCT_ID)
   if (!p) return
   const journey = game.startJourney({ name: p.name, materialIds: [...p.materialIds] }, 'pick')
-  if (journey) router.push(`/journey/${journey.id}`)
+  router.push(`/journey/${journey.id}`)
 }
 
 function closePreview() {
@@ -148,11 +171,6 @@ function closePreview() {
 function start() {
   if (!preview.value?.materialIds.length) return
   const journey = game.startJourney(preview.value, preview.value.source)
-  if (!journey) {
-    preview.value = null
-    error.value = '오늘의 여정을 모두 떠났어요. 내일 다시 만나요!'
-    return
-  }
   preview.value = null
   text.value = ''
   router.push(`/journey/${journey.id}`)
@@ -189,49 +207,42 @@ function start() {
 
     <header class="head">
       <h1 class="display title">오늘 손에 닿은 물건은?</h1>
-      <p v-if="game.remaining.value > 0" class="muted left">오늘 <span class="mono">{{ game.remaining.value }}</span>번 더 떠날 수 있어요</p>
       <NuxtLink to="/mystery" class="mystery-link">오늘의 미스터리 물건 맞히기</NuxtLink>
     </header>
 
-    <template v-if="game.remaining.value > 0">
-      <section class="grid" aria-label="물건 고르기">
-        <button v-for="p in tiles" :key="p.id" class="tile" @click="pick(p.id)">
-          <!-- eslint-disable-next-line vue/no-v-html -- 직접 그린 SVG -->
-          <svg class="tile-icon" viewBox="0 0 32 32" width="44" height="44" aria-hidden="true" v-html="productIconSvg(p.id)" />
-          <span class="tile-name">{{ p.name }}</span>
-        </button>
-      </section>
-      <button v-if="!showAll" class="more" @click="showAll = true">
-        더 보기 <span class="mono muted">+{{ PRODUCTS.length - FIRST_TILES }}</span>
+    <section class="grid" aria-label="물건 고르기">
+      <button v-for="p in tiles" :key="p.id" class="tile" @click="pick(p.id)">
+        <!-- eslint-disable-next-line vue/no-v-html -- 직접 그린 SVG -->
+        <svg class="tile-icon" viewBox="0 0 32 32" width="44" height="44" aria-hidden="true" v-html="productIconSvg(p.id)" />
+        <span class="tile-name">{{ p.name }}</span>
       </button>
-
-      <div class="other">
-        <p class="other-line">
-          <span class="muted">찾는 물건이 없나요?</span>
-          <button class="link" :aria-expanded="writing" @click="openWriting">직접 쓰기</button>
-          <span class="muted" aria-hidden="true">·</span>
-          <label class="link">
-            <input type="file" accept="image/*" class="sr-only" @change="onPhoto">
-            사진 찍기
-          </label>
-        </p>
-        <form v-if="writing" class="text-form" @submit.prevent="submitText">
-          <label for="item" class="sr-only">오늘 나에게 닿은 것</label>
-          <input id="item" ref="textEl" v-model="text" maxlength="40" placeholder="물건, 음식, 고양이, 월요일… 뭐든지" autocomplete="off">
-          <button class="btn btn-primary" :disabled="!text.trim() || loading">분해하기</button>
-        </form>
-        <p v-if="loading" class="muted small thinking" role="status">
-          <span class="dots" aria-hidden="true"><span /><span /><span /></span>
-          {{ photoUrl ? '사진 속 물건을 알아보는 중…' : '재료를 살펴보는 중…' }}
-        </p>
-        <p v-if="error" class="error" role="alert">{{ error }}</p>
-      </div>
-    </template>
-
-    <section v-else class="panel done-panel">
-      <p class="p-name">오늘의 여정을 모두 마쳤어요</p>
-      <NuxtLink to="/result" class="btn btn-primary btn-block">결과 카드 보기</NuxtLink>
     </section>
+    <button v-if="!showAll" class="more" @click="showAll = true">
+      더 보기 <span class="mono muted">+{{ PRODUCTS.length - FIRST_TILES }}</span>
+    </button>
+
+    <div class="other">
+      <p class="other-line">
+        <span class="muted">찾는 물건이 없나요?</span>
+        <button class="link" :aria-expanded="writing" @click="openWriting">직접 쓰기</button>
+        <span class="muted" aria-hidden="true">·</span>
+        <label class="link">
+          <input type="file" accept="image/*" class="sr-only" @change="onPhoto">
+          사진 찍기
+        </label>
+      </p>
+      <form v-if="writing" class="text-form" @submit.prevent="submitText">
+        <label for="item" class="sr-only">오늘 나에게 닿은 것</label>
+        <input id="item" ref="textEl" v-model="text" maxlength="40" placeholder="물건, 음식, 고양이, 월요일… 뭐든지" autocomplete="off">
+        <button class="btn btn-primary" :disabled="!text.trim() || loading">분해하기</button>
+      </form>
+      <p v-if="loading" class="muted small thinking" role="status">
+        <span class="dots" aria-hidden="true"><span /><span /><span /></span>
+        {{ photoUrl ? '사진 속 물건을 알아보는 중…' : '재료를 살펴보는 중…' }}
+      </p>
+      <p v-if="error" class="error" role="alert">{{ error }}</p>
+      <p v-if="aiLimited" class="panel limit-note" role="status">오늘은 직접 쓰기를 다 썼어요. 위 물건은 계속 고를 수 있어요</p>
+    </div>
 
     <div v-if="preview" class="sheet-wrap" role="dialog" aria-modal="true" :aria-label="`${preview.name} 미리보기`" @click.self="closePreview">
       <div class="sheet">
@@ -296,7 +307,6 @@ function start() {
 
 .head { display: flex; flex-direction: column; gap: 6px; }
 .title { font-size: 28px; line-height: 1.25; }
-.left { margin: 0; font-size: 13px; }
 
 .mystery-link { align-self: flex-start; display: inline-flex; align-items: center; min-height: 44px; color: var(--accent); font-size: 14px; font-weight: 700; }
 .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
@@ -343,7 +353,7 @@ function start() {
 .error { margin: 0; color: #ffb4a6; font-size: 14px; text-align: center; }
 .small { margin: 0; font-size: 13px; text-align: center; }
 
-.done-panel { display: flex; flex-direction: column; gap: 14px; }
+.limit-note { margin: 4px 0 0; padding: 12px 14px; font-size: 14px; line-height: 1.5; word-break: keep-all; }
 
 .sheet-wrap {
   position: fixed; inset: 0; z-index: 30;

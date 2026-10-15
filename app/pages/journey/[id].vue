@@ -308,7 +308,7 @@ const reunionPerson = computed(() => (reunionCard.value ? linkPersonOf(reunionCa
 const reunionOpen = ref(true)
 
 /**
- * 다음 여정 예고. 이 여정과 같은 날 떠나야 연결 카드가 나오므로, 오늘 떠난 여정이고 오늘 더 떠날 수 있을 때만.
+ * 다음 여정 예고. 이 여정과 같은 날 떠나야 연결 카드가 나오므로, 오늘 떠난 여정일 때만.
  * 화면에 처음 보일 때의 카드로 한 번 정한다 (예고를 따라 떠나도 이 화면의 예고가 바뀌지 않게).
  */
 const teaser = shallowRef<ReturnType<typeof pickTeaser>>(null)
@@ -317,7 +317,7 @@ watch(
   (done) => {
     const j = journey.value
     if (!done || !j || teaser.value) return
-    if (j.id.slice(0, 10) !== game.todayKey || game.remaining.value <= 0) return
+    if (j.id.slice(0, 10) !== game.todayKey) return
     teaser.value = pickTeaser(j, new Set(Object.keys(game.state.cards)))
   },
   { immediate: true },
@@ -327,7 +327,7 @@ function followTeaser(p: Product) {
   const t = teaser.value
   if (!t) return
   const next = game.startJourney({ name: p.name, materialIds: [...p.materialIds] }, 'pick', { teaser: t.personId })
-  if (next) router.push(`/journey/${next.id}`)
+  router.push(`/journey/${next.id}`)
 }
 </script>
 

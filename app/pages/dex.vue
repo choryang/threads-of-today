@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { PEOPLE, PEOPLE_LIST } from '../../shared/data/people'
-import { DAILY_LIMIT, withJosa } from '../../shared/logic'
+import { withJosa } from '../../shared/logic'
 import type { Person, Rarity } from '../../shared/types'
 import { HIDDEN_LABEL, RARITY_GUIDE, RARITY_LABEL, RARITY_NOTE, badgeOf, howToMeet } from '../utils/labels'
 
@@ -64,7 +64,6 @@ const metLabel = computed(() => `${withJosa(game.nickname.value, '이', '가')} 
       <div class="bar" aria-hidden="true"><span :style="{ width: `${percent}%` }" /></div>
       <div class="stats panel" aria-label="내 기록">
         <div><strong class="mono">{{ game.ownedCount.value }}<small>/{{ total }}</small></strong><span>모은 카드</span></div>
-        <div><strong class="mono">{{ game.remaining.value }}/{{ DAILY_LIMIT }}</strong><span>남은 여정</span></div>
       </div>
       <NicknameEditor />
       <button v-if="game.allThanked.value" class="btn ending-btn" @click="game.replayEnding()">

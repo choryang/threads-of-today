@@ -47,7 +47,8 @@ async function decompose(event: H3Event): Promise<DecomposeResult> {
 
   const ip = getRequestIP(event, { xForwardedFor: true }) ?? 'unknown'
   const allowed = await allowAiCall(ip, Number(config.aiDailyLimit) || 20).catch(() => true)
-  if (!allowed) return { ok: false, message: LIMIT_MESSAGE }
+  // limited: 화면이 '오늘은 직접 쓰기를 다 썼어요' 안내로 바꿔 보여 준다 (물건 고르기는 계속된다)
+  if (!allowed) return { ok: false, message: LIMIT_MESSAGE, limited: true }
 
   try {
     const result = await decomposeWithClaude(image ? { image } : { text }, {

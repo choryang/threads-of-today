@@ -2,7 +2,7 @@ import { computed, effectScope, reactive, ref, watch } from 'vue'
 import { LINK_RULES, SETS } from '../../shared/data/materials'
 import { PEOPLE } from '../../shared/data/people'
 import {
-  DAILY_LIMIT, completedSets, dateKey, findLinkCards, mysteryOptions, mysteryProduct, seoulDateKey,
+  completedSets, dateKey, findLinkCards, mysteryOptions, mysteryProduct, seoulDateKey,
   type Decomposed,
 } from '../../shared/logic'
 import { addGratitude, addMeeting, friendshipOf, migratePeople, quizOf, UNLOCK } from '../../shared/friendship'
@@ -124,8 +124,6 @@ export function useGame() {
   const todayKey = dateKey()
 
   const today = computed<DayLog>(() => s.days[todayKey] ?? { journeys: [], linkCards: [] })
-  const regularCount = computed(() => today.value.journeys.filter((j) => j.source !== 'mystery').length)
-  const remaining = computed(() => Math.max(0, DAILY_LIMIT - regularCount.value))
   const ownedCount = computed(() => Object.keys(s.cards).length)
 
   function ensureToday(): DayLog {
@@ -174,10 +172,13 @@ export function useGame() {
   /** 아직 카드가 한 장도 없는 사람 (첫 여정 전) */
   const firstVisit = computed(() => ownedCount.value === 0)
 
-  /** teaser: 지난 여정의 '다음 여정 추천'을 따라 떠날 때, 말을 건 사람 id */
-  function startJourney(item: Decomposed, source: JourneySource, opts: { teaser?: string } = {}): Journey | null {
+  /**
+   * 여정을 떠난다. 하루 횟수 제한은 없다(물건 고르기는 로컬 데이터라 비용이 없다). AI를 부르는 직접 쓰기·사진만
+   * 서버가 IP별 하루 한도(NUXT_AI_DAILY_LIMIT)로 막는다.
+   * teaser: 지난 여정의 '다음 여정 추천'을 따라 떠날 때, 말을 건 사람 id
+   */
+  function startJourney(item: Decomposed, source: JourneySource, opts: { teaser?: string } = {}): Journey {
     const day = ensureToday()
-    if (source !== 'mystery' && regularCount.value >= DAILY_LIMIT) return null
     const journey: Journey = {
       // 여러 기기의 기록을 합칠 때 겹치지 않게 무작위 꼬리를 붙인다 (앞 10글자는 날짜, '-꼬리'가 있으면 새 여정 규칙을 쓴다)
       // '-r': 내 손에서 원산지로 거슬러 올라가는 여정. 이 꼬리가 없는 예전 여정은 예전 순서 그대로 끝난다
@@ -373,8 +374,6 @@ export function useGame() {
     setNickname,
     todayKey,
     today,
-    remaining,
-    regularCount,
     ownedCount,
     firstVisit,
     itemCount,

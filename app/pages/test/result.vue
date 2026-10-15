@@ -41,10 +41,6 @@ function meet() {
   if (!items.value || !result.value) return
   const product = PRODUCTS.find((p) => p.id === leadProduct(items.value!, result.value!.type.id))!
   const journey = game.startJourney({ name: product.name, materialIds: [...product.materialIds] }, 'pick')
-  if (!journey) {
-    message.value = '오늘의 여정을 모두 떠났어요. 내일 이 사람들을 만나러 가요.'
-    return
-  }
   router.push(`/journey/${journey.id}`)
 }
 

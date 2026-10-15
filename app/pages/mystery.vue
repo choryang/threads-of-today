@@ -21,7 +21,7 @@ function bonus() {
   const existing = game.mysteryJourney.value
   if (existing) return router.push(`/journey/${existing.id}`)
   const j = game.startJourney({ name: answer.name, materialIds: [...answer.materialIds] }, 'mystery')
-  if (j) router.push(`/journey/${j.id}`)
+  router.push(`/journey/${j.id}`)
 }
 
 const shareText = computed(() => {

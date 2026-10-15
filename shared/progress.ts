@@ -142,7 +142,8 @@ export interface Save {
 }
 
 export const KEEP_DAYS = 30
-const LIMITS = { items: 2000, journeysPerDay: 12, name: 40, voice: 80, guesses: 10 }
+// journeysPerDay: 하루 여정 횟수 제한이 없어져서 서버 입력 검사용 상한만 둔다
+const LIMITS = { items: 2000, journeysPerDay: 60, name: 40, voice: 80, guesses: 10 }
 const DATE = /^\d{4}-\d{2}-\d{2}$/
 
 export function emptySave(): Save {
