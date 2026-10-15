@@ -3,6 +3,8 @@ import { existsSync, readFileSync } from 'node:fs'
 import { test } from 'node:test'
 import { FORMS } from '../shared/data/forms'
 import { PROP_ICON_CROPS, propDrawing } from '../scripts/sync-prop-icons'
+import { TEST_ITEMS } from '../shared/day-type'
+import { TEST_ICON } from '../app/utils/day-test'
 
 const index = JSON.parse(readFileSync('public/forms/index.json', 'utf8')) as Record<string, { ko: string; group: string }>
 
@@ -30,4 +32,15 @@ test('형태 아이콘: prop-* 아이콘은 캐릭터 소품과 같은 그림이
     const copy = propDrawing(readFileSync(`public/forms/prop-${prop}.svg`, 'utf8').trimEnd())
     assert.equal(copy, source, `prop-${prop}: npx tsx scripts/sync-prop-icons.ts 로 다시 만든다`)
   }
+})
+
+test('형태 아이콘: 하루 유형 테스트 물건 18개의 아이콘도 public/forms와 index.json에 있다', () => {
+  assert.deepEqual(Object.keys(TEST_ICON).sort(), [...TEST_ITEMS].sort())
+  for (const [id, { slug, exact }] of Object.entries(TEST_ICON)) {
+    assert.ok(existsSync(`public/forms/${slug}.svg`), `${id} → ${slug}`)
+    // 캐릭터 소품을 옮긴 prop-*는 index.json 밖이다
+    if (!slug.startsWith('prop-')) assert.ok(index[slug], `${slug}가 index.json에 없음`)
+    assert.ok(exact, `${id}: 대신 쓴 아이콘`)
+  }
+  for (const slug of Object.keys(index).filter((s) => s.startsWith('product-'))) assert.equal(index[slug]!.group, '완성품')
 })

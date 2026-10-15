@@ -79,7 +79,7 @@ app/
                           journey/[id] · mystery · dex(통계) · result(기록: 오늘 여정·html-to-image 공유) · threads(기록 안 나의 실타래)
                           하단 탭은 3개(마을·도감·기록). 미스터리는 물건 넣기 화면에서 연다
   utils/share-image.ts    공유 이미지 1080×1350을 캔버스로 그린다(나의 하루 유형·두 사람의 하루). 글씨는 위아래 80px 안쪽
-  utils/day-test.ts       테스트 물건 18개의 형태 아이콘(가장 가까운 것, exact: false는 대신 쓴 것)
+  utils/day-test.ts       테스트 물건 18개의 아이콘(형태 아이콘, 없던 7개는 완성품 아이콘 product-*). tests/forms.test.ts가 파일·index.json을 검사
   utils/pan-zoom.ts       지도 배율·위치 제한, 한 점 기준 확대 (usePanZoom.ts가 쓰는 순수 함수)
   utils/motion.ts         모든 시간 값(전환 0.3초·토스트·고마워요 손 흔들기·자동 넘김 3~6초). CSS는 plugins/motion.client.ts가 넣는 --motion-* 변수
   utils/local-match.ts    대표 물건 + 앱용 사전으로 서버 없이 즉시 분해

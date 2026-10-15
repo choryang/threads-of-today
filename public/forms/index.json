@@ -382,5 +382,33 @@
  "clothes": {
   "ko": "옷",
   "group": "옷"
+ },
+ "product-americano": {
+  "ko": "아이스 아메리카노",
+  "group": "완성품"
+ },
+ "product-choco-bar": {
+  "ko": "초콜릿",
+  "group": "완성품"
+ },
+ "product-samgak": {
+  "ko": "참치마요 삼각김밥",
+  "group": "완성품"
+ },
+ "product-salmon-sushi": {
+  "ko": "연어초밥",
+  "group": "완성품"
+ },
+ "product-ramen": {
+  "ko": "라면",
+  "group": "완성품"
+ },
+ "product-burger": {
+  "ko": "햄버거",
+  "group": "완성품"
+ },
+ "product-chopsticks": {
+  "ko": "나무젓가락",
+  "group": "완성품"
  }
 }
