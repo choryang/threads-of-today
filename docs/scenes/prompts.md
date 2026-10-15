@@ -2,28 +2,58 @@
 
 새 기획(오늘의 나 → 물건 → 같은 마음의 한 사람)에서 이야기가 있는 13명의 장면이다. 한 사람에 한 장면.
 - 모든 프롬프트는 같은 틀이다: 첫 줄 + Scene + Style + Avoid. Style·Avoid는 바꾸지 않는다(실내는 하늘 문구만 soft natural daylight).
-- 참고 이미지: art/style-ref.png (시다마 커피 밭 그림). 요청마다 함께 첨부한다.
+- 참고 이미지: art/style-ref.webp (시다마 커피 밭 그림, 그림체 기준으로만 쓴다). 요청마다 함께 첨부한다.
 - 결과: art/scenes/<장면 id>.png → npm run scenes → public/scenes/<장면 id>.webp
-- '있음'은 이미 만든 그림이라 생성하지 않는다(art/scenes에 넣기만).
+- 모든 장면에 얼굴이 보이지 않는 그 사람이 들어간다. 사람이 없는 그림은 쓰지 않는다.
 - '확인 필요'는 생성 뒤 사람이 꼭 한 번 본다.
 
 ## sidama-coffee-farm
 
 - 사람: coffee-picker (알마즈 · 커피 체리 수확자)
 - 대체 글: 비탈진 언덕에 커피 나무가 줄지어 선 시다마의 커피 밭
-- 상태: 있음
+- 상태: 다시 만들기 (예전 그림에는 사람이 없어서)
+
+```text
+Create a 4:3 landscape illustration.
+
+Scene: Highland smallholder coffee garden in Sidama, Ethiopia. Rows of glossy green coffee shrubs with clusters of ripe red coffee cherries on the left and right, broad-leaved enset plants and tall eucalyptus shade trees behind them, rolling green hills fading into soft blue distance, a narrow reddish-brown dirt path, a few small homesteads far away on the hillside. In the middle ground, a woman in a headscarf and work dress seen from behind, reaching up to pick ripe red cherries into a woven basket on her hip.
+
+Style: editorial illustration matching the attached reference image, gouache and watercolor texture with visible soft brushstrokes, realistic proportions but gently simplified shapes, muted earthy palette with warm cream highlights, clear midday light with short soft shadows, open sky in the top third, calm and quiet mood. One worker in the middle ground absorbed in their work, face not visible, dignified and skilled, ordinary practical work clothes. No other people up close, no readable text, no logos, no flags.
+
+Avoid: photorealistic, 3D render, glossy, neon, oversaturated, visible face, close-up portrait, crowd, poverty, exotic costume, sunset, night.
+```
 
 ## container-ship-sea
 
 - 사람: sea-crew (로널드 · 컨테이너선 선원)
 - 대체 글: 넓은 바다 위를 지나는 컨테이너선 갑판
-- 상태: 있음
+- 상태: 다시 만들기 (예전 그림에는 사람이 없어서)
+
+```text
+Create a 4:3 landscape illustration.
+
+Scene: On the open deck of a large container ship crossing a calm open ocean. Tall stacks of steel shipping containers in muted red, blue, green and ochre on the left, a steel railing along the edge, wide deep-blue sea with gentle swells and a clean horizon on the right, a few seabirds far in the sky. In the middle ground, a seafarer in a navy work jacket, orange safety vest and knit beanie seen from behind, leaning toward the container stack and checking the lashing rods.
+
+Style: editorial illustration matching the attached reference image, gouache and watercolor texture with visible soft brushstrokes, realistic proportions but gently simplified shapes, muted earthy palette with warm cream highlights, clear midday light with short soft shadows, open sky in the top third, calm and quiet mood. One worker in the middle ground absorbed in their work, face not visible, dignified and skilled, ordinary practical work clothes. No other people up close, no readable text, no logos, no flags.
+
+Avoid: photorealistic, 3D render, glossy, neon, oversaturated, visible face, close-up portrait, crowd, poverty, exotic costume, sunset, night.
+```
 
 ## busan-port
 
 - 사람: busan-crane (진호 · 부산항 크레인 기사)
 - 대체 글: 크레인이 늘어선 부산항 부두
-- 상태: 있음
+- 상태: 다시 만들기 (예전 그림에는 사람이 없어서)
+
+```text
+Create a 4:3 landscape illustration.
+
+Scene: A container terminal at Busan port, South Korea. Huge ship-to-shore gantry cranes reaching over a docked container ship, neat rows of stacked containers in the middle distance, calm harbor water, green hills and apartment buildings softly in the background, a wide concrete quay in the lower foreground. Viewed from behind and slightly above, a crane operator in a yellow safety helmet and reflective vest sits in the glass cab high on the crane, hands on the controls, looking down at a container being lifted.
+
+Style: editorial illustration matching the attached reference image, gouache and watercolor texture with visible soft brushstrokes, realistic proportions but gently simplified shapes, muted earthy palette with warm cream highlights, clear midday light with short soft shadows, open sky in the top third, calm and quiet mood. One worker in the middle ground absorbed in their work, face not visible, dignified and skilled, ordinary practical work clothes. No other people up close, no readable text, no logos, no flags.
+
+Avoid: photorealistic, 3D render, glossy, neon, oversaturated, visible face, close-up portrait, crowd, poverty, exotic costume, sunset, night.
+```
 
 ## huila-coffee-slope
 
