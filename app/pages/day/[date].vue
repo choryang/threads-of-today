@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { memoryFor, replyText } from '../../../shared/today-log'
 import { shortDate } from '../../../shared/today-text'
 import { localDay } from '../../utils/today-local'
@@ -16,6 +16,7 @@ const date = computed(() => String(route.params.date))
 const record = computed(() => game.state.todays?.[date.value])
 const local = computed(() => localDay(date.value))
 const said = computed(() => (record.value ? replyText(record.value, local.value.own) : undefined))
+const sharing = ref(false)
 const memory = computed(() => (record.value ? memoryFor(game.state.todays, record.value.personId, date.value, (d) => localDay(d).own) : undefined))
 function back() {
   if (window.history.length > 1) router.back()
@@ -42,8 +43,10 @@ function back() {
       <div class="said">
         <p v-if="local.note" class="note"><span class="t-dot" aria-hidden="true" />{{ local.note }}</p>
         <p v-if="said" class="reply">당신이 건넨 말: {{ said }}</p>
+        <button class="t-btn secondary" @click="sharing = true">카드로 남기기</button>
       </div>
     </TodayPersonScreen>
+    <TodayShareSheet v-if="sharing && record" :date="date" :record="record" @close="sharing = false" />
     <p v-else class="missing">이날의 기록이 없어요.</p>
   </main>
 </template>

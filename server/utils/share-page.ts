@@ -47,13 +47,13 @@ export async function sharePageHtml(event: H3Event, meta: ShareMeta | null): Pro
  * 공유 링크 주소의 서버 라우트 (/d, /p, /v가 같이 쓴다): 토큰으로 그 링크를 찾아 OG meta를 만들고 SPA 껍데기에 넣어 돌려준다.
  * 링크가 없거나 만료됐으면 앱 기본 meta 그대로(화면은 SPA가 '열 수 없어요'를 보여 준다).
  */
-export function defineShareRoute<P>(kind: ShareKind, metaOf: (payload: P) => ShareMeta | null) {
+export function defineShareRoute<P>(kind: ShareKind, metaOf: (payload: P, token: string) => ShareMeta | null) {
   return defineEventHandler(async (event) => {
     const token = getRouterParam(event, 'token') ?? ''
     let meta: ShareMeta | null = null
     if (isToken(token) && kvPersistent()) {
       const found = await shares.lookup(token).catch(() => null)
-      if (found?.kind === kind) meta = metaOf(found.payload as P)
+      if (found?.kind === kind) meta = metaOf(found.payload as P, token)
     }
     setHeader(event, 'content-type', 'text/html; charset=utf-8')
     // 링크마다 다른 meta라 공유 캐시에는 남기지 않는다

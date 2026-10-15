@@ -1,5 +1,5 @@
 /**
- * 공유 링크 (나의 하루 유형 /d, 이후 사람 카드 소개 /p, 마을 초대 /v). 종류마다 TTL·주소·내용 검사가 다르고 구조는 같다.
+ * 공유 링크 (오늘의 실 /t, 예전 기획의 나의 하루 유형 /d, 사람 카드 소개 /p, 마을 초대 /v). 종류마다 TTL·주소·내용 검사가 다르고 구조는 같다.
  *
  *   share:{token}           { kind, payload, createdAt, expiresAt, owner }  (owner = 관리 키의 SHA-256)
  *   share-owner:{owner}     → 지금 살아 있는 token (재발급하면 이전 token을 지운다)
@@ -15,8 +15,12 @@ import { INTRO_PHRASES, introText, isFood, type IntroPhraseId } from './intro'
 import { withJosa } from './logic'
 import { normalizeNickname } from './nickname'
 import { PRODUCTS } from './data/materials'
+import { PLACES } from './data/places'
+import { MOODS, isMoodId, type MoodId } from './data/moods'
+import { storyEpisodes } from './key-story'
+import { placeLabel } from './rewind'
 
-export type ShareKind = 'day' | 'person' | 'village'
+export type ShareKind = 'day' | 'person' | 'village' | 'thread'
 
 const DAY = 24 * 60 * 60
 
@@ -87,15 +91,44 @@ function validatePerson(raw: unknown): PersonPayload | null {
   return item && isFood(item) ? { personId: r.personId, nickname, phraseId: phrase.id, itemId: item.id } : null
 }
 
-export const SHARE_KINDS: { day: ShareKindSpec<DayPayload>; person: ShareKindSpec<PersonPayload>; village: ShareKindSpec<VillagePayload> } = {
+/**
+ * 오늘의 실 (docs/redesign/README.md "공유"): 그날 만난 사람과 마음. 한 줄·직접 쓴 한마디·건넨 말은 담지 않는다.
+ * 카드 그림(V2Quote)은 앱이 그려서 링크를 만든 기기에서만 올린다(api/share/[token]/image)
+ */
+export interface ThreadPayload {
+  /** 서울 날짜 */
+  date: string
+  mood: MoodId
+  personId: string
+  /** 그날 본 편(0부터). 카드 문구로 만났으면 null */
+  episode: number | null
+  /** 물건 이름 */
+  item: string
+}
+
+function validateThread(raw: unknown): ThreadPayload | null {
+  if (!raw || typeof raw !== 'object') return null
+  const r = raw as Record<string, unknown>
+  if (typeof r.date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(r.date) || !isMoodId(r.mood)) return null
+  if (typeof r.personId !== 'string' || !PEOPLE[r.personId]) return null
+  const episode = r.episode === null ? null : Number.isInteger(r.episode) && (r.episode as number) >= 0 && (r.episode as number) < storyEpisodes(r.personId).length ? (r.episode as number) : undefined
+  if (episode === undefined) return null
+  const item = typeof r.item === 'string' ? r.item.trim().slice(0, 40) : ''
+  if (!item) return null
+  return { date: r.date, mood: r.mood, personId: r.personId, episode, item }
+}
+
+export const SHARE_KINDS: { day: ShareKindSpec<DayPayload>; person: ShareKindSpec<PersonPayload>; village: ShareKindSpec<VillagePayload>; thread: ShareKindSpec<ThreadPayload> } = {
   day: { path: '/d', ttl: 30 * DAY, validate: validateDay },
   // 사람 카드 소개: 소개마다 링크 하나 (관리 키도 소개마다 따로)
   person: { path: '/p', ttl: 30 * DAY, validate: validatePerson },
   // 마을 초대: 주인이 마을을 열 때마다 내용을 고치며(update) 기간도 다시 7일로 늘린다
   village: { path: '/v', ttl: 7 * DAY, validate: validateVillage },
+  // 오늘의 실: 그날마다 링크 하나
+  thread: { path: '/t', ttl: 30 * DAY, validate: validateThread },
 }
 
-export const isShareKind = (v: unknown): v is ShareKind => v === 'day' || v === 'person' || v === 'village'
+export const isShareKind = (v: unknown): v is ShareKind => v === 'day' || v === 'person' || v === 'village' || v === 'thread'
 
 /** 받은 사람의 답 ('보여주기'를 눌렀을 때만) */
 export interface DayReply {
@@ -211,6 +244,13 @@ export function createShares(store: ShareStore, clock: () => number = Date.now) 
     return token && (await read(token)) ? token : null
   }
 
+  /** 서버 안에서만: 이 관리 키가 이 링크를 만든 기기의 것인지 (카드 그림 올리기) */
+  async function manages(token: string, manage: unknown): Promise<ShareRecord | null> {
+    if (!isManageKey(manage)) return null
+    const rec = await read(token)
+    return rec && rec.owner === (await sha256(manage)) ? rec : null
+  }
+
   /** 서버 안에서만: 이 링크를 만든 사람(관리 키 해시). 응답에는 내보내지 않는다 (마을 꽃을 링크가 아니라 마을에 붙이려고) */
   async function ownerOf(token: string): Promise<string | null> {
     return (await read(token))?.owner ?? null
@@ -242,7 +282,7 @@ export function createShares(store: ShareStore, clock: () => number = Date.now) 
     return { token, replies: JSON.parse((await store.get(repliesKey(token))) ?? '[]') as DayReply[] }
   }
 
-  return { issue, update, lookup, ownerOf, tokenOf, reply, replies }
+  return { issue, update, lookup, ownerOf, tokenOf, manages, reply, replies }
 }
 
 /** OG 제목: "노을의 찻잎님의 하루는 '목장에서 온 하루'예요" */
@@ -268,4 +308,35 @@ export function personShareTitle(p: PersonPayload): string {
 /** 받는 사람 화면 첫 줄: "옥희님이 소개해요 · 오늘 아침 커피가 맛있어서, 이 분을 소개해요" */
 export function personShareLine(p: PersonPayload): string {
   return `${p.nickname}님이 소개해요 · ${introText(p.phraseId, p.itemId)}`
+}
+
+// ── 오늘의 실 ──
+
+/** 인용: 그 편(없으면 카드 문구)의 첫 문장 */
+export function threadQuote(p: Pick<ThreadPayload, 'personId' | 'episode'>): string {
+  const text = p.episode === null ? PEOPLE[p.personId]?.story ?? '' : storyEpisodes(p.personId)[p.episode] ?? ''
+  return (/^.*?[.?!](?=\s|$)/.exec(text)?.[0] ?? text).trim()
+}
+
+/** '에티오피아 시다마의 알마즈' */
+export function threadWho(p: Pick<ThreadPayload, 'personId'>): string {
+  const person = PEOPLE[p.personId]
+  const place = PLACES[person?.placeId ?? '']
+  return `${place ? placeLabel(place) : ''}의 ${person?.name ?? person?.job ?? ''}`
+}
+
+/** OG 제목·설명 */
+export function threadShareTitle(p: ThreadPayload): string {
+  return `오늘 나와 같은 하루를 보낸 사람, ${threadWho(p)}`
+}
+export function threadShareLine(p: ThreadPayload): string {
+  return `${MOODS[p.mood].past} 날, ${withEuro(p.item)} 이어진 사람. 당신의 오늘은 어땠어요?`
+}
+
+/** '라면으로' · '커피로' · '물로'(ㄹ 받침은 '로') */
+export function withEuro(word: string): string {
+  const last = word.charCodeAt(word.length - 1)
+  if (last < 0xac00 || last > 0xd7a3) return `${word}로`
+  const batchim = (last - 0xac00) % 28
+  return `${word}${batchim === 0 || batchim === 8 ? '로' : '으로'}`
 }

@@ -16,6 +16,13 @@ const d = today.draft
 /** 자주 고르는 것 (시안 V2Item) */
 const CHOICES = ['아이스 아메리카노', '스마트폰', '참치마요 삼각김밥', '라면', '운동화', '면 티셔츠']
 
+const route = useRoute()
+const game = useGame()
+/** 공유 링크로 들어온 사람: "당신의 오늘은 어땠어요?"로 시작 */
+const invited = computed(() => route.query.from === 'share')
+const record = computed(() => game.state.todays?.[d.date])
+const sharing = ref(false)
+
 const busy = ref(false)
 const itemError = ref('')
 
@@ -58,6 +65,7 @@ const tightTop = computed(() => d.step === 'item' || d.step === 'person' || d.st
       :date="d.date"
       :mood="d.mood"
       :note="d.note"
+      :invited="invited"
       @pick="pickMood"
       @note="today.setNote"
       @next="today.go('item')"
@@ -98,7 +106,7 @@ const tightTop = computed(() => d.step === 'item' || d.step === 'person' || d.st
       @reply="today.giveReply"
     >
       <template #actions>
-        <button class="t-btn secondary" @click="today.go('done')">다 했어요</button>
+        <button class="t-btn secondary" @click="sharing = true">카드로 남기기</button>
         <NuxtLink to="/people" class="t-btn">이어진 사람들</NuxtLink>
       </template>
     </TodayReplyScreen>
@@ -115,8 +123,10 @@ const tightTop = computed(() => d.step === 'item' || d.step === 'person' || d.st
         <p v-if="d.note" class="done-note"><span class="t-dot" aria-hidden="true" />{{ d.note }}</p>
         <p v-if="saidText" class="done-said">당신이 건넨 말: {{ saidText }}</p>
         <p class="done-bye">내일 저녁에 또 만나요</p>
+        <button class="t-btn secondary" @click="sharing = true">카드로 남기기</button>
       </div>
     </TodayPersonScreen>
+    <TodayShareSheet v-if="sharing && record" :date="d.date" :record="record" @close="sharing = false" />
   </main>
 </template>
 

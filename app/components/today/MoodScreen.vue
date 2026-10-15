@@ -6,7 +6,8 @@ import { dateLabel } from '../../../shared/today-text'
 /**
  * 1번 화면 (시안 V2Mood): 오늘 하루, 어땠어요? 에너지 × 편안함 네 칸 위의 마음 8개. 한 줄은 선택(기기에만 남는다).
  */
-const props = defineProps<{ date: string; mood?: MoodId; note: string }>()
+/** invited: 공유 링크로 들어온 사람 (제목이 "당신의 오늘은 어땠어요?") */
+const props = defineProps<{ date: string; mood?: MoodId; note: string; invited?: boolean }>()
 const emit = defineEmits<{ pick: [mood: MoodId]; note: [text: string]; next: [] }>()
 
 const current = computed(() => (props.mood ? MOODS[props.mood] : undefined))
@@ -18,7 +19,7 @@ const NOTE_MAX = 60
 <template>
   <div class="mood-screen">
     <p class="t-kicker">{{ dateLabel(date) }}</p>
-    <h1 class="t-title">오늘 하루, 어땠어요?</h1>
+    <h1 class="t-title">{{ invited ? '당신의 오늘은 어땠어요?' : '오늘 하루, 어땠어요?' }}</h1>
 
     <div class="board" role="group" aria-label="오늘의 마음. 위로 갈수록 에너지가 높고, 오른쪽으로 갈수록 편안해요">
       <span class="cell" aria-hidden="true" style="left: 0; top: 0; background: #e0528a; opacity: 0.06" />
