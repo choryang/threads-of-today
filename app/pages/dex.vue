@@ -142,7 +142,10 @@ const metLabel = computed(() => `${withJosa(game.nickname.value, '이', '가')} 
 
     <div v-if="openPerson" class="modal" role="dialog" aria-modal="true" @click.self="open = null">
       <div class="sheet">
-        <PersonCard v-if="game.owns(openPerson.id)" :person-id="openPerson.id" :number="numberOf(openPerson.id)" />
+        <template v-if="game.owns(openPerson.id)">
+          <PersonCard :person-id="openPerson.id" :number="numberOf(openPerson.id)" />
+          <div class="friend-wrap"><FriendshipPanel :person-id="openPerson.id" /></div>
+        </template>
         <div v-else class="locked-card panel">
           <Character :person-id="openPerson.id" locked :size="120" />
           <p class="mono small muted">No.{{ String(numberOf(openPerson.id)).padStart(3, '0') }} · {{ badgeOf(openPerson) }}</p>
@@ -156,6 +159,7 @@ const metLabel = computed(() => `${withJosa(game.nickname.value, '이', '가')} 
 
 <style scoped>
 .head { display: flex; flex-direction: column; gap: 8px; }
+.friend-wrap { padding: 16px; border-radius: 22px; background: var(--paper); }
 .title { font-size: 30px; }
 .small { margin: 0; font-size: 13px; }
 .people-note { margin: 0; font-size: 12px; line-height: 1.5; color: var(--muted); text-align: center; word-break: keep-all; }

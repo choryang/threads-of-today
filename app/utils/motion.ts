@@ -29,6 +29,8 @@ export const MOTION = {
   handMs: 300,
   /** 되감기 엔딩에서 사람 한 명이 지나가는 시간 */
   replayStepMs: 200,
+  /** 아는 사람을 다시 만났을 때 친해진 정도 숫자가 오르는 시간 */
+  friendUpMs: 900,
 } as const
 
 /** 자동으로 넘어가는 화면이 머무는 시간. 글자 수에 비례하고 최소·최대 사이로 자른다 */
@@ -53,5 +55,6 @@ export function motionCssVars(): Record<string, string> {
     '--motion-draw': `${MOTION.drawMs}ms`,
     '--motion-hand': `${MOTION.handMs}ms`,
     '--motion-replay': `${MOTION.replayStepMs}ms`,
+    '--motion-friend': `${MOTION.friendUpMs}ms`,
   }
 }

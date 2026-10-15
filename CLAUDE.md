@@ -27,7 +27,9 @@ shared/                 앱과 서버가 상대 경로로 함께 import (Nuxt �
   data/dictionary.json  미리 만든 물건 사전 (scripts/build-dictionary.ts가 생성). 서버에서만 import
   data/dictionary-client.json 앱용 사전(한마디 하나만, scripts/build-client-dictionary.ts). 화면에서 바로 매칭할 때 쓴다
   safety.ts             looksFactual: AI 문구에 숫자·나라 이름이 섞였는지 검사
-  progress.ts           Save 타입, mergeSaves(카드·물건 합집합, 날짜 기록 30일), sanitizeSave(서버 입력 검사)
+  progress.ts           Save 타입, mergeSaves(카드·물건 합집합, 날짜 기록 30일, 사람별 기록 합집합·OR), sanitizeSave(서버 입력 검사)
+  friendship.ts         친해진 정도: 사람별 기록(metItems·gratitudeDays·quizCorrect)에서 퍼센트 계산(저장하지 않음), 열리는 단계,
+                        출처 있는 사실(workFact)·퀴즈(한 재료에만 나오는 사람의 일의 크기 퀴즈), 예전 기록 마이그레이션
   nickname.ts           기본 닉네임 조합·normalizeNickname(1~12자)
   recovery.ts           복구 코드 '낱말-낱말-숫자4' 생성·정규화
   voice.ts              voice의 {name} 자리표시자 검사·renderVoice (AI에 닉네임을 보내지 않는다)
@@ -91,6 +93,7 @@ tests/                    node:test + tsx 단위 테스트
 10. Save 모양을 바꾸면 `shared/progress.ts`의 mergeSaves·sanitizeSave와 tests/progress.test.ts도 함께 고친다.
 11. 일의 크기 숫자(workFact·work-quizzes)를 보강할 때는 시설 규모나 나라 전체 통계보다 한 사람의 하루(하루에 몇 개, 몇 시간, 몇 km)나
     한 그루·한 송이처럼 손에 잡히는 단위의 숫자를 먼저 고른다. 단위는 미터법(톤·kg·km)으로 환산하고 계산식을 주석에 남긴다.
+12. 친해진 정도와 희소도는 별개다. 친해진 정도·감사 수로 사람 순위를 매기지 않고, 연속 출석이나 "안 하면 사라져요" 같은 잃는 장치는 넣지 않는다.
 
 ## 알려진 상태
 

@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { PEOPLE } from '../../shared/data/people'
 import { PLACES } from '../../shared/data/places'
+import { UNLOCK, factOf } from '../../shared/friendship'
 import { placeLabel as labelOf } from '../../shared/rewind'
 import { thanksReply } from '../../shared/thanks'
 import { badgeOf } from '../utils/labels'
@@ -13,8 +14,11 @@ const placeLabel = computed(() => labelOf(place.value))
 
 const game = useGame()
 const met = computed(() => game.owns(props.personId))
-const thanked = computed(() => game.thanked(props.personId))
+/** 고마워요는 하루(서울 기준) 한 번 */
+const thanked = computed(() => game.thankedToday(props.personId))
 const reply = computed(() => (thanked.value ? thanksReply(props.personId) : ''))
+/** 일하는 사실은 친해진 정도 50%에 열린다 */
+const fact = computed(() => (met.value && game.friendship(props.personId).percent >= UNLOCK.fact ? factOf(props.personId) : undefined))
 
 // 다른 사람들의 고마움: 만난 사람 카드에서만 읽는다
 const gratitude = useGratitude()
@@ -51,14 +55,14 @@ onBeforeUnmount(() => clearTimeout(waveTimer))
         <template v-if="person.name"><span class="name">{{ person.name }}</span> · </template>{{ person.job }}<span class="place"> · {{ placeLabel }}</span>
       </h3>
       <p class="story">{{ person.story }}</p>
-      <div v-if="person.workFact" class="fact">
+      <div v-if="fact" class="fact">
         <button class="fact-btn" :aria-expanded="showSource" @click="showSource = !showSource">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /></svg>
-          <span>{{ person.workFact }}</span>
+          <span>{{ fact.fact }}</span>
         </button>
-        <p v-if="showSource && person.workFactSource" class="fact-source">
-          출처: {{ person.workFactSource.name }} ({{ person.workFactSource.year }})
-          <a :href="person.workFactSource.url" target="_blank" rel="noopener noreferrer">자료 보기</a>
+        <p v-if="showSource" class="fact-source">
+          출처: {{ fact.source.name }} ({{ fact.source.year }})
+          <a :href="fact.source.url" target="_blank" rel="noopener noreferrer">자료 보기</a>
         </p>
       </div>
       <div v-if="met" class="thanks" aria-live="polite">
@@ -70,7 +74,7 @@ onBeforeUnmount(() => clearTimeout(waveTimer))
           <p class="reply">“{{ reply }}”</p>
           <p class="thanked-note">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z" /></svg>
-            {{ person.name ? `${person.name}에게 ` : '' }}고마움을 전했어요
+            오늘 {{ person.name ? `${person.name}에게 ` : '' }}고마움을 전했어요
           </p>
         </template>
         <p v-if="others && others.total" class="others">

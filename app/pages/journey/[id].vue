@@ -188,7 +188,7 @@ function answer(i: number) {
 let waveTimer: ReturnType<typeof setTimeout> | undefined
 const currentPerson = computed(() => (current.value?.type === 'stage' || current.value?.type === 'hidden' ? current.value.personId : ''))
 watch(
-  () => (currentPerson.value ? game.thanked(currentPerson.value) : false),
+  () => (currentPerson.value ? game.thankedToday(currentPerson.value) : false),
   (now, before) => {
     if (!now || before) return
     clearTimeout(waveTimer)
@@ -464,6 +464,7 @@ function followTeaser(p: Product) {
             <!-- eslint-disable-next-line vue/no-v-html -- 직접 그린 SVG -->
             <svg v-else viewBox="0 0 32 32" width="40" height="40" v-html="productIconSvg(productId)" />
           </span>
+          <MeetAgain :key="`again-${journey.step}`" :person-id="current.personId" :journey-id="journey.id" :journey-name="journey.name" />
           <PersonCard :person-id="current.personId" :is-new="journey.newCards.includes(current.personId)" />
           <div v-if="stop" class="stop panel">
             <p class="stop-q">이 전엔 어디 있었을까요?</p>
@@ -494,6 +495,7 @@ function followTeaser(p: Product) {
 
         <section v-else-if="current.type === 'hidden'" class="stage hidden-meet">
           <p class="mono kicker gold">숨은 만남</p>
+          <MeetAgain :key="`again-${journey.step}`" :person-id="current.personId" :journey-id="journey.id" :journey-name="journey.name" />
           <PersonCard :person-id="current.personId" :is-new="journey.newCards.includes(current.personId)" />
         </section>
 

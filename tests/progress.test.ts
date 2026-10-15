@@ -144,3 +144,12 @@ test('대사 자리표시자: 부르는 말로만 쓰고 화면에서 닉네임�
   assert.equal(renderVoice('{name}, 오늘도 수고했어요', ''), '오늘도 수고했어요')
   assert.equal(renderVoice(undefined, '커피 체리'), '')
 })
+
+test('사람별 기록(친해진 정도): 목록은 합집합, quizCorrect는 OR, 기록 없는 카드는 만남 1곳', () => {
+  const [p1, p2] = PEOPLE_LIST.map((p) => p.id)
+  const a: Save = { ...emptySave(), cards: { [p1!]: '2026-10-01', [p2!]: '2026-10-01' }, people: { [p1!]: { metItems: ['2026-10-01-1-a'], gratitudeDays: ['2026-10-02'] } } }
+  const b: Save = { ...emptySave(), cards: { [p1!]: '2026-10-01' }, people: { [p1!]: { metItems: ['2026-10-05-1-b'], gratitudeDays: [], quizCorrect: true } } }
+  const m = mergeSaves(a, b, TODAY)
+  assert.deepEqual(m.people[p1!], { metItems: ['2026-10-01-1-a', '2026-10-05-1-b'], gratitudeDays: ['2026-10-02'], quizCorrect: true })
+  assert.deepEqual(m.people[p2!], { metItems: [`legacy:${p2}`], gratitudeDays: [] })
+})

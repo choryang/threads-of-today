@@ -9,9 +9,12 @@
  *  - 닉네임: updatedAt이 더 최근인 쪽.
  *  - 재료별 누적(threads): 같은 재료는 떠난 횟수가 큰 쪽, 처음 떠난 날은 이른 쪽.
  *  - 본 감사 장면(seenScenes): 합집합. 한 기기에서 본 장면은 다른 기기에서 다시 띄우지 않는다.
+ *  - 사람별 기록(people, 친해진 정도): 목록은 합집합, quizCorrect는 OR (shared/friendship.ts).
+ *    어느 쪽에도 기록이 없는 가진 카드는 만남 1곳(legacy)으로 채운다.
  */
 import { MATERIALS, SETS } from './data/materials'
 import { PEOPLE } from './data/people'
+import { LOG_CAP, legacyMeeting, mergePersonLog } from './friendship'
 import { normalizeNickname } from './nickname'
 
 export type JourneySource = 'text' | 'photo' | 'pick' | 'mystery'
@@ -60,6 +63,20 @@ export interface ThreadStat {
   first: string
 }
 
+/**
+ * 사람 한 명과의 기록 (친해진 정도는 여기서 계산한다: shared/friendship.ts). 목록은 이른 것부터 LOG_CAP개까지만 남긴다.
+ */
+export interface PersonLog {
+  /** 이 사람을 만난 여정 id (같은 여정은 한 번). 'legacy:{id}'는 만난 곳을 모르는 예전 기록 */
+  metItems: string[]
+  /** 고마워요를 누른 서울 기준 날짜 (하루 한 번) */
+  gratitudeDays: string[]
+  /** 이 사람 퀴즈를 맞혔는지 */
+  quizCorrect?: true
+  /** 만난 물건 이름 (75%에 열리는 '만난 물건 목록'. 여정 기록은 30일만 남아서 이름을 따로 둔다) */
+  metNames?: string[]
+}
+
 export interface Save {
   v: 1
   cards: Record<string, string>
@@ -74,6 +91,8 @@ export interface Save {
   seenScenes: string[]
   /** 재료 id → 누적 기록. 날짜별 기록(days)은 30일만 남아서 실타래는 이걸로 그린다 */
   threads: Record<string, ThreadStat>
+  /** 사람 id → 친해진 정도 기록 */
+  people: Record<string, PersonLog>
   nickname?: Nickname
 }
 
@@ -82,7 +101,7 @@ const LIMITS = { items: 2000, journeysPerDay: 12, name: 40, voice: 80, guesses: 
 const DATE = /^\d{4}-\d{2}-\d{2}$/
 
 export function emptySave(): Save {
-  return { v: 1, cards: {}, days: {}, streak: { last: '', count: 0 }, mystery: {}, items: {}, thanks: {}, seenScenes: [], threads: {} }
+  return { v: 1, cards: {}, days: {}, streak: { last: '', count: 0 }, mystery: {}, items: {}, thanks: {}, seenScenes: [], threads: {}, people: {} }
 }
 
 /** todayKey를 포함해 최근 days일의 날짜 키인지 */
@@ -102,6 +121,14 @@ function mergeThreads(a: Record<string, ThreadStat>, b: Record<string, ThreadSta
     const x = out[id]
     out[id] = x ? { count: Math.max(x.count, t.count), first: earlier(x.first, t.first) } : { ...t }
   }
+  return out
+}
+
+function mergePeople(a: Record<string, PersonLog>, b: Record<string, PersonLog>, cards: Record<string, string>): Record<string, PersonLog> {
+  const out: Record<string, PersonLog> = {}
+  for (const id of new Set([...Object.keys(a), ...Object.keys(b)])) out[id] = mergePersonLog(a[id], b[id])
+  // 예전 버전 기기에서 온 카드: 만난 곳은 모르지만 만난 사람이다
+  for (const id of Object.keys(cards)) if (!out[id]) out[id] = { metItems: [legacyMeeting(id)], gratitudeDays: [] }
   return out
 }
 
@@ -160,14 +187,16 @@ export function mergeSaves(a: Save, b: Save, todayKey: string): Save {
   const nickname =
     !a.nickname ? b.nickname : !b.nickname ? a.nickname : a.nickname.updatedAt >= b.nickname.updatedAt ? a.nickname : b.nickname
 
+  const cards = mergeRecordOfDates(a.cards, b.cards)
   return {
     v: 1,
-    cards: mergeRecordOfDates(a.cards, b.cards),
+    cards,
     items: mergeRecordOfDates(a.items, b.items),
     // 예전 기록에는 thanks가 없을 수 있다
     thanks: mergeRecordOfDates(a.thanks ?? {}, b.thanks ?? {}),
     seenScenes: union(a.seenScenes ?? [], b.seenScenes ?? []),
     threads: mergeThreads(a.threads ?? {}, b.threads ?? {}),
+    people: mergePeople(a.people ?? {}, b.people ?? {}, cards),
     days: pickRecent(days, todayKey),
     mystery: pickRecent(mystery, todayKey),
     streak,
@@ -216,6 +245,18 @@ export function sanitizeSave(raw: unknown, todayKey: string): Save {
       if (!MATERIALS[id] || !isObj(t) || typeof t.first !== 'string' || !DATE.test(t.first)) continue
       if (!Number.isInteger(t.count) || t.count < 1) continue
       s.threads[id] = { count: Math.min(t.count, 1_000_000), first: t.first }
+    }
+  }
+  if (isObj(raw.people)) {
+    for (const [id, log] of Object.entries(raw.people)) {
+      if (!s.cards[id] || !isObj(log)) continue
+      const metNames = strList(log.metNames, LOG_CAP, LIMITS.name)
+      s.people[id] = {
+        metItems: strList(log.metItems, LOG_CAP, 40).sort(),
+        gratitudeDays: strList(log.gratitudeDays, LOG_CAP, 10).filter((d) => DATE.test(d)).sort(),
+        ...(log.quizCorrect === true ? { quizCorrect: true as const } : {}),
+        ...(metNames.length ? { metNames } : {}),
+      }
     }
   }
   s.seenScenes = strList(raw.seenScenes, SETS.length + 1).filter((id) => id === 'ending' || SETS.some((set) => set.id === id))

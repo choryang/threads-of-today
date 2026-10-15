@@ -20,6 +20,7 @@ import { MYSTERY_HINT_COUNT, middleCandidates, mysteryHints } from '../shared/my
 import { MYSTERY_INFO } from '../shared/data/mystery'
 import { createMatcher, match, productEntries, type DictEntry } from '../shared/match'
 import { WORK_QUIZZES } from '../shared/data/work-quizzes'
+import { factOf, quizOf } from '../shared/friendship'
 import { NAME_GROUPS } from '../shared/data/names'
 
 const errors: string[] = []
@@ -331,6 +332,15 @@ for (const product of PRODUCTS) {
 if (JSON.stringify(buildTimeline(['coffee'], '2026-10-15-1-k3x9-r', '아메리카노')) !== JSON.stringify(reverseTimeline(['coffee'], '2026-10-15-1-k3x9-r', '아메리카노'))) errors.push("'-r' 여정은 거꾸로 가야 함")
 if (JSON.stringify(buildTimeline(['coffee'], '2026-10-15-1-k3x9', '아메리카노')) !== JSON.stringify(forwardTimeline(['coffee'], '2026-10-15-1-k3x9', '아메리카노'))) errors.push("'-r'이 없는 여정은 예전 순서여야 함")
 console.log('형태:', Object.values(FORMS).flat().length, '개 · 거꾸로 가는 여정 검사', PRODUCTS.length * 40, '개 · 가장 먼 여정 약', Math.round(maxKm), 'km')
+
+// 친해진 정도: 50%(사실)·75%(퀴즈) 단계는 출처 있는 데이터가 있는 사람만 열린다. 없는 사람은 그 단계를 건너뛴다
+const noFact = PEOPLE_LIST.filter((p) => !factOf(p.id))
+const noQuiz = PEOPLE_LIST.filter((p) => !quizOf(p.id))
+for (const p of PEOPLE_LIST) {
+  const q = quizOf(p.id)
+  if (q && (q.answer < 0 || q.answer >= q.options.length)) errors.push(`${p.id}: 친해진 정도 퀴즈 정답 번호 오류`)
+}
+console.log('친해진 정도: 사실 없음', noFact.length, '명 · 퀴즈 없음', noQuiz.length, '명 (퀴즈가 없으면 90%까지)')
 
 const today = mysteryProduct('2026-10-15')
 console.log('오늘 미스터리', today.name, mysteryHints(today, mysteryOptions('2026-10-15').filter((o) => o.id !== today.id)))

@@ -1,13 +1,14 @@
 import { computed, effectScope, reactive, ref, watch } from 'vue'
-import { SETS } from '../../shared/data/materials'
+import { LINK_RULES, SETS } from '../../shared/data/materials'
 import { PEOPLE } from '../../shared/data/people'
 import {
-  DAILY_LIMIT, completedSets, dateKey, findLinkCards, mysteryOptions, mysteryProduct, previousDateKey,
+  DAILY_LIMIT, completedSets, dateKey, findLinkCards, mysteryOptions, mysteryProduct, previousDateKey, seoulDateKey,
   type Decomposed,
 } from '../../shared/logic'
+import { addGratitude, addMeeting, friendshipOf, migratePeople, quizOf, UNLOCK } from '../../shared/friendship'
 import { mysteryHints } from '../../shared/mystery'
 import { normalizeNickname, randomNickname } from '../../shared/nickname'
-import { FIRST_SUFFIX, REVERSE_SUFFIX, buildTimeline, firstJourneyGift, quizFor } from '../../shared/journey'
+import { FIRST_SUFFIX, REVERSE_SUFFIX, buildTimeline, firstJourneyGift, quizFor, timelinePeople } from '../../shared/journey'
 import { addJourneyToThreads, backfillThreads } from '../../shared/threads'
 import { everyoneThanked, sceneKey, thanksReply, unseenScenes, type ThanksScene } from '../../shared/thanks'
 import { emptySave, type DayLog, type Journey, type JourneySource, type MysteryLog, type Save } from '../../shared/progress'
@@ -28,6 +29,8 @@ function load(): Save {
     const save: Save = { ...emptySave(), ...parsed }
     // 실타래 기능 전의 기록: 남은 30일 기록과 분해해 본 물건으로 재료별 누적을 채운다
     if (!parsed.threads) save.threads = backfillThreads(save)
+    // 친해진 정도 기능 전의 기록: 남은 여정·가진 카드·고마워요로 사람별 기록을 채운다
+    if (!parsed.people) save.people = migratePeople(save)
     return save
   } catch {
     return emptySave()
@@ -59,6 +62,12 @@ function getState(): Save {
   return state
 }
 
+/** 이 여정에 연결 카드의 원래 사람(선원·항구 등)이 나왔는지 */
+function journeyHasLink(journey: Journey, cardId: string): boolean {
+  const rule = LINK_RULES.find((r) => r.cardId === cardId)
+  return !!rule && timelinePeople(journey.materialIds, journey.id, journey.name).some((x) => x.personId === rule.personId)
+}
+
 /** 서버와 합친 진행 상황으로 바꾼다. 반응형 객체는 그대로 두고 내용만 바꿔 화면이 따라 바뀌게 한다 */
 export function replaceSave(next: Save) {
   const s = getState()
@@ -70,6 +79,7 @@ export function replaceSave(next: Save) {
   s.thanks = next.thanks ?? {}
   s.seenScenes = next.seenScenes ?? []
   s.threads = next.threads ?? {}
+  s.people = next.people ?? {}
   if (next.nickname) s.nickname = next.nickname
 }
 
@@ -124,9 +134,21 @@ export function useGame() {
     return !!s.cards[cardId]
   }
 
-  /** 카드를 얻는다. 세트가 완성되면 보상 카드도 함께. 새로 얻은 id 목록을 돌려준다. */
-  function collect(cardId: string): string[] {
-    if (!PEOPLE[cardId] || s.cards[cardId]) return []
+  /** 이 여정에서 이 사람을 만났다 (친해진 정도). 같은 여정은 한 번만 센다 */
+  function meet(cardId: string, journey: { id: string; name: string }) {
+    if (!PEOPLE[cardId]) return
+    if (!s.people) s.people = {}
+    s.people[cardId] = addMeeting(s.people[cardId], journey.id, journey.name)
+  }
+
+  /**
+   * 카드를 얻는다. 세트가 완성되면 보상 카드도 함께. 새로 얻은 id 목록을 돌려준다.
+   * journey를 넘기면 이미 가진 사람이어도 그 여정에서 만난 것으로 적는다.
+   */
+  function collect(cardId: string, journey?: { id: string; name: string }): string[] {
+    if (!PEOPLE[cardId]) return []
+    if (journey) meet(cardId, journey)
+    if (s.cards[cardId]) return []
     s.cards[cardId] = todayKey
     const gained = [cardId]
     const owned = new Set(Object.keys(s.cards))
@@ -134,6 +156,7 @@ export function useGame() {
       if (!s.cards[set.rewardId]) {
         s.cards[set.rewardId] = todayKey
         gained.push(set.rewardId)
+        if (journey) meet(set.rewardId, journey)
       }
     }
     return gained
@@ -172,7 +195,7 @@ export function useGame() {
     const saved = day.journeys[day.journeys.length - 1]!
     // 첫 번째 사람은 여정을 시작하자마자 만난다
     const first = buildTimeline(saved.materialIds, saved.id, saved.name)[0]
-    if (first?.type === 'stage') saved.newCards.push(...collect(first.personId))
+    if (first?.type === 'stage') saved.newCards.push(...collect(first.personId, saved))
     return saved
   }
 
@@ -194,7 +217,7 @@ export function useGame() {
     const next = timeline[journey.step]
     // 같은 길(pass)의 사람은 앞에서 이미 만났지만, 카드가 빠진 기록이어도 얻게 한다
     const ids = next?.type === 'stage' || next?.type === 'hidden' ? [next.personId] : next?.type === 'pass' ? next.personIds : []
-    const gained = ids.flatMap((id) => collect(id))
+    const gained = ids.flatMap((id) => collect(id, journey))
     journey.newCards.push(...gained)
     return gained
   }
@@ -206,7 +229,7 @@ export function useGame() {
     const correct = choice === quiz.answer
     // 첫 여정에 숨은 만남이 나올 자리가 없으면, 처음 답한 퀴즈의 보상은 틀려도 준다
     const gift = !correct && firstJourneyGift(journey.materialIds, journey.id) && !journey.newCards.some((id) => PEOPLE[id]?.kind === 'quiz')
-    const gained = correct || gift ? collect(quiz.rewardId) : []
+    const gained = correct || gift ? collect(quiz.rewardId, journey) : []
     journey.newCards.push(...gained)
     return { correct, gained }
   }
@@ -221,7 +244,8 @@ export function useGame() {
     const gained: string[] = []
     for (const cardId of findLinkCards(day.journeys.filter((j) => j.done))) {
       if (!day.linkCards.includes(cardId)) day.linkCards.push(cardId)
-      gained.push(...collect(cardId))
+      // 이 여정에서 찾은 연결이면 다시 만난 것으로 센다 (이미 가진 연결 카드도)
+      gained.push(...collect(cardId, journeyHasLink(journey, cardId) ? journey : undefined))
     }
     journey.newCards.push(...gained)
     if (!s.threads) s.threads = {}
@@ -261,7 +285,10 @@ export function useGame() {
   }
 
   // ── 고마워요 ──
+  /** 한 번이라도 고마움을 전했는지 (세트 감사 장면·엔딩 기준) */
   const thanked = (cardId: string) => !!s.thanks[cardId]
+  /** 오늘(서울 기준) 고마움을 전했는지. 고마워요는 하루 한 번 */
+  const thankedToday = (cardId: string) => !!s.people?.[cardId]?.gratitudeDays.includes(seoulDateKey())
   const allThanked = computed(() => everyoneThanked(new Set(Object.keys(s.thanks))))
 
   /** 열렸지만 아직 못 본 감사 장면(세트·엔딩)을 띄우고 본 것으로 기록한다. 다른 기기와 합쳐져 완성된 세트도 여기서 나온다 */
@@ -272,12 +299,29 @@ export function useGame() {
     sceneQueue.value.push(...scenes)
   }
 
-  /** 만난 사람에게 고마움을 전한다. 이미 전했거나 아직 못 만났으면 아무것도 하지 않는다. 답을 돌려준다 */
+  /** 만난 사람에게 고마움을 전한다(하루 한 번). 오늘 이미 전했거나 아직 못 만났으면 아무것도 하지 않는다. 답을 돌려준다 */
   function thank(cardId: string): string | null {
-    if (!s.cards[cardId] || s.thanks[cardId]) return null
-    s.thanks[cardId] = todayKey
-    showUnseenScenes()
+    if (!s.cards[cardId] || thankedToday(cardId)) return null
+    if (!s.people) s.people = {}
+    s.people[cardId] = addGratitude(s.people[cardId], seoulDateKey())
+    if (!s.thanks[cardId]) {
+      s.thanks[cardId] = todayKey
+      showUnseenScenes()
+    }
     return thanksReply(cardId)
+  }
+
+  // ── 친해진 정도 ──
+  const friendship = (cardId: string) => friendshipOf(s.people?.[cardId])
+
+  /** 75%부터 열리는 그 사람의 퀴즈에 답한다. 맞히면 친해진 정도 +10%. 틀려도 잃는 것 없이 다시 고를 수 있다 */
+  function answerFriendQuiz(cardId: string, choice: number): boolean {
+    const quiz = quizOf(cardId)
+    const log = s.people?.[cardId]
+    if (!quiz || !log || friendship(cardId).percent < UNLOCK.quiz) return false
+    if (choice !== quiz.answer) return false
+    s.people[cardId] = { ...log, quizCorrect: true }
+    return true
   }
 
   /** 도감에서 엔딩을 다시 본다 */
@@ -320,7 +364,10 @@ export function useGame() {
     guessMystery,
     setProgress,
     thanked,
+    thankedToday,
     thank,
+    friendship,
+    answerFriendQuiz,
     allThanked,
     replayEnding,
     showUnseenScenes,
