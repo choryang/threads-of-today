@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { LINK_RULES, MATERIALS, PRODUCTS } from '../shared/data/materials'
-import { FIRST_SUFFIX, buildTimeline, firstJourneyGift, isFirstJourney, quizFor, timelinePeople } from '../shared/journey'
+import { FIRST_SUFFIX, SECOND_SUFFIX, buildTimeline, isFirstJourney, isSecondJourney, journeyOrderSuffix, quizFor, secondJourneyGift, timelinePeople } from '../shared/journey'
 import { findLinkCards } from '../shared/logic'
 import { LINEUP_MAX, alwaysMeets, lineupOf, pickTeaser } from '../shared/next'
 
@@ -27,22 +27,47 @@ test('첫 여정 id: 꼬리 뒤 -first만 첫 여정으로 본다', () => {
   assert.ok(!isFirstJourney('2026-10-15-1-first'))
 })
 
-test('첫 여정: 숨은 만남이 나올 자리가 있으면 늘 하나 나온다, 첫 여정이 아니면 원래 확률', () => {
-  for (const id of ids(200, FIRST_SUFFIX)) {
+test('두 번째 여정 id: 꼬리 뒤 -second, 남은 여정이 첫 여정 하나뿐일 때만', () => {
+  assert.ok(isSecondJourney(`2026-10-15-2-k3x9-r${SECOND_SUFFIX}`))
+  assert.ok(!isSecondJourney(`2026-10-15-2-k3x9-r${FIRST_SUFFIX}`))
+  assert.ok(!isFirstJourney(`2026-10-15-2-k3x9-r${SECOND_SUFFIX}`))
+  assert.equal(journeyOrderSuffix(true, []), FIRST_SUFFIX)
+  assert.equal(journeyOrderSuffix(false, [`2026-10-15-1-abcd-r${FIRST_SUFFIX}`]), SECOND_SUFFIX)
+  assert.equal(journeyOrderSuffix(false, [`2026-10-15-1-abcd-r${FIRST_SUFFIX}`, `2026-10-15-2-efgh-r${SECOND_SUFFIX}`]), '')
+  // 예전 사용자(첫 여정 꼬리가 없는 기록)는 두 번째 여정 선물을 받지 않는다
+  assert.equal(journeyOrderSuffix(false, ['2026-10-15-1-abcd-r']), '')
+})
+
+test('첫 여정은 사람 카드만: 퀴즈·이야기·숨은 만남·같은 길이 없다', () => {
+  for (const id of [...ids(200, FIRST_SUFFIX), ...ids(200, `-r${FIRST_SUFFIX}`)]) {
+    for (const m of [['coffee', 'plastic'], ['cobalt', 'lithium', 'chip', 'assembly', 'plastic'], ['apple']]) {
+      const t = buildTimeline(m, id, '물건')
+      assert.ok(t.every((x) => x.type === 'stage'), `${id} ${m}`)
+    }
+  }
+  // 같은 사람이 두 번 나오지 않는다 (거꾸로 가는 여정에서 같은 길 칸 대신 건너뛴다)
+  const t = buildTimeline(['cobalt', 'lithium', 'chip', 'assembly', 'plastic'], `2026-10-15-1-abcd-r${FIRST_SUFFIX}`, '스마트폰')
+  const people = t.flatMap((x) => (x.type === 'stage' ? [x.personId] : []))
+  assert.equal(new Set(people).size, people.length)
+})
+
+test('두 번째 여정: 숨은 만남이 나올 자리가 있으면 늘 하나 나온다, 그 밖의 여정은 원래 확률', () => {
+  for (const id of ids(200, SECOND_SUFFIX)) {
     const t = buildTimeline(['coffee', 'plastic'], id, '아이스 아메리카노')
     assert.equal(t.filter((x) => x.type === 'hidden').length, 1, id)
-    assert.ok(!firstJourneyGift(['coffee', 'plastic'], id))
+    assert.ok(!secondJourneyGift(['coffee', 'plastic'], id))
   }
   const plain = ids(200).filter((id) => buildTimeline(['coffee', 'plastic'], id).some((x) => x.type === 'hidden')).length
   assert.ok(plain < 40, `${plain}`)
 })
 
-test('첫 여정: 숨은 만남이 나올 자리가 없는 경로면 퀴즈 선물', () => {
-  const id = `2026-10-15-1-abcd${FIRST_SUFFIX}`
+test('두 번째 여정: 숨은 만남이 나올 자리가 없는 경로면 퀴즈 선물 (예전 첫 여정 선물)', () => {
+  const id = `2026-10-15-2-abcd${SECOND_SUFFIX}`
   assert.ok(!buildTimeline(['apple'], id).some((x) => x.type === 'hidden'))
   assert.ok(quizFor(['apple'], id, 'apple'))
-  assert.ok(firstJourneyGift(['apple'], id))
-  assert.ok(!firstJourneyGift(['apple'], '2026-10-15-1-abcd'))
+  assert.ok(secondJourneyGift(['apple'], id))
+  assert.ok(!secondJourneyGift(['apple'], '2026-10-15-1-abcd'))
+  assert.ok(!secondJourneyGift(['apple'], `2026-10-15-1-abcd${FIRST_SUFFIX}`))
 })
 
 test('다음 여정 예고: 이미 가진 연결 카드의 사람은 고르지 않는다', () => {

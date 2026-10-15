@@ -6,7 +6,7 @@
 import { formAt } from './data/forms'
 import { PEOPLE } from './data/people'
 import { PLACES } from './data/places'
-import { forwardTimeline, materialRoute, type TimelineItem } from './journey'
+import { forwardTimeline, isFirstJourney, materialRoute, type TimelineItem } from './journey'
 import { withJosa } from './logic'
 import { hash } from './random'
 import type { Place } from './types'
@@ -89,6 +89,8 @@ export interface StopQuestion {
  * 오답은 정답과 다른 나라의 장소(정답이 우리나라면 우리나라의 다른 장소)에서 여정 id 시드로 고른다.
  */
 export function stopQuestion(timeline: TimelineItem[], index: number, journeyId: string): StopQuestion | null {
+  // 첫 여정은 사람 카드만 (경유지 맞히기 없음)
+  if (isFirstJourney(journeyId)) return null
   // 바로 앞 사람 칸에서 물었는지 (사이의 숨은 만남·이야기 칸은 건너뛰고 본다)
   let asked = false
   for (let i = 0; i < index; i++) if (timeline[i]?.type === 'stage') asked = !asked && !!asks(timeline, i)

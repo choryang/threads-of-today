@@ -138,7 +138,7 @@ const quizRewards = computed(() => {
   const j = journey.value
   return j.materialIds.flatMap((mid) => {
     const q = quizFor(j.materialIds, j.id, mid)
-    // 첫 여정 선물로 틀려도 받은 보상까지
+    // 두 번째 여정 선물로 틀려도 받은 보상까지
     return q && j.quiz[mid] !== undefined && (j.quiz[mid] === q.answer || j.newCards.includes(q.rewardId)) ? [q.rewardId] : []
   })
 })
@@ -520,7 +520,7 @@ function followTeaser(p: Product) {
           </div>
           <div v-if="quizChoice !== undefined" class="explain">
             <p>{{ quiz.explain }}</p>
-            <p v-if="quizChoice !== quiz.answer && journey.newCards.includes(quiz.rewardId)" class="small gold">그래도 첫 여정 선물로 이 사람을 만나게 해 드릴게요.</p>
+            <p v-if="quizChoice !== quiz.answer && journey.newCards.includes(quiz.rewardId)" class="small gold">그래도 두 번째 여정 선물로 이 사람을 만나게 해 드릴게요.</p>
             <div v-if="quizChoice === quiz.answer || journey.newCards.includes(quiz.rewardId)" class="reward">
               <p class="small gold">아주 드물게 만나는 분이에요</p>
               <MiniCard :person-id="quiz.rewardId" :is-new="journey.newCards.includes(quiz.rewardId)" />

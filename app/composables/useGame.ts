@@ -9,7 +9,7 @@ import { addGratitude, addMeeting, friendshipOf, migratePeople, quizOf, UNLOCK }
 import { createIncoming } from '../../shared/incoming'
 import { mysteryHints } from '../../shared/mystery'
 import { normalizeNickname, randomNickname } from '../../shared/nickname'
-import { FIRST_SUFFIX, REVERSE_SUFFIX, buildTimeline, firstJourneyGift, quizFor, timelinePeople } from '../../shared/journey'
+import { REVERSE_SUFFIX, buildTimeline, journeyOrderSuffix, quizFor, secondJourneyGift, timelinePeople } from '../../shared/journey'
 import { addJourneyToThreads, backfillThreads } from '../../shared/threads'
 import { everyoneThanked, sceneKey, thanksReply, unseenScenes, type ThanksScene } from '../../shared/thanks'
 import { emptySave, type DayLog, type Journey, type JourneySource, type MysteryLog, type Save } from '../../shared/progress'
@@ -187,8 +187,8 @@ export function useGame() {
     const journey: Journey = {
       // 여러 기기의 기록을 합칠 때 겹치지 않게 무작위 꼬리를 붙인다 (앞 10글자는 날짜, '-꼬리'가 있으면 새 여정 규칙을 쓴다)
       // '-r': 내 손에서 원산지로 거슬러 올라가는 여정. 이 꼬리가 없는 예전 여정은 예전 순서 그대로 끝난다
-      // 첫 여정에는 '-first'를 더 붙여 숨은 만남(또는 퀴즈 보상)을 보장한다 (shared/journey.ts)
-      id: `${todayKey}-${day.journeys.length + 1}-${Math.random().toString(36).slice(2, 6)}${REVERSE_SUFFIX}${firstVisit.value ? FIRST_SUFFIX : ''}`,
+      // 첫 여정에는 '-first'(사람 카드만), 두 번째 여정에는 '-second'(숨은 만남 또는 퀴즈 보상 보장)를 더 붙인다 (shared/journey.ts)
+      id: `${todayKey}-${day.journeys.length + 1}-${Math.random().toString(36).slice(2, 6)}${REVERSE_SUFFIX}${journeyOrderSuffix(firstVisit.value, Object.values(s.days).flatMap((d) => d.journeys.map((j) => j.id)))}`,
       name: item.name,
       twist: item.twist,
       voice: item.voice,
@@ -237,8 +237,8 @@ export function useGame() {
     if (!quiz || journey.quiz[materialId] !== undefined) return { correct: false, gained: [] }
     journey.quiz[materialId] = choice
     const correct = choice === quiz.answer
-    // 첫 여정에 숨은 만남이 나올 자리가 없으면, 처음 답한 퀴즈의 보상은 틀려도 준다
-    const gift = !correct && firstJourneyGift(journey.materialIds, journey.id) && !journey.newCards.some((id) => PEOPLE[id]?.kind === 'quiz')
+    // 두 번째 여정에 숨은 만남이 나올 자리가 없으면, 처음 답한 퀴즈의 보상은 틀려도 준다
+    const gift = !correct && secondJourneyGift(journey.materialIds, journey.id) && !journey.newCards.some((id) => PEOPLE[id]?.kind === 'quiz')
     const gained = correct || gift ? collect(quiz.rewardId, journey) : []
     journey.newCards.push(...gained)
     return { correct, gained }

@@ -56,10 +56,20 @@ test('거꾸로: 앞 재료에서 이미 만난 사람이 이어지면 같은 �
   assert.ok(passes.some((p) => p.type === 'pass' && p.personIds.includes('warehouse')))
 })
 
-test('첫 여정은 거꾸로 가도 숨은 만남(또는 퀴즈 보상)을 보장한다', () => {
+test('두 번째 여정은 거꾸로 가도 숨은 만남(또는 퀴즈 보상)을 보장하고, 첫 여정은 경유지 맞히기도 없다', () => {
   let withHidden = 0
-  for (const id of ids(100, '-r-first')) if (buildTimeline(['coffee', 'banana'], id, '바나나 라떼').some((x) => x.type === 'hidden')) withHidden++
+  for (const id of ids(100, '-r-second')) if (buildTimeline(['coffee', 'banana'], id, '바나나 라떼').some((x) => x.type === 'hidden')) withHidden++
   assert.equal(withHidden, 100)
+  for (const id of ids(50, '-r-first')) {
+    const t = buildTimeline(['coffee', 'banana'], id, '바나나 라떼')
+    assert.ok(t.every((_, i) => stopQuestion(t, i, id) === null), id)
+  }
+  // 같은 경로의 첫 여정이 아니면 경유지 질문이 나오는 칸이 있다
+  const asked = ids(50, '-r').filter((id) => {
+    const t = buildTimeline(['coffee', 'banana'], id, '바나나 라떼')
+    return t.some((_, i) => stopQuestion(t, i, id) !== null)
+  }).length
+  assert.ok(asked > 0)
 })
 
 test('되감기 변신: 거꾸로 가면 완성품 → 가공품 → 원재료', () => {
