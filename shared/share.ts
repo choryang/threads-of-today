@@ -11,7 +11,10 @@
  */
 import { PEOPLE } from './data/people'
 import { DAY_TYPES, dayTypeOf, isValidPick, type DayTypeId } from './day-type'
+import { INTRO_PHRASES, introText, isFood, type IntroPhraseId } from './intro'
+import { withJosa } from './logic'
 import { normalizeNickname } from './nickname'
+import { PRODUCTS } from './data/materials'
 
 export type ShareKind = 'day' | 'person' | 'village'
 
@@ -62,10 +65,29 @@ function validateVillage(raw: unknown): VillagePayload | null {
   return { nickname, residents, open: r.open !== false }
 }
 
-export const SHARE_KINDS: { day: ShareKindSpec<DayPayload>; person: ShareKindSpec<never>; village: ShareKindSpec<VillagePayload> } = {
+/** 사람 카드 소개: 사람 id, 보낸 사람 닉네임, 정해진 문구 id, (맛있어서 문구면) 먹는 대표 물건 id */
+export interface PersonPayload {
+  personId: string
+  nickname: string
+  phraseId: IntroPhraseId
+  itemId?: string
+}
+
+function validatePerson(raw: unknown): PersonPayload | null {
+  if (!raw || typeof raw !== 'object') return null
+  const r = raw as Record<string, unknown>
+  const nickname = normalizeNickname(r.nickname)
+  const phrase = INTRO_PHRASES.find((x) => x.id === r.phraseId)
+  if (!nickname || typeof r.personId !== 'string' || !PEOPLE[r.personId] || !phrase) return null
+  if (!phrase.needsItem) return { personId: r.personId, nickname, phraseId: phrase.id }
+  const item = PRODUCTS.find((p) => p.id === r.itemId)
+  return item && isFood(item) ? { personId: r.personId, nickname, phraseId: phrase.id, itemId: item.id } : null
+}
+
+export const SHARE_KINDS: { day: ShareKindSpec<DayPayload>; person: ShareKindSpec<PersonPayload>; village: ShareKindSpec<VillagePayload> } = {
   day: { path: '/d', ttl: 30 * DAY, validate: validateDay },
-  // 사람 카드 소개: 아직 내용이 정해지지 않아 받지 않는다 (TTL과 주소만 먼저 정해 둔다)
-  person: { path: '/p', ttl: 30 * DAY, validate: () => null },
+  // 사람 카드 소개: 소개마다 링크 하나 (관리 키도 소개마다 따로)
+  person: { path: '/p', ttl: 30 * DAY, validate: validatePerson },
   // 마을 초대: 주인이 마을을 열 때마다 내용을 고치며(update) 기간도 다시 7일로 늘린다
   village: { path: '/v', ttl: 7 * DAY, validate: validateVillage },
 }
@@ -179,6 +201,13 @@ export function createShares(store: ShareStore, clock: () => number = Date.now) 
     return { token, path: `${spec.path}/${token}`, expiresAt: next.expiresAt }
   }
 
+  /** 서버 안에서만: 관리 키로 지금 살아 있는 링크의 토큰 (소개 고마워요 수를 보낸 사람에게 돌려줄 때) */
+  async function tokenOf(manage: string): Promise<string | null> {
+    if (!isManageKey(manage)) return null
+    const token = await store.get(ownerKey(await sha256(manage)))
+    return token && (await read(token)) ? token : null
+  }
+
   /** 서버 안에서만: 이 링크를 만든 사람(관리 키 해시). 응답에는 내보내지 않는다 (마을 꽃을 링크가 아니라 마을에 붙이려고) */
   async function ownerOf(token: string): Promise<string | null> {
     return (await read(token))?.owner ?? null
@@ -210,7 +239,7 @@ export function createShares(store: ShareStore, clock: () => number = Date.now) 
     return { token, replies: JSON.parse((await store.get(repliesKey(token))) ?? '[]') as DayReply[] }
   }
 
-  return { issue, update, lookup, ownerOf, reply, replies }
+  return { issue, update, lookup, ownerOf, tokenOf, reply, replies }
 }
 
 /** OG 제목: "노을의 찻잎님의 하루는 '목장에서 온 하루'예요" */
@@ -226,4 +255,14 @@ export async function ownerOfManage(manage: unknown): Promise<string | null> {
 /** OG 제목: "옥희님의 마을에 놀러 오세요" */
 export function villageShareTitle(p: VillagePayload): string {
   return `${p.nickname}님의 마을에 놀러 오세요`
+}
+
+/** OG 제목: "옥희님이 커피 체리 수확자를 소개해요" */
+export function personShareTitle(p: PersonPayload): string {
+  return `${p.nickname}님이 ${withJosa(PEOPLE[p.personId]?.job ?? '', '을', '를')} 소개해요`
+}
+
+/** 받는 사람 화면 첫 줄: "옥희님이 소개해요 · 오늘 아침 커피가 맛있어서, 이 분을 소개해요" */
+export function personShareLine(p: PersonPayload): string {
+  return `${p.nickname}님이 소개해요 · ${introText(p.phraseId, p.itemId)}`
 }

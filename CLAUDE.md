@@ -46,6 +46,7 @@ shared/                 앱과 서버가 상대 경로로 함께 import (Nuxt �
   share.ts              공유 링크 공통 구조: 종류(day /d · person /p · village /v)별 TTL·주소·내용 검사, 발급·조회·재발급(이전 링크 닫기)·답.
                         링크를 만든 기기의 관리 키 해시만 저장. 복구 코드·사용자 id는 토큰·저장 값·응답·로그 어디에도 넣지 않는다
   visit.ts              마을에 놀러 가서 꽃 남기기: 꽃(닉네임·주민·날짜) 색(구역별)·하루 한 송이·새 꽃 알림 문구, 못 만난 주민의 힌트 물건
+  intro.ts              사람 카드 소개: 정해진 문구 4개(맛있어서는 먹는 대표 물건만), 소개 화면의 사람 크기 사실(workFactHuman), 보낸 사람 알림 문구
   today.ts              모두의 오늘: 숫자 포맷, "오늘 1,203명이 이 분을 만났어요"·여정 끝 합 문구, 사람마다 하루 한 번만 보내기
   character-svg.ts      캐릭터 SVG 조립(순수 함수)과 피부색. 앱(app/utils/character.ts)과 OG 스크립트가 같이 쓴다
   village.ts            마을 자리 배정(먼저 만난 사람부터 hash(id) 자리, 모자라면 빈 땅), 빈 집터, 주민 나라 수
@@ -61,6 +62,8 @@ server/
   api/share/            공유 링크: POST(만들기·다시 만들기) · GET [token] · POST [token]/reply('보여주기') · POST replies(관리 키로 답 읽기)
   routes/d/[token].get.ts  /d/{token}: SPA 껍데기 HTML에 그 링크의 OG meta를 넣어 돌려준다(ssr: false라 크롤러용). utils/share-page.ts
   api/village/          [token] GET(공개용: 닉네임·주민 id·최근 꽃만) · [token]/flower POST(하루 한 송이, 감사 수 B에도) · flowers POST(주인, 관리 키)
+  routes/p/[token].get.ts  /p/{token}: 사람 카드 소개 OG(사람별 og/person-{id}.png)
+  api/share/[token]/thank  소개받은 사람의 고마워요(가입 없이, 링크마다 한 번, 감사 수 B에도) · api/share/intro-thanks(보낸 사람, 관리 키 목록). utils/intro.ts
   routes/v/[token].get.ts  /v/{token}: 마을 초대 OG(공통 이미지 og/village.png). /d·/v·/p는 utils/share-page.ts의 defineShareRoute 하나로
   utils/village.ts      마을 꽃 저장(village-flowers:{주인 해시} 최근 200개·60일, village-flower-day 하루 한 송이)
   api/meet/             모두의 오늘: POST(만난 사람들, PFADD meet:{사람}:{YYYYMMDD} 48시간) · GET ?ids=(PFCOUNT 파이프라인, 60초 캐시). utils/meet.ts
@@ -80,10 +83,11 @@ app/
   composables/useSync.ts  서버 동기화·복구 코드로 이어 하기 (plugins/sync.client.ts가 호출)
   components/             ResidentSheet(주민 카드) · FriendshipPanel(친해진 정도) · MeetAgain(또 만났어요)
                           NicknameEditor(도감) · DeviceTransfer(도감 "다른 기기에서 이어 하기") · RecordTabs(기록 탭 안 오늘/나의 실타래 전환)
-                          VillageMap(내 마을·친구 마을이 같이 쓰는 지도) · FriendResidentSheet · FlowerMark
+                          VillageMap(내 마을·친구 마을이 같이 쓰는 지도) · FriendResidentSheet · FlowerMark · IntroSheet(이 분 소개하기)
                           FormBadge(지금 물건의 형태) · RewindReplay(빨리 감기 엔딩) · IncomingCard(오고 있는 물건)
   pages/                  index(내 하루 마을: 지도·주민·주민 카드·오고 있는 물건, 처음 온 사람은 /test로) · test(10초 테스트)·test/result
-                          d/[token](친구가 보낸 하루 → "당신의 하루는요?") · v/[token](친구 마을: 주민에게 고마워요 → 꽃) · arrival/[id](밤사이 도착했어요) · add(오늘 쓴 물건 넣기: 물건 타일 + 직접 쓰기·사진, 미스터리로 가는 길)
+                          d/[token](친구가 보낸 하루 → "당신의 하루는요?") · v/[token](친구 마을: 주민에게 고마워요 → 꽃)
+                          p/[token](소개받은 사람: 15초 안에 끝나는 다섯 단계, 가입 없이 고마워요) · arrival/[id](밤사이 도착했어요) · add(오늘 쓴 물건 넣기: 물건 타일 + 직접 쓰기·사진, 미스터리로 가는 길)
                           journey/[id] · mystery · dex(통계) · result(기록: 오늘 여정·html-to-image 공유) · threads(기록 안 나의 실타래)
                           하단 탭은 3개(마을·도감·기록). 미스터리는 물건 넣기 화면에서 연다
   utils/share-image.ts    공유 이미지 1080×1350을 캔버스로 그린다(나의 하루 유형·두 사람의 하루). 글씨는 위아래 80px 안쪽
@@ -94,7 +98,7 @@ app/
   utils/character.ts      모자(hat)·소품(prop) 파츠를 조합한 SVG 콩 캐릭터
   utils/product-icon.ts   메인 물건 타일 아이콘. 대표 물건을 추가하면 여기도 그린다(없으면 상자 모양)
 scripts/check-data.ts     데이터 검사. 모든 변경 후 반드시 통과시킬 것
-scripts/build-og-cards.ts OG 이미지를 resvg로(마을 초대 공통 한 장, 사람 카드 소개). 글꼴은 이 컴퓨터의 맑은 고딕 (npm run build:og-cards)
+scripts/build-og-cards.ts OG 이미지를 resvg로(마을 초대 공통 한 장, 사람 카드 소개 사람마다 한 장). 글꼴은 이 컴퓨터의 맑은 고딕 (npm run build:og-cards)
 scripts/build-og.ts       OG 이미지(하루 유형 9장 1200×630)를 이 컴퓨터의 Chrome·Edge로 찍어 public/og에 (npm run build:og)
 scripts/day-type-dist.ts  하루 유형 분포(3~5개 조합 12,444가지). 한 유형이 25%를 넘으면 실패 (npm run check:day-types)
 scripts/sync-prop-icons.ts 캐릭터 소품 7개를 형태 아이콘(public/forms/prop-*.svg)으로 옮긴다. 소품을 고치면 다시 실행

@@ -53,7 +53,12 @@ function showFlower(f: Flower) {
 }
 onBeforeUnmount(() => clearTimeout(pickedTimer))
 
+// 내 소개로 누군가 고마워했으면 한 번 알린다 ("누군가 옥희님의 소개로 커피 체리 수확자에게 고마워했어요")
+const share = useShare()
+const introLine = ref('')
+
 async function loadVillageSocial() {
+  introLine.value = await share.introNotice(game.nickname.value)
   if (!villageLink.link.value) return
   await villageLink.refresh()
   flowers.value = await villageLink.flowers()
@@ -149,6 +154,7 @@ onMounted(async () => {
           <FlowerMark color="#F9B9C9" :size="28" />
           <span>{{ notice.text }}</span>
         </button>
+        <p v-if="introLine" class="notice intro-notice" role="status">{{ introLine }}</p>
         <ul v-if="notice && noticeOpen" class="notice-list">
           <li v-for="f in notice.flowers" :key="f.at">{{ flowerLabel(f) }}</li>
         </ul>
@@ -215,6 +221,7 @@ onMounted(async () => {
   animation: rise var(--motion-enter) var(--motion-ease);
 }
 .notice svg { flex-shrink: 0; }
+.intro-notice { margin: 0; cursor: default; }
 .notice-list { margin: 0; padding: 10px 14px; list-style: none; border-radius: 16px; background: #f3f1ea; color: #1a1a22; display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
 .bottom {
   position: absolute; left: 12px; right: 12px; bottom: calc(84px + env(safe-area-inset-bottom)); max-width: 456px; margin: 0 auto;

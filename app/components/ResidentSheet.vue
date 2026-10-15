@@ -29,6 +29,7 @@ const todayLine = computed(() => {
   return n === undefined && !mine ? '' : todayMeetLine(n ?? 0, mine)
 })
 
+const introOpen = ref(false)
 const waving = ref(false)
 let timer: ReturnType<typeof setTimeout> | undefined
 function thank() {
@@ -62,6 +63,7 @@ onBeforeUnmount(() => clearTimeout(timer))
 
       <p v-if="todayLine" class="today-line">{{ todayLine }}</p>
       <FriendshipPanel :person-id="personId" />
+      <button class="intro" @click="introOpen = true">이 분 소개하기</button>
 
       <p v-if="reply" class="reply">“{{ reply }}”</p>
       <div class="thanks-row">
@@ -77,6 +79,7 @@ onBeforeUnmount(() => clearTimeout(timer))
         </button>
       </div>
     </section>
+    <IntroSheet v-if="introOpen" :person-id="personId" @close="introOpen = false" />
   </div>
 </template>
 
@@ -101,6 +104,7 @@ onBeforeUnmount(() => clearTimeout(timer))
 .where { font-size: 12px; font-weight: 700; color: #4e7a3e; }
 .name { margin: 0; font-size: 26px; line-height: 1.2; word-break: keep-all; }
 .job { font-size: 14px; color: #4a4a55; }
+.intro { min-height: 48px; border-radius: 16px; border: 2px solid #1a1a22; background: none; color: #1a1a22; font-size: 15px; font-weight: 700; cursor: pointer; }
 .today-line { margin: 0; font-size: 14px; font-weight: 700; color: #2f5a73; }
 .reply { margin: 0; padding: 10px 14px; border-radius: 14px; background: #fff; font-size: 14px; line-height: 1.5; }
 .thanks-row { display: flex; align-items: center; gap: 12px; }

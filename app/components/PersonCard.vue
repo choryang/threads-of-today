@@ -26,6 +26,11 @@ const gratitude = useGratitude()
 watch([() => props.personId, met], ([id, isMet]) => { if (isMet) void gratitude.load(id) }, { immediate: true })
 const others = computed(() => gratitude.counts[props.personId])
 
+// 사람 카드 소개: 보내기 버튼, 그리고 친구가 소개해 준 분이면 그 한 줄
+const share = useShare()
+const introOpen = ref(false)
+const introducedBy = computed(() => (met.value ? share.introducedBy(props.personId) : ''))
+
 // 모두의 오늘: 오늘 이 분을 만난 사람 수
 const meets = useTodayMeets()
 watch([() => props.personId, met], ([id, isMet]) => { if (isMet) void meets.load([id]) }, { immediate: true })
@@ -87,7 +92,10 @@ onBeforeUnmount(() => clearTimeout(waveTimer))
             오늘 {{ person.name ? `${person.name}에게 ` : '' }}고마움을 전했어요
           </p>
         </template>
+        <p v-if="introducedBy" class="introduced">{{ introducedBy }}님이 소개해준 분이에요</p>
         <p v-if="todayLine" class="today-line">{{ todayLine }}</p>
+        <button class="intro-btn" @click="introOpen = true">이 분 소개하기</button>
+        <Teleport to="body"><IntroSheet v-if="introOpen" :person-id="personId" @close="introOpen = false" /></Teleport>
         <p v-if="others && others.total" class="others">
           <strong>오늘 {{ others.today.toLocaleString('ko-KR') }}명이 고마워했어요</strong>
           <span>지금까지 {{ others.total.toLocaleString('ko-KR') }}번</span>
@@ -156,6 +164,8 @@ onBeforeUnmount(() => clearTimeout(waveTimer))
 .fact-source { margin: 0; padding: 0 4px; font-size: 12px; line-height: 1.5; color: #4a4a4a; word-break: keep-all; }
 .fact-source a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 4px; color: #6b4e00; font-weight: 700; }
 .thanks { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
+.introduced { margin: 2px 0 0; font-size: 13px; font-weight: 700; color: #6b4e00; }
+.intro-btn { min-height: 44px; padding: 0 14px; border-radius: 14px; border: 2px solid var(--ink); background: none; color: var(--ink); font-size: 14px; font-weight: 700; cursor: pointer; align-self: flex-start; }
 .today-line { margin: 2px 0 0; font-size: 13px; font-weight: 700; color: #2f5a73; }
 .others { margin: 2px 0 0; display: flex; flex-wrap: wrap; gap: 2px 8px; align-items: baseline; font-size: 13px; color: #4a4a4a; }
 .others strong { color: var(--ink); font-size: 14px; }

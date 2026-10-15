@@ -79,9 +79,29 @@ ${crew.map((p, i) => flower(spots[i]![0] - 70, spots[i]![1] - 8, FLOWER_COLORS[p
 </svg>`
 }
 
+/** 사람 카드 소개: 손 흔드는 캐릭터 + 이름 + 하는 일 + 사는 곳 */
+function personCard(p: Person): string {
+  const place = PLACES[p.placeId]
+  const where = !place ? '' : place.continent === 'korea' || !place.country || place.name.includes(place.country) ? place.name : `${place.country} ${place.name}`
+  const name = p.name ?? p.job
+  const nameSize = name.length > 8 ? 60 : 84
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+<rect width="${W}" height="${H}" fill="#0F1B2D"/>
+<circle cx="900" cy="330" r="250" fill="#F3F1EA"/>
+<ellipse cx="900" cy="560" rx="170" ry="22" fill="#000" opacity=".12"/>
+${character(p, 900, 580, 470, true)}
+<text x="80" y="118" font-family="${FONT}" font-size="30" font-weight="700" fill="#F2C14E">내 하루에 닿은 사람들</text>
+<text x="80" y="196" font-family="${FONT}" font-size="34" fill="#C9CFD9">이 분을 소개해요</text>
+<text x="80" y="${196 + 30 + nameSize}" font-family="${FONT}" font-size="${nameSize}" font-weight="700" fill="${INK}">${esc(name)}</text>
+<text x="80" y="${196 + 90 + nameSize}" font-family="${FONT}" font-size="34" font-weight="700" fill="${INK}">${esc(p.name ? p.job : '')}</text>
+<text x="80" y="${196 + 140 + nameSize}" font-family="${FONT}" font-size="28" fill="#C9CFD9">${esc(where)}</text>
+</svg>`
+}
+
 const which = process.argv[2] ?? 'all'
 if (which === 'all' || which === 'village') console.log(`${OUT}/village.png ${render(villageCard(), 'village.png')} bytes`)
 if (which === 'all' || which === 'people') {
-  // 사람 카드 소개 이미지는 personCard()가 들어오면 여기서 만든다
-  void PEOPLE_LIST
+  let bytes = 0
+  for (const p of PEOPLE_LIST) bytes += render(personCard(p), `person-${p.id}.png`)
+  console.log(`${OUT}/person-*.png ${PEOPLE_LIST.length}장, 모두 ${Math.round(bytes / 1024)}KB`)
 }

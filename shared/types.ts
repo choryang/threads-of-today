@@ -79,6 +79,8 @@ export interface Person {
   /** 일의 크기를 보여 주는 숫자 한 줄 (해요체, 40자 이내, 숫자 앞에 '약'·'보통'). 출처를 확인한 것만 */
   workFact?: string
   workFactSource?: FactSource
+  /** 사람 한 명의 크기(하루·한 시간·한 건)로 된 숫자인지. 사람 카드 소개 화면은 이것만 쓴다 */
+  workFactHuman?: true
   /** 내 하루 마을에서 사는 구역과 일터 (shared/data/village.ts의 RESIDENCE) */
   zone: ZoneId
   workplace: WorkplaceId

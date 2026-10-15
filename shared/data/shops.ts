@@ -36,7 +36,7 @@ const KEYWORDS: Array<[ClosingKind, string[]]> = [
 const ELECTRONICS = ['assembly', 'chip']
 const CLOTHING = ['cotton', 'polyester', 'rubber']
 /** 먹을거리가 아닌 재료. 이것만으로 된 물건은 가게 물건(goods) */
-const NON_FOOD = ['cotton', 'polyester', 'plastic', 'rubber', 'cobalt', 'lithium', 'chip', 'assembly', 'aluminum', 'pulp', 'steel', 'glass', 'wood']
+export const NON_FOOD = ['cotton', 'polyester', 'plastic', 'rubber', 'cobalt', 'lithium', 'chip', 'assembly', 'aluminum', 'pulp', 'steel', 'glass', 'wood']
 
 export function closingKind(itemName: string, materialIds: string[]): ClosingKind {
   const name = itemName.replace(/\s+/g, ' ')
