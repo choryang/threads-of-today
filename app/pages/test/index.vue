@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { PRODUCTS } from '../../../shared/data/materials'
-import { PICK_MAX, PICK_MIN, TEST_ITEMS } from '../../../shared/day-type'
+import { DAY_TYPES, PICK_MAX, PICK_MIN, TEST_ITEMS, meetingOf } from '../../../shared/day-type'
+import type { DayReply } from '../../../shared/share'
 import { iconUrl } from '../../utils/day-test'
 
 /**
@@ -26,6 +27,15 @@ const countText = computed(() =>
   count.value >= PICK_MAX ? `${PICK_MAX}개까지 골랐어요` : count.value >= PICK_MIN ? `${count.value}개 골랐어요` : `${PICK_MIN - count.value}개 더 골라 주세요`,
 )
 
+// 내가 보낸 링크에 친구들이 보여 준 하루 ('보여주기'를 누른 것만)
+const share = useShare()
+const replies = ref<Array<DayReply & { place: string; typeName: string }>>([])
+onMounted(async () => {
+  const mine = await share.myReplies()
+  if (!mine.items) return
+  replies.value = mine.replies.slice().reverse().map((r) => ({ ...r, typeName: DAY_TYPES[r.type].name, place: meetingOf(mine.items!, r.items).place }))
+})
+
 function seeResult() {
   if (count.value < PICK_MIN) return
   router.push({ path: '/test/result', query: { items: picked.value.join(','), ...(from.value ? { from: from.value } : {}) } })
@@ -37,6 +47,13 @@ function seeResult() {
     <span class="kicker">10초 테스트</span>
     <h1 class="display title">당신의 하루는<br>어떤 하루일까요?</h1>
     <p class="sub">오늘 쓴 물건을 3개 이상 골라 보세요</p>
+
+    <section v-if="replies.length && !from" class="replies" aria-label="친구가 보여 준 하루">
+      <p class="r-title">친구가 보여 준 하루</p>
+      <p v-for="(r, i) in replies" :key="i" class="r-row">
+        <strong>{{ r.nickname }}</strong> · {{ r.typeName }}<template v-if="r.place"> · {{ r.place }}에서 만나요</template>
+      </p>
+    </section>
 
     <div class="grid" role="group" aria-label="오늘 쓴 물건">
       <button
@@ -68,6 +85,9 @@ function seeResult() {
 .kicker { font-size: 13px; font-weight: 700; color: var(--accent); }
 .title { margin: 8px 0 0; font-size: 32px; line-height: 1.25; }
 .sub { margin: 10px 0 0; font-size: 15px; color: #c9cfd9; }
+.replies { margin-top: 18px; padding: 12px 14px; border-radius: 16px; background: #172840; display: flex; flex-direction: column; gap: 6px; }
+.r-title { margin: 0; font-size: 12px; font-weight: 700; color: var(--accent); }
+.r-row { margin: 0; font-size: 14px; line-height: 1.5; word-break: keep-all; }
 .grid { margin-top: 24px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
 .item {
   min-height: 104px; border-radius: 18px; border: 3px solid #172840; background: #172840; color: var(--text);

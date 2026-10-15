@@ -186,3 +186,30 @@ export function contrast(a: string, b: string): number {
   const [x, y] = [luminance(a), luminance(b)]
   return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05)
 }
+
+// ── 두 사람의 하루 ──
+
+export interface Meeting {
+  /** 두 사람의 물건에서 겹치는 사람 (먼저 고른 사람의 순서) */
+  shared: string[]
+  /** 그 사람들 중 하루가 만나는 사람: 운송·항만 사람(마을 항구 구역)이 있으면 그 사람, 없으면 첫 번째 */
+  hub: string | null
+  /** 만나는 곳 (그 사람의 장소 이름) */
+  place: string
+}
+
+export function meetingOf(a: string[], b: string[]): Meeting {
+  const theirs = new Set(dayNumbers(b).people)
+  const shared = dayNumbers(a).people.filter((p) => theirs.has(p))
+  const hub = shared.find((p) => PEOPLE[p]?.zone === 'port') ?? shared[0] ?? null
+  const place = hub ? placeName(hub) : ''
+  return { shared, hub, place }
+}
+
+/** 장소 이름 (나라가 이름에 없으면 앞에 붙인다. 바다 위는 그대로) */
+function placeName(personId: string): string {
+  const place = PLACES[PEOPLE[personId]?.placeId ?? '']
+  if (!place) return ''
+  const { name, country, continent } = place
+  return continent === 'korea' || !country || name.includes(country) ? name : `${country} ${name}`
+}

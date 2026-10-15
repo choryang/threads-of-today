@@ -3,7 +3,7 @@ import { test } from 'node:test'
 import { MATERIALS, PRODUCTS } from '../shared/data/materials'
 import { PEOPLE } from '../shared/data/people'
 import {
-  CLASS_OF, DAY_TYPES, TEST_ITEMS, TYPE_ORDER, contrast, dayNumbers, dayScores, dayTypeOf, distanceLabel, isValidPick,
+  CLASS_OF, DAY_TYPES, TEST_ITEMS, TYPE_ORDER, contrast, dayNumbers, dayScores, dayTypeOf, distanceLabel, isValidPick, meetingOf,
 } from '../shared/day-type'
 
 // docs/day-types.md 7번 예시
@@ -68,4 +68,22 @@ test('거리 문구', () => {
   assert.equal(distanceLabel(40075 * 1.05), '지구 한 바퀴')
   assert.equal(distanceLabel(40075 * 1.4), '지구 1.5바퀴')
   assert.equal(distanceLabel(40075 * 2.6), '지구 2.5바퀴')
+})
+
+test('두 사람의 하루: 겹치는 사람과 만나는 곳 (운송·항만 사람의 장소, 없으면 첫 번째)', () => {
+  const m = meetingOf(['americano', 'banana', 'tshirt'], ['choco-bar', 'tuna-can', 'apple'])
+  assert.ok(m.shared.length > 0)
+  assert.equal(PEOPLE[m.hub!]!.zone, 'port')
+  assert.ok(m.place)
+  // 겹친 사람 중 (먼저 고른 사람의 순서로) 첫 운송·항만 사람
+  assert.equal(m.hub, m.shared.find((p) => PEOPLE[p]!.zone === 'port'))
+  // 운송·항만 사람이 없으면 첫 번째로 겹친 사람 (지금 데이터에 그런 짝이 있으면 확인)
+  for (const x of TEST_ITEMS) {
+    for (const y of TEST_ITEMS) {
+      const mm = meetingOf([x], [y])
+      if (mm.shared.length && !mm.shared.some((p) => PEOPLE[p]!.zone === 'port')) assert.equal(mm.hub, mm.shared[0])
+      if (!mm.shared.length) assert.deepEqual([mm.hub, mm.place], [null, ''])
+    }
+  }
+  assert.deepEqual(meetingOf(['americano', 'kimchi', 'apple'], ['americano', 'kimchi', 'apple']).shared.length, dayNumbers(['americano', 'kimchi', 'apple']).people.length)
 })

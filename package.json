@@ -9,6 +9,7 @@
     "postinstall": "nuxt prepare",
     "check:data": "tsx scripts/check-data.ts",
     "check:day-types": "tsx scripts/day-type-dist.ts",
+    "build:og": "tsx scripts/build-og.ts",
     "test": "node --import tsx --test tests/*.test.ts",
     "dict:build": "tsx scripts/build-dictionary.ts",
     "cache:export": "tsx scripts/export-cache.ts"

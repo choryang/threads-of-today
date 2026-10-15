@@ -1,45 +1,34 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { PRODUCTS } from '../../../shared/data/materials'
 import { PEOPLE } from '../../../shared/data/people'
-import { CLASS_OF, dayResult, distanceLabel, isValidPick, type DayTypeId } from '../../../shared/day-type'
-import { iconUrl } from '../../utils/day-test'
-import { drawDayCard, savePng } from '../../utils/share-image'
+import { CLASS_OF, DAY_TYPES, dayResult, isValidPick, meetingOf, type DayTypeId } from '../../../shared/day-type'
+import { dayShareTitle, type DayPayload } from '../../../shared/share'
+import { dayNumbersText, iconUrl } from '../../utils/day-test'
+import { drawDayCard, drawMatchCard, savePng } from '../../utils/share-image'
 
 /**
- * 10초 테스트 결과: 유형 이름·설명·대표 주민·숫자 3개, 이미지로 저장, 이 사람들 만나러 가기.
- * 같은 물건이면 늘 같은 결과라 주소(?items=)만으로 다시 그린다.
+ * 10초 테스트 결과. 같은 물건이면 늘 같은 결과라 주소(?items=)만으로 다시 그린다.
+ * ?from=토큰: 친구가 보낸 링크에서 "당신의 하루는요?"로 들어왔으면 두 사람의 물건에서 겹치는 사람을 보여 주고,
+ * '보여주기'를 누를 때만 보낸 사람에게 내 하루를 남긴다.
  */
 const route = useRoute()
 const router = useRouter()
 const game = useGame()
+const share = useShare()
 
 const items = computed(() => {
   const raw = typeof route.query.items === 'string' ? route.query.items.split(',') : []
   return isValidPick(raw) ? raw : null
 })
 if (!items.value) router.replace('/test')
-
 const result = computed(() => (items.value ? dayResult(items.value) : null))
-const resident = computed(() => (result.value ? PEOPLE[result.value.type.resident] : undefined))
-const numbers = computed<Array<[string, string]>>(() => {
-  const n = result.value?.numbers
-  if (!n) return []
-  const dist = distanceLabel(n.km)
-  return [
-    [`${n.people.length}명`, '나에게 닿은 사람'],
-    [`${n.countries.length}개`, '나라'],
-    dist.startsWith('지구 ') ? [dist.slice(3), '지구를 돌아온 거리'] : [dist, '물건이 지나온 거리'],
-  ]
-})
+const from = typeof route.query.from === 'string' ? route.query.from : ''
 
-const nameOf = (id: string) => PRODUCTS.find((p) => p.id === id)?.name ?? ''
-
-/** 여정을 떠날 물건: 유형과 같은 분류의 재료로 시작하는 물건, 없으면(지구 한 바퀴·하늘길) 사람을 가장 많이 만나는 물건 */
+/** 여정을 떠날 물건: 유형과 같은 분류의 재료로 시작하는 물건, 없으면(지구 한 바퀴·하늘길) 재료가 가장 많은 물건 */
 function leadProduct(ids: string[], type: DayTypeId): string {
   const same = ids.find((id) => {
-    const first = PRODUCTS.find((p) => p.id === id)?.materialIds[0] ?? ''
-    const cls = CLASS_OF[first]
+    const cls = CLASS_OF[PRODUCTS.find((p) => p.id === id)?.materialIds[0] ?? '']
     return cls === type || (type === 'under' && cls === 'tech')
   })
   if (same) return same
@@ -59,60 +48,110 @@ function meet() {
   router.push(`/journey/${journey.id}`)
 }
 
-const saving = ref(false)
-const canvas = ref<HTMLCanvasElement | null>(null)
+// ── 이미지로 저장 ──
+const busy = ref(false)
+const today = () => {
+  const d = new Date()
+  return `${d.getMonth() + 1}월 ${d.getDate()}일의 나`
+}
 async function saveImage() {
-  if (!result.value || !items.value || saving.value) return
-  saving.value = true
+  if (!result.value || !items.value || busy.value) return
+  busy.value = true
   try {
-    const c = canvas.value ?? document.createElement('canvas')
-    const now = new Date()
-    await drawDayCard(c, {
-      type: result.value.type,
-      numbers: numbers.value,
-      icons: items.value.map(iconUrl),
-      caption: `${now.getMonth() + 1}월 ${now.getDate()}일의 나`,
-    })
+    const c = document.createElement('canvas')
+    await drawDayCard(c, { type: result.value.type, numbers: dayNumbersText(items.value), icons: items.value.map(iconUrl), caption: today() })
     await savePng(c, `my-day-type-${result.value.type.id}.png`)
   } finally {
-    saving.value = false
+    busy.value = false
+  }
+}
+
+// ── 친구에게 보내기 ──
+async function send() {
+  if (!items.value || !result.value || busy.value) return
+  busy.value = true
+  message.value = ''
+  try {
+    const made = await share.shareDay(items.value, game.nickname.value)
+    if (!made) {
+      message.value = '지금은 링크를 만들 수 없어요. 이미지로 저장해서 보내 주세요.'
+      return
+    }
+    const title = dayShareTitle({ items: items.value, type: result.value.type.id, nickname: game.nickname.value })
+    if (navigator.share) {
+      try {
+        await navigator.share({ title, text: `${title}. 당신의 하루는요?`, url: made.url })
+        return
+      } catch (err) {
+        if ((err as Error)?.name === 'AbortError') return
+      }
+    }
+    await navigator.clipboard?.writeText(made.url)
+    message.value = '링크를 복사했어요. 친구에게 붙여 넣어 보내 주세요.'
+  } finally {
+    busy.value = false
+  }
+}
+
+// ── 두 사람의 하루 (친구 링크에서 들어왔을 때) ──
+const friend = ref<DayPayload | null>(null)
+onMounted(async () => {
+  if (from) friend.value = (await share.open(from))?.payload ?? null
+})
+const meeting = computed(() => (friend.value && items.value ? meetingOf(friend.value.items, items.value) : null))
+const friendTypeName = computed(() => (friend.value ? DAY_TYPES[friend.value.type].name : ''))
+const hubJob = computed(() => (meeting.value?.hub ? PEOPLE[meeting.value.hub]?.job ?? '' : ''))
+const shown = ref(false)
+async function showBack() {
+  if (!items.value || shown.value) return
+  shown.value = await share.showBack(from, items.value, game.nickname.value)
+  if (!shown.value) message.value = '지금은 보여 줄 수 없어요. 잠시 후 다시 눌러 주세요.'
+}
+async function saveTogether() {
+  if (!friend.value || !items.value || !meeting.value?.hub || busy.value) return
+  busy.value = true
+  try {
+    const c = document.createElement('canvas')
+    await drawMatchCard(c, {
+      left: { label: `${friend.value.nickname}의 하루`, type: DAY_TYPES[friend.value.type] },
+      right: { label: `${game.nickname.value}의 하루`, type: result.value!.type },
+      place: meeting.value.place,
+      hub: meeting.value.hub,
+      shared: meeting.value.shared.map((id) => PEOPLE[id]?.job ?? ''),
+    })
+    await savePng(c, 'our-days.png')
+  } finally {
+    busy.value = false
   }
 }
 </script>
 
 <template>
-  <main v-if="result && resident" class="result" :style="{ background: result.type.bg }">
-    <div class="head">
-      <span class="kicker">나의 하루 유형<template v-if="result.type.rare"> · 드문 하루</template></span>
-      <h1 class="display title">{{ result.type.name }}</h1>
-      <p class="desc">{{ result.type.desc }}</p>
-    </div>
+  <main v-if="result && items" class="result" :style="{ background: result.type.bg }">
+    <DayResultView :items="items" />
 
-    <div class="scene">
-      <span class="ground" />
-      <span class="tag">대표 주민 · {{ resident.job }}</span>
-      <div class="who"><Character :person-id="resident.id" :size="190" standing bob /></div>
-    </div>
-
-    <dl class="numbers">
-      <div v-for="[value, label] in numbers" :key="label" class="num">
-        <dt class="display">{{ value }}</dt>
-        <dd>{{ label }}</dd>
-      </div>
-    </dl>
-
-    <div class="picked" aria-label="고른 물건">
-      <img v-for="id in items" :key="id" :src="iconUrl(id)" :alt="nameOf(id)" width="44" height="44">
-    </div>
+    <section v-if="friend && meeting" class="together" aria-labelledby="together-title">
+      <p class="t-kicker">{{ friend.nickname }}님의 하루 · {{ friendTypeName }}</p>
+      <template v-if="meeting.hub">
+        <h2 id="together-title" class="display t-title">두 사람의 하루는<br>{{ meeting.place }}에서 만나요</h2>
+        <p class="t-sub">{{ hubJob }}{{ hubJob ? ' · ' : '' }}같이 닿은 사람 {{ meeting.shared.length }}명</p>
+        <div class="faces">
+          <Character v-for="id in meeting.shared.slice(0, 10)" :key="id" :person-id="id" :size="44" />
+        </div>
+        <button class="ghost wide" :disabled="busy" @click="saveTogether">두 사람의 하루 이미지 저장</button>
+      </template>
+      <h2 v-else id="together-title" class="display t-title">두 사람의 하루는<br>아직 만나지 않았어요</h2>
+      <button class="show" :disabled="shown" @click="showBack">{{ shown ? `${friend.nickname}님에게 보여 줬어요` : `${friend.nickname}님에게 내 하루 보여주기` }}</button>
+    </section>
 
     <div class="actions">
       <div class="two">
-        <button class="ghost" :disabled="saving" @click="saveImage">{{ saving ? '그리는 중…' : '이미지로 저장' }}</button>
+        <button class="ghost" :disabled="busy" @click="saveImage">이미지로 저장</button>
+        <button class="ghost" :disabled="busy" @click="send">친구에게 보내기</button>
       </div>
       <button class="go" @click="meet">이 사람들 만나러 가기</button>
       <p v-if="message" class="message" role="status">{{ message }}</p>
     </div>
-    <canvas ref="canvas" class="hidden-canvas" aria-hidden="true" />
   </main>
 </template>
 
@@ -121,23 +160,18 @@ async function saveImage() {
   min-height: 100dvh; max-width: 480px; margin: 0 auto; box-sizing: border-box; color: #f3f1ea;
   display: flex; flex-direction: column; padding-bottom: calc(96px + env(safe-area-inset-bottom));
 }
-.head { padding: 48px 24px 0; display: flex; flex-direction: column; }
-.kicker { font-size: 14px; font-weight: 700; color: #f2c14e; }
-.title { margin: 8px 0 0; font-size: 44px; line-height: 1.12; word-break: keep-all; }
-.desc { margin: 12px 0 0; font-size: 15px; line-height: 1.6; word-break: keep-all; }
-.scene { position: relative; height: 220px; margin-top: 12px; }
-.ground { position: absolute; left: 0; right: 0; bottom: 0; height: 84px; background: rgba(255, 255, 255, 0.18); }
-.tag {
-  position: absolute; left: 24px; top: 24px; padding: 4px 12px; border-radius: 16px; border: 3px solid #2a2a35;
-  background: #f3f1ea; color: #2a2a35; font-size: 13px; font-weight: 700;
+.together {
+  margin: 20px 16px 0; padding: 18px; border-radius: 20px; background: #f3f1ea; color: #1a1a22;
+  display: flex; flex-direction: column; gap: 10px;
 }
-.who { position: absolute; right: 30px; bottom: 10px; }
-.numbers { margin: 0; padding: 18px 24px 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-.num { display: flex; flex-direction: column; gap: 2px; margin: 0; }
-.num dt { font-size: 28px; line-height: 1.1; word-break: keep-all; }
-.num dd { margin: 0; font-size: 12px; opacity: 0.9; }
-.picked { display: flex; gap: 8px; padding: 18px 24px 0; }
-.picked img { background: #f3f1ea; border-radius: 12px; padding: 4px; }
+.t-kicker { margin: 0; font-size: 13px; font-weight: 700; color: #4a4a55; }
+.t-title { margin: 0; font-size: 26px; line-height: 1.25; word-break: keep-all; }
+.t-sub { margin: 0; font-size: 13px; color: #4a4a55; }
+.faces { display: flex; flex-wrap: wrap; gap: 2px; }
+.show { min-height: 52px; border-radius: 16px; border: 0; background: #1f5a73; color: #f3f1ea; font-size: 15px; font-weight: 700; cursor: pointer; }
+.show:disabled { background: #c9c4b5; color: #4a4a55; cursor: default; }
+.together .ghost { border-color: #1a1a22; color: #1a1a22; }
+.wide { width: 100%; }
 .actions { margin-top: auto; padding: 20px 16px 0; display: flex; flex-direction: column; gap: 10px; }
 .two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .ghost {
@@ -147,5 +181,4 @@ async function saveImage() {
 .ghost:disabled { opacity: 0.6; }
 .go { min-height: 56px; border-radius: 18px; border: 0; background: #f2c14e; color: #1a1a22; font-size: 17px; font-weight: 700; cursor: pointer; }
 .message { margin: 0; text-align: center; font-size: 13px; }
-.hidden-canvas { display: none; }
 </style>
