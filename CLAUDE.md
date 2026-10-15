@@ -7,7 +7,7 @@
 
 - Nuxt 4 (Vue 3.5, TypeScript), `ssr: false` SPA + Nitro 서버 API. 배포는 Vercel.
 - 진행 상황 원본은 브라우저 localStorage(`my-day-people:v1`). 앱을 열 때·여정을 마칠 때만 Upstash와 합친다(익명 id + 복구 코드, 로그인 없음).
-- `npm run dev` / `npm run build` / `npm run check:data`(데이터 무결성 + 스모크 테스트) / `npm test`(node:test, 매칭 사례)
+- `npm run dev` / `npm run build` / `npm run typecheck` / `npm run check:data`(데이터 무결성 + 스모크 테스트) / `npm test`(node:test, 매칭 사례)
 - 환경 변수: `NUXT_ANTHROPIC_API_KEY`, `NUXT_ANTHROPIC_MODEL`(기본 `claude-haiku-5-5`), `KV_REST_API_URL`/`KV_REST_API_TOKEN`(Upstash), `NUXT_AI_DAILY_LIMIT`, `NUXT_IP_SALT`. 자세한 건 README
 
 ## 구조
@@ -132,6 +132,6 @@ tests/                    node:test + tsx 단위 테스트
 
 ## 알려진 상태
 
-- `npm install`, `npm run build`, `npm run check:data`, `npx nuxt typecheck`(vue-tsc 필요) 모두 통과.
+- `npm install`, `npm run build`, `npm run check:data`, `npm run typecheck`(nuxt typecheck, vue-tsc는 devDependency) 모두 통과. 시작할 때 나오는 `vue-router/volar/sfc-route-blocks` 경로 경고는 무시해도 된다(검사는 그대로 돈다).
 - `package-lock.json`을 커밋해 둔다. lock 파일 없이 npm 10.9로 설치하면 npm 자체 버그(`Cannot read properties of null (reading 'edgesOut')`)로 실패한다.
 - Vue 템플릿 안 화살표 함수에서 `MATERIALS[id]`처럼 공유 데이터를 인덱싱하면 vue-tsc가 잘못된 타입 오류를 낸다. 스크립트 쪽 함수로 빼서 쓴다.
