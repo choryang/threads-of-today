@@ -25,7 +25,15 @@ export function usePanZoom(
   map: { w: number; h: number },
   start: (s: Size) => View,
   paint: (v: View, gliding: boolean, moving: boolean) => void,
+  /** 사용자가 지도를 직접 만질 때마다 (끌기·두 손가락·휠·확대 축소 버튼) */
+  onInput?: () => void,
 ) {
+  /** 사용자가 지도를 직접 만진 횟수 (연출 중에 만졌는지 보려고) */
+  let inputs = 0
+  const touched = () => {
+    inputs++
+    onInput?.()
+  }
   let view: View = { x: 0, y: 0, scale: 1 }
   /** 화면을 옮기는 연출 중이면 true (transform에 transition을 건다) */
   let gliding = false
@@ -102,6 +110,7 @@ export function usePanZoom(
 
   function onDown(e: PointerEvent) {
     if (e.pointerType === 'mouse' && e.button !== 0) return
+    touched()
     if (points.size === 0) moved = 0
     stopGlide()
     points.set(e.pointerId, local(e))
@@ -145,14 +154,21 @@ export function usePanZoom(
 
   function onWheel(e: WheelEvent) {
     e.preventDefault()
+    touched()
     const p = local(e)
     stopGlide()
     set(zoomAt(view, p.x, p.y, view.scale * Math.exp(-e.deltaY * WHEEL_SPEED), size))
   }
 
   /** 화면 가운데 기준 확대(+)·축소(−) */
-  const zoomIn = () => set(zoomAt(view, size.vw / 2, size.vh / 2, view.scale * STEP, size))
-  const zoomOut = () => set(zoomAt(view, size.vw / 2, size.vh / 2, view.scale / STEP, size))
+  const zoomIn = () => {
+    touched()
+    set(zoomAt(view, size.vw / 2, size.vh / 2, view.scale * STEP, size))
+  }
+  const zoomOut = () => {
+    touched()
+    set(zoomAt(view, size.vw / 2, size.vh / 2, view.scale / STEP, size))
+  }
 
   /** 지도의 한 점을 화면 가운데로. glide면 MOTION.panMs 동안 미끄러지듯 옮긴다 */
   function goTo(mx: number, my: number, scale = view.scale, glide = false) {
@@ -208,6 +224,10 @@ export function usePanZoom(
     zoomOut,
     goTo,
     setInsets,
+    /** 사용자가 지도를 직접 만진 횟수 */
+    inputs: () => inputs,
+    /** '우리 집으로' 버튼처럼 사용자가 누른 이동도 만진 것으로 센다 */
+    touched,
     dragged,
     size: () => size,
   }

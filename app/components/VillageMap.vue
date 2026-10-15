@@ -33,7 +33,7 @@ const props = withDefaults(defineProps<{
   insets?: { top: number; bottom: number }
 }>(), { lots: () => [], arriving: () => [], bestFriends: () => [], showWorkplaces: true, flowers: () => [], bloomAt: 0 })
 
-const emit = defineEmits<{ resident: [id: string]; flower: [flower: Flower]; far: [far: boolean] }>()
+const emit = defineEmits<{ resident: [id: string]; flower: [flower: Flower]; far: [far: boolean]; touch: [] }>()
 
 const viewport = ref<HTMLElement | null>(null)
 const world = ref<HTMLElement | null>(null)
@@ -96,7 +96,7 @@ function paint(v: View, gliding: boolean, moving: boolean) {
     painted.overview = overview
   }
 }
-const pz = usePanZoom(viewport, { w: MAP_W, h: MAP_H }, (s) => centerOn(HOME_POINT.x, HOME_POINT.y, HOME_POINT.scale, s), paint)
+const pz = usePanZoom(viewport, { w: MAP_W, h: MAP_H }, (s) => centerOn(HOME_POINT.x, HOME_POINT.y, HOME_POINT.scale, s), paint, () => emit('touch'))
 watch(() => props.insets, (i) => { if (i) pz.setInsets(i.top, i.bottom) }, { immediate: true, deep: true })
 /** 멀리 보기(배율 0.25 미만)에 들어가고 나올 때 알린다: 마을 화면이 위·아래 카드를 접고 편다 */
 watch(pz.far, (f) => emit('far', f), { immediate: true })
@@ -185,7 +185,16 @@ function walkIn(ids: string[]): Promise<void> {
   })
 }
 
+/** '우리 집으로'와 같은 기본 배율로 부드럽게 옮긴다. 옮기기가 끝나면 resolve */
+function goHome(): Promise<void> {
+  pz.goTo(HOME_POINT.x, HOME_POINT.y, HOME_POINT.scale, true)
+  return new Promise((resolve) => setTimeout(resolve, reducedMotion() ? 0 : MOTION.panMs))
+}
+
 defineExpose({
+  goHome,
+  /** 사용자가 지도를 직접 만진 횟수 (연출 중에 만졌으면 연출이 화면을 옮기지 않는다) */
+  inputs: () => pz.inputs(),
   /** 이번 여정에서 만난 사람들이 자리로 걸어온다 (줄인 움직임 설정이면 화면만 옮긴다). 끝나면 resolve */
   walkIn,
   /** 한 주민 자리로 화면을 옮긴다 */
@@ -270,7 +279,7 @@ defineExpose({
     <button class="zbtn" aria-label="축소" @click="pz.zoomOut">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14" /></svg>
     </button>
-    <button class="zbtn home-btn" aria-label="우리 집으로" @click="pz.goTo(HOME_POINT.x, HOME_POINT.y, HOME_POINT.scale, true)">
+    <button class="zbtn home-btn" aria-label="우리 집으로" @click="pz.touched(); pz.goTo(HOME_POINT.x, HOME_POINT.y, HOME_POINT.scale, true)">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z" /></svg>
     </button>
   </div>

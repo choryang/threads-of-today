@@ -21,7 +21,13 @@ const game = useGame()
 const route = useRoute()
 const router = useRouter()
 const villageLink = useVillageLink()
-const map = ref<{ focus: (p: Placed) => void; celebrate: (p: Placed) => Promise<void>; walkIn: (ids: string[]) => Promise<void> } | null>(null)
+const map = ref<{
+  focus: (p: Placed) => void
+  celebrate: (p: Placed) => Promise<void>
+  walkIn: (ids: string[]) => Promise<void>
+  goHome: () => Promise<void>
+  inputs: () => number
+} | null>(null)
 
 // ── 오고 있는 물건: 1분마다 진행 막대를 새로 그린다 ──
 const now = ref(Date.now())
@@ -84,26 +90,36 @@ async function celebrateNext() {
 // 주민 카드에서 고마워요로 100%가 되면 카드를 닫았을 때 연출한다
 watch([bestFriends, open], () => { void celebrateNext() })
 
-// ── 새 기능 열림 알림 (shared/unlocks.ts): 한 번에 하나씩, 띄우는 순간 본 것으로 적는다(동기화 합집합) ──
+// ── 새 기능 열림 알림 (shared/unlocks.ts): 한 번에 하나씩. 저절로 사라지지 않고, 누르거나 지도를 만질 때 닫힌다.
+// "본 것"(동기화 합집합)은 사용자가 실제로 닫을 때 적는다. 마을로 모시기 연출·처음 열 때 잠깐은 띄우지 않고 기다린다(holdNotices) ──
 const unlockShown = ref<UnlockStep | null>(null)
+const holdNotices = ref(true)
+let closing = false
 let unlockTimer: ReturnType<typeof setTimeout> | undefined
 onBeforeUnmount(() => clearTimeout(unlockTimer))
 function showNextUnlock() {
   const next = game.unlockNotice.value
-  if (unlockShown.value || !next) return
+  if (holdNotices.value || closing || unlockShown.value || !next) return
   unlockShown.value = next
-  game.markUnlockSeen(next.id)
-  clearTimeout(unlockTimer)
-  unlockTimer = setTimeout(closeUnlockNotice, MOTION.unlockNoticeMs)
 }
 function closeUnlockNotice() {
-  clearTimeout(unlockTimer)
+  const shown = unlockShown.value
+  if (!shown) return
+  game.markUnlockSeen(shown.id)
   unlockShown.value = null
   // 한 번에 여러 개가 열렸으면 다음 것을 이어서 (닫히는 걸 본 뒤)
-  unlockTimer = setTimeout(showNextUnlock, MOTION.enterMs)
+  closing = true
+  clearTimeout(unlockTimer)
+  unlockTimer = setTimeout(() => {
+    closing = false
+    showNextUnlock()
+  }, MOTION.enterMs)
+}
+function releaseNotices() {
+  holdNotices.value = false
+  showNextUnlock()
 }
 watch(() => game.unlockNotice.value?.id, () => showNextUnlock())
-onMounted(() => showNextUnlock())
 
 // ── 꽃: 친구들이 내 마을 주민에게 남긴 고마워요 ──
 const flowers = ref<Flower[]>([])
@@ -295,17 +311,27 @@ onMounted(async () => {
   }
   void loadVillageSocial()
   if (arrive) {
+    // 마을로 모시기: 걷기 연출 → (마지막 주민이 선 뒤 잠깐 쉬고) 기본 배율로 옮기기 → 그다음에 열림 알림.
+    // 사용자가 그사이 지도를 만졌으면 옮기지 않는다. 제목 카드는 펼치지 않는다(접힘 또는 기억시킨 상태)
     router.replace({ query: {} })
     await nextTick()
-    await map.value?.walkIn(arrivedPeople(arrive))
+    const m = map.value
+    const before = m?.inputs() ?? 0
+    await m?.walkIn(arrivedPeople(arrive))
+    await new Promise((r) => setTimeout(r, MOTION.walkSettleMs))
+    if (m && m.inputs() === before) await m.goHome()
+    releaseNotices()
     void celebrateNext()
     return
   }
   if (!focus) {
     await nextTick()
     void celebrateNext()
+    // 여정 없이 열 때: 기다리는 알림은 마을이 그려지고 1초 뒤에
+    unlockTimer = setTimeout(releaseNotices, MOTION.unlockFirstDelayMs)
     return
   }
+  releaseNotices()
   await nextTick()
   const spot = layout.value.residents.find((r) => r.id === focus)
   if (spot) requestAnimationFrame(() => map.value?.focus(spot))
@@ -329,6 +355,7 @@ onMounted(async () => {
       @resident="open = $event"
       @flower="showFlower"
       @far="compact = $event"
+      @touch="closeUnlockNotice"
     />
 
     <div class="overlay">
