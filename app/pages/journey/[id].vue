@@ -727,8 +727,9 @@ function followTeaser(p: Product) {
 .reunion-text { margin: 0; font-size: 15px; line-height: 1.5; word-break: keep-all; }
 .reunion-card { width: 140px; }
 
+/* position: relative — 얼굴 안 sr-only 글자가 스크롤 상자 밖(페이지 오른쪽)으로 새어 가로 스크롤을 만들지 않게 */
 .faces {
-  list-style: none; margin: 0; padding: 2px 0;
+  position: relative; list-style: none; margin: 0; padding: 2px 0;
   display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none;
 }
 .face {
