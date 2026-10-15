@@ -33,6 +33,8 @@ export const MOTION = {
   friendUpMs: 900,
   /** 마을 지도에서 한 곳으로 화면을 옮기는 연출(새 주민을 마을로 모실 때) */
   panMs: 800,
+  /** 친구 마을 주민에게 고마워요를 남겼을 때 꽃이 피는 시간 */
+  bloomMs: 700,
 } as const
 
 /** 자동으로 넘어가는 화면이 머무는 시간. 글자 수에 비례하고 최소·최대 사이로 자른다 */
@@ -59,5 +61,6 @@ export function motionCssVars(): Record<string, string> {
     '--motion-replay': `${MOTION.replayStepMs}ms`,
     '--motion-friend': `${MOTION.friendUpMs}ms`,
     '--motion-pan': `${MOTION.panMs}ms`,
+    '--motion-bloom': `${MOTION.bloomMs}ms`,
   }
 }

@@ -64,3 +64,23 @@ test('공유: 받은 사람이 보여주기를 누른 답만, 보낸 사람이 �
   assert.deepEqual(got.replies, [{ items: ['kimchi', 'apple', 'samgak'], type: 'home', nickname: '바다의 연필', at: 5 }])
   assert.equal(await shares.replies('x'.repeat(32)), null)
 })
+
+test('마을 초대: 닉네임·주민·방문 받기만, 내용을 고쳐도 링크는 그대로, 새로 만들면 이전 링크는 닫힌다', async () => {
+  const { store } = memoryStore()
+  let now = 0
+  const shares = createShares(store, () => now)
+  const made = (await shares.issue('village', { nickname: '세운', residents: ['barista', 'link-sea-crew', 'nobody', 'barista'], open: true, secret: 'x' }))!
+  assert.equal(made.path, `/v/${made.token}`)
+  assert.deepEqual((await shares.lookup(made.token))!.payload, { nickname: '세운', residents: ['barista'], open: true })
+  now = 1000
+  const updated = (await shares.update(made.manage, { nickname: '세운', residents: ['barista', 'sea-crew'], open: false }))!
+  assert.equal(updated.token, made.token)
+  assert.equal(updated.expiresAt, 1000 + SHARE_KINDS.village.ttl * 1000)
+  assert.deepEqual((await shares.lookup(made.token))!.payload, { nickname: '세운', residents: ['barista', 'sea-crew'], open: false })
+  assert.ok(await shares.ownerOf(made.token))
+  assert.equal(await shares.update('y'.repeat(32), { nickname: '세운', residents: [], open: true }), null)
+  const again = (await shares.issue('village', { nickname: '세운', residents: [], open: true }, made.manage))!
+  assert.notEqual(again.token, made.token)
+  assert.equal(await shares.lookup(made.token), null)
+  assert.equal(await shares.ownerOf(made.token), null)
+})

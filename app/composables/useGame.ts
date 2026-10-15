@@ -82,6 +82,8 @@ export function replaceSave(next: Save) {
   s.threads = next.threads ?? {}
   s.people = next.people ?? {}
   s.incoming = next.incoming ?? []
+  s.visitedVillages = next.visitedVillages ?? []
+  if (next.village) s.village = next.village
   if (next.nickname) s.nickname = next.nickname
 }
 
@@ -274,6 +276,13 @@ export function useGame() {
     return inc.personId
   }
 
+  // ── 친구 마을 ──
+  /** 링크를 연 마을을 '다녀온 마을'에 적는다 (상대에게 알리지 않는다) */
+  function visitVillage(token: string, nickname: string) {
+    if (!s.visitedVillages) s.visitedVillages = []
+    s.visitedVillages = [{ token, nickname, at: Date.now() }, ...s.visitedVillages.filter((v) => v.token !== token)].slice(0, 30)
+  }
+
   // ── 오늘의 미스터리 ──
   const mysteryAnswer = mysteryProduct(todayKey)
   const mysteryHintList = mysteryHints(mysteryAnswer, mysteryOptions(todayKey).filter((p) => p.id !== mysteryAnswer.id))
@@ -378,6 +387,7 @@ export function useGame() {
     answerQuiz,
     finishJourney,
     openArrival,
+    visitVillage,
     mysteryAnswer,
     mysteryHintList,
     mystery,

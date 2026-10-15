@@ -163,3 +163,15 @@ test('오고 있는 물건: 여정 id로 합치고, 한 기기에서 연 물건�
   delete old.incoming
   assert.deepEqual(mergeSaves(old as Save, a, TODAY).incoming, [inc])
 })
+
+test('내 마을 링크·다녀온 마을: 링크는 나중에 바꾼 쪽, 본 시각은 큰 쪽, 다녀온 마을은 토큰으로 합친다', () => {
+  const link = { token: 'abcdefghjk', manage: 'a'.repeat(32), open: true, seenAt: 5, updatedAt: 10 }
+  const a: Save = { ...emptySave(), village: link, visitedVillages: [{ token: 'mnpqrstuvw', nickname: '세운', at: 1 }] }
+  const b: Save = { ...emptySave(), village: { ...link, open: false, seenAt: 3, updatedAt: 20 }, visitedVillages: [{ token: 'mnpqrstuvw', nickname: '세운', at: 7 }, { token: 'xyzABCDEFG', nickname: '옥희', at: 2 }] }
+  const m = mergeSaves(a, b, TODAY)
+  assert.deepEqual(m.village, { ...link, open: false, seenAt: 5, updatedAt: 20 })
+  assert.deepEqual(m.visitedVillages.map((v) => [v.token, v.at]), [['mnpqrstuvw', 7], ['xyzABCDEFG', 2]])
+  const s = sanitizeSave({ village: { ...link, token: 'bad' }, visitedVillages: [{ token: 'mnpqrstuvw', nickname: '{name}', at: 1 }, { token: 'xyzABCDEFG', nickname: '옥희', at: 2 }] }, TODAY)
+  assert.equal(s.village, undefined)
+  assert.deepEqual(s.visitedVillages, [{ token: 'xyzABCDEFG', nickname: '옥희', at: 2 }])
+})

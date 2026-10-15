@@ -13,10 +13,13 @@
  *    어느 쪽에도 기록이 없는 가진 카드는 만남 1곳(legacy)으로 채운다.
  *  - 오고 있는 물건(incoming): 여정 id로 짝짓는다. 한 기기에서 연 물건(openedAt)은 연 것으로 남는다.
  *    연 지 30일이 지난 것은 버린다.
+ *  - 내 마을 초대 링크(village): 더 나중에 바꾼 쪽. 꽃을 본 시각(seenAt)은 큰 쪽.
+ *  - 다녀온 마을(visitedVillages): 토큰으로 합집합, 최근 30곳. 상대에게 알리지 않는다.
  */
 import { MATERIALS, SETS } from './data/materials'
 import { PEOPLE } from './data/people'
 import { LOG_CAP, legacyMeeting, mergePersonLog } from './friendship'
+import { isManageKey, isToken } from './share'
 import { normalizeNickname } from './nickname'
 
 export type JourneySource = 'text' | 'photo' | 'pick' | 'mystery'
@@ -92,6 +95,26 @@ export interface Incoming {
   openedAt?: number
 }
 
+/** 내 마을 초대 링크 (shared/share.ts의 village). 관리 키는 내 기기들과 내 서버 기록에만 있다 */
+export interface VillageLink {
+  token: string
+  manage: string
+  /** 마을 방문 받기 */
+  open: boolean
+  /** 마을 꽃 알림을 마지막으로 본 시각(ms) */
+  seenAt: number
+  /** 이 기록을 마지막으로 바꾼 시각(ms) */
+  updatedAt: number
+}
+
+/** 다녀온 마을 (링크를 연 마을) */
+export interface VisitedVillage {
+  token: string
+  nickname: string
+  /** 마지막으로 연 시각(ms) */
+  at: number
+}
+
 export interface Save {
   v: 1
   cards: Record<string, string>
@@ -109,6 +132,8 @@ export interface Save {
   /** 사람 id → 친해진 정도 기록 */
   people: Record<string, PersonLog>
   incoming: Incoming[]
+  village?: VillageLink
+  visitedVillages: VisitedVillage[]
   nickname?: Nickname
 }
 
@@ -117,7 +142,7 @@ const LIMITS = { items: 2000, journeysPerDay: 12, name: 40, voice: 80, guesses: 
 const DATE = /^\d{4}-\d{2}-\d{2}$/
 
 export function emptySave(): Save {
-  return { v: 1, cards: {}, days: {}, streak: { last: '', count: 0 }, mystery: {}, items: {}, thanks: {}, seenScenes: [], threads: {}, people: {}, incoming: [] }
+  return { v: 1, cards: {}, days: {}, streak: { last: '', count: 0 }, mystery: {}, items: {}, thanks: {}, seenScenes: [], threads: {}, people: {}, incoming: [], visitedVillages: [] }
 }
 
 /** todayKey를 포함해 최근 days일의 날짜 키인지 */
@@ -162,6 +187,23 @@ function mergeIncoming(a: Incoming[], b: Incoming[], todayKey: string): Incoming
   const [ty, tm, td] = todayKey.split('-').map(Number)
   const cutoff = Date.UTC(ty!, tm! - 1, td!) - KEEP_DAYS * DAY_MS
   return [...byId.values()].filter((x) => !x.openedAt || x.openedAt >= cutoff).sort((p, q) => p.departAt - q.departAt).slice(-MAX_INCOMING_KEEP)
+}
+
+const MAX_VISITED = 30
+
+function mergeVillage(a?: VillageLink, b?: VillageLink): VillageLink | undefined {
+  if (!a || !b) return a ?? b
+  const main = a.updatedAt >= b.updatedAt ? a : b
+  return { ...main, seenAt: Math.max(a.seenAt, b.seenAt) }
+}
+
+function mergeVisited(a: VisitedVillage[], b: VisitedVillage[]): VisitedVillage[] {
+  const byToken = new Map<string, VisitedVillage>()
+  for (const v of [...a, ...b]) {
+    const cur = byToken.get(v.token)
+    if (!cur || v.at > cur.at) byToken.set(v.token, v)
+  }
+  return [...byToken.values()].sort((x, y) => y.at - x.at).slice(0, MAX_VISITED)
 }
 
 function mergeRecordOfDates(a: Record<string, string>, b: Record<string, string>): Record<string, string> {
@@ -230,6 +272,8 @@ export function mergeSaves(a: Save, b: Save, todayKey: string): Save {
     threads: mergeThreads(a.threads ?? {}, b.threads ?? {}),
     people: mergePeople(a.people ?? {}, b.people ?? {}, cards),
     incoming: mergeIncoming(a.incoming ?? [], b.incoming ?? [], todayKey),
+    visitedVillages: mergeVisited(a.visitedVillages ?? [], b.visitedVillages ?? []),
+    ...(mergeVillage(a.village, b.village) ? { village: mergeVillage(a.village, b.village) } : {}),
     days: pickRecent(days, todayKey),
     mystery: pickRecent(mystery, todayKey),
     streak,
@@ -302,6 +346,19 @@ export function sanitizeSave(raw: unknown, todayKey: string): Save {
         journeyId: x.journeyId.slice(0, 30), departAt: x.departAt, arriveAt: x.arriveAt, personId: x.personId,
         ...(Number.isFinite(x.openedAt) ? { openedAt: x.openedAt } : {}),
       })
+    }
+  }
+  if (isObj(raw.village)) {
+    const v = raw.village
+    if (isToken(v.token) && isManageKey(v.manage) && Number.isFinite(v.seenAt) && Number.isFinite(v.updatedAt)) {
+      s.village = { token: v.token, manage: v.manage, open: v.open !== false, seenAt: v.seenAt, updatedAt: v.updatedAt }
+    }
+  }
+  if (Array.isArray(raw.visitedVillages)) {
+    for (const v of raw.visitedVillages.slice(0, MAX_VISITED)) {
+      if (!isObj(v) || !isToken(v.token) || !Number.isFinite(v.at)) continue
+      const nickname = normalizeNickname(v.nickname)
+      if (nickname && !s.visitedVillages.some((x) => x.token === v.token)) s.visitedVillages.push({ token: v.token, nickname, at: v.at })
     }
   }
   s.seenScenes = strList(raw.seenScenes, SETS.length + 1).filter((id) => id === 'ending' || SETS.some((set) => set.id === id))

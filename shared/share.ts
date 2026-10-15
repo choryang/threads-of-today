@@ -9,6 +9,7 @@
  * 복구 코드나 사용자 id는 토큰·저장 값·응답·로그 어디에도 넣지 않는다: 이 모듈은 그 값을 받지도 않는다.
  * 저장소는 넘겨받는다(createShares): 서버는 KV, 테스트는 메모리.
  */
+import { PEOPLE } from './data/people'
 import { DAY_TYPES, dayTypeOf, isValidPick, type DayTypeId } from './day-type'
 import { normalizeNickname } from './nickname'
 
@@ -42,11 +43,31 @@ function validateDay(raw: unknown): DayPayload | null {
   return { items: [...r.items], type: dayTypeOf(r.items), nickname }
 }
 
-export const SHARE_KINDS: { day: ShareKindSpec<DayPayload>; person: ShareKindSpec<never>; village: ShareKindSpec<never> } = {
+/** 마을 초대: 다른 사람에게 보이는 건 닉네임과 주민뿐. 주민은 주인 마을의 자리 잡는 순서 그대로 (같은 자리 배정) */
+export interface VillagePayload {
+  nickname: string
+  /** 주민 person id (연결 카드 제외, 주인 마을에서 자리를 잡는 순서) */
+  residents: string[]
+  /** 마을 방문 받기 */
+  open: boolean
+}
+export const MAX_RESIDENTS = 250
+
+function validateVillage(raw: unknown): VillagePayload | null {
+  if (!raw || typeof raw !== 'object') return null
+  const r = raw as Record<string, unknown>
+  const nickname = normalizeNickname(r.nickname)
+  if (!nickname || !Array.isArray(r.residents) || r.residents.length > MAX_RESIDENTS) return null
+  const residents = [...new Set(r.residents.filter((id): id is string => typeof id === 'string' && !!PEOPLE[id] && PEOPLE[id]!.kind !== 'link'))]
+  return { nickname, residents, open: r.open !== false }
+}
+
+export const SHARE_KINDS: { day: ShareKindSpec<DayPayload>; person: ShareKindSpec<never>; village: ShareKindSpec<VillagePayload> } = {
   day: { path: '/d', ttl: 30 * DAY, validate: validateDay },
-  // 사람 카드 소개·마을 초대: 아직 내용이 정해지지 않아 받지 않는다 (TTL과 주소만 먼저 정해 둔다)
+  // 사람 카드 소개: 아직 내용이 정해지지 않아 받지 않는다 (TTL과 주소만 먼저 정해 둔다)
   person: { path: '/p', ttl: 30 * DAY, validate: () => null },
-  village: { path: '/v', ttl: 7 * DAY, validate: () => null },
+  // 마을 초대: 주인이 마을을 열 때마다 내용을 고치며(update) 기간도 다시 7일로 늘린다
+  village: { path: '/v', ttl: 7 * DAY, validate: validateVillage },
 }
 
 export const isShareKind = (v: unknown): v is ShareKind => v === 'day' || v === 'person' || v === 'village'
@@ -142,6 +163,27 @@ export function createShares(store: ShareStore, clock: () => number = Date.now) 
     return { token, manage: key, path: `${spec.path}/${token}`, expiresAt: rec.expiresAt }
   }
 
+  /** 링크는 그대로 두고 내용만 바꾼다(기간도 다시 늘린다). 그 관리 키의 링크가 없거나 내용이 틀리면 null */
+  async function update(manage: string, rawPayload: unknown): Promise<{ token: string; path: string; expiresAt: number } | null> {
+    if (!isManageKey(manage)) return null
+    const owner = await sha256(manage)
+    const token = await store.get(ownerKey(owner))
+    const rec = token ? await read(token) : null
+    if (!token || !rec) return null
+    const spec = SHARE_KINDS[rec.kind] as ShareKindSpec<unknown>
+    const payload = spec.validate(rawPayload)
+    if (!payload) return null
+    const next: ShareRecord = { ...rec, payload, expiresAt: clock() + spec.ttl * 1000 }
+    await store.set(shareKey(token), JSON.stringify(next), spec.ttl)
+    await store.set(ownerKey(owner), token, spec.ttl)
+    return { token, path: `${spec.path}/${token}`, expiresAt: next.expiresAt }
+  }
+
+  /** 서버 안에서만: 이 링크를 만든 사람(관리 키 해시). 응답에는 내보내지 않는다 (마을 꽃을 링크가 아니라 마을에 붙이려고) */
+  async function ownerOf(token: string): Promise<string | null> {
+    return (await read(token))?.owner ?? null
+  }
+
   /** 링크를 연 사람에게 보여 줄 내용 */
   async function lookup(token: string): Promise<PublicShare | null> {
     const rec = await read(token)
@@ -168,10 +210,20 @@ export function createShares(store: ShareStore, clock: () => number = Date.now) 
     return { token, replies: JSON.parse((await store.get(repliesKey(token))) ?? '[]') as DayReply[] }
   }
 
-  return { issue, lookup, reply, replies }
+  return { issue, update, lookup, ownerOf, reply, replies }
 }
 
 /** OG 제목: "노을의 찻잎님의 하루는 '목장에서 온 하루'예요" */
 export function dayShareTitle(p: DayPayload): string {
   return `${p.nickname}님의 하루는 '${DAY_TYPES[p.type].name}'예요`
+}
+
+/** 서버 안에서만: 관리 키로 그 사람(링크를 만든 사람)의 해시를 구한다 (마을 꽃 읽기). 틀린 키면 null */
+export async function ownerOfManage(manage: unknown): Promise<string | null> {
+  return isManageKey(manage) ? sha256(manage) : null
+}
+
+/** OG 제목: "옥희님의 마을에 놀러 오세요" */
+export function villageShareTitle(p: VillagePayload): string {
+  return `${p.nickname}님의 마을에 놀러 오세요`
 }
