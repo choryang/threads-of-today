@@ -7,6 +7,9 @@ import { togetherLine } from '../../shared/today-text'
 import type { Reply } from '../composables/useToday'
 import type { JobId } from '../../shared/data/jobs'
 import { MOTION, reducedMotion } from '../utils/motion'
+import { PEOPLE } from '../../shared/data/people'
+import { PLACES } from '../../shared/data/places'
+import { clockAt, dayInfo, nameDoingLine } from '../../shared/local-time'
 
 /**
  * 첫 화면: 오늘 흐름 (docs/redesign/README.md, 시안 V2Mood → V2Item → V2Thread → V2Person → V2Reply).
@@ -34,6 +37,17 @@ const together = computed(() => {
   const n = meets.moodCount(d.mood)
   return n ? togetherLine(d.mood, n) : ''
 })
+// 오늘 결과 화면의 실시간 한 줄: "지금 마인은 아마 …" (1분마다)
+const donePerson = computed(() => (d.pick ? PEOPLE[d.pick.personId] : undefined))
+const donePlace = computed(() => PLACES[donePerson.value?.placeId ?? ''] ?? PLACES.kr!)
+const doneNow = usePlaceNow(computed(() => donePlace.value.tz), MOTION.peekTickMs)
+const nowLine = computed(() => {
+  const p = donePerson.value
+  if (!p || !d.pick) return ''
+  const line = nameDoingLine(d.pick.personId, p.name ?? p.job, clockAt(donePlace.value.tz, doneNow.value).h, dayInfo(donePlace.value.country, donePlace.value.tz, doneNow.value))
+  return line.startsWith('오늘은') ? line : `지금 ${line}`
+})
+
 // 하는 일 묻기: 3일째, 실을 묶은 뒤(매듭이 다 묶이고) 한 번만. 닫기·"말하지 않을래요"는 declined
 const askingJob = ref(false)
 function reply(r: Reply) {
@@ -149,6 +163,7 @@ const tightTop = computed(() => d.step === 'item' || d.step === 'person' || d.st
       <div class="done">
         <p v-if="d.note" class="done-note"><span class="t-dot" aria-hidden="true" />{{ d.note }}</p>
         <p v-if="saidText" class="done-said">당신이 건넨 말: {{ saidText }}</p>
+        <p class="done-now" aria-live="polite">{{ nowLine }}</p>
         <p class="done-bye">내일 저녁에 또 만나요</p>
         <button class="t-btn secondary" @click="sharing = true">카드로 남기기</button>
       </div>
@@ -162,5 +177,6 @@ const tightTop = computed(() => d.step === 'item' || d.step === 'person' || d.st
 .done { margin-top: 20px; display: flex; flex-direction: column; gap: 8px; }
 .done-note { margin: 0; display: flex; align-items: center; gap: 8px; font-size: 15px; color: var(--t-quiet); word-break: keep-all; }
 .done-said { margin: 0; font-size: 14px; color: var(--t-sub); word-break: keep-all; }
+.done-now { margin: 8px 0 0; font-size: 15px; line-height: 1.6; color: var(--t-text); word-break: keep-all; }
 .done-bye { margin: 12px 0 0; font-size: 17px; font-weight: 700; text-align: center; }
 </style>

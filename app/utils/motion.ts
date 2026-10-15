@@ -4,6 +4,8 @@
  * prefers-reduced-motion 사용자는 main.css가 애니메이션을 모두 끄고, JS 대기는 reducedMotion()으로 건너뛴다.
  */
 export const MOTION = {
+  /** 지금 들여다보기: 그곳 시각과 '지금은 아마'를 다시 그리는 간격 */
+  peekTickMs: 60_000,
   /** 오늘 흐름 3번: 서울에서 그곳까지 실이 이어지는 시간 (거쳐 온 손이 점으로 하나씩) */
   threadDrawMs: 1800,
   /** 오늘 흐름 5번: 한마디를 건네고 실을 묶는 시간 */

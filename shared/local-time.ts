@@ -153,13 +153,32 @@ export function doingBucket(h: number, hours: [number, number] = DEFAULT_HOURS):
  * 평일에만 일하는 사람이 공휴일·주말의 일하는 시간이면 쉬는 문구
  */
 export function doingLine(personId: string, h: number, day?: DayInfo): string {
+  const p = doingParts(personId, h, day)
+  if (p.off === 'holiday') return `오늘은 ${withJosa(p.holiday!, '이라', '라')} 아마 쉬고 있을 거예요`
+  if (p.off === 'weekend') return DOING_DEFAULT.off
+  return `지금은 아마 ${p.text}`
+}
+
+/** 지금 하고 있을 일의 조각: 쉬는 날이면 off, 아니면 문구('…고 있을 거예요') */
+export function doingParts(personId: string, h: number, day?: DayInfo): { off?: 'holiday' | 'weekend'; holiday?: string; text: string } {
   const d = DOING[personId]
   const b = doingBucket(h, d?.hours)
   if (b === 'work' && d?.days === 'weekdays' && day) {
-    if (day.holiday) return `오늘은 ${withJosa(day.holiday, '이라', '라')} 아마 쉬고 있을 거예요`
-    if (day.weekend) return DOING_DEFAULT.off
+    if (day.holiday) return { off: 'holiday', holiday: day.holiday, text: '쉬고 있을 거예요' }
+    if (day.weekend) return { off: 'weekend', text: '집에서 쉬고 있을 거예요' }
   }
-  return `지금은 아마 ${d?.[b] ?? DOING_DEFAULT[b]}`
+  return { text: d?.[b] ?? DOING_DEFAULT[b] }
+}
+
+/**
+ * 이름을 넣은 한 줄 (지금 들여다보기): '마인은 아마 커피 나무에 물을 주고 있을 거예요'.
+ * 쉬는 날이면 '오늘은 추석이라 지원도 아마 쉬고 있을 거예요'
+ */
+export function nameDoingLine(personId: string, name: string, h: number, day?: DayInfo): string {
+  const p = doingParts(personId, h, day)
+  if (p.off === 'holiday') return `오늘은 ${withJosa(p.holiday!, '이라', '라')} ${name}도 아마 ${p.text}`
+  if (p.off === 'weekend') return `오늘은 쉬는 날이라 ${name}도 아마 ${p.text}`
+  return `${withJosa(name, '은', '는')} 아마 ${p.text}`
 }
 
 /** 개발용: 그곳 시각이 hh:mm이 되도록 옮긴 지금 (?clock=05:30) */
