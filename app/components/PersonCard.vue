@@ -18,12 +18,21 @@ const met = computed(() => game.owns(props.personId))
 /** 고마워요는 하루(서울 기준) 한 번 */
 const thanked = computed(() => game.thankedToday(props.personId))
 const reply = computed(() => (thanked.value ? thanksReply(props.personId) : ''))
+/**
+ * 사람 카드는 단계별로 보인다 (shared/unlocks.ts): 처음엔 이름·하는 일·이야기·고마워요만.
+ * 친해진 정도(등급 표시·일하는 사실)는 주민 5명, 다른 사람들의 고마움·모두의 오늘은 주민 10명, 소개하기는 첫 단짝 뒤.
+ * 친구가 소개해 준 분이라는 한 줄은 받은 쪽(링크)이라 늘 보인다
+ */
+const showFriendship = computed(() => game.opens('friendship'))
+const showOthers = computed(() => game.opens('others-thanks'))
+const showToday = computed(() => game.opens('today-count'))
+const showIntro = computed(() => game.opens('intro'))
 /** 일하는 사실은 친해진 정도 50%에 열린다 */
-const fact = computed(() => (met.value && game.friendship(props.personId).percent >= UNLOCK.fact ? factOf(props.personId) : undefined))
+const fact = computed(() => (met.value && showFriendship.value && game.friendship(props.personId).percent >= UNLOCK.fact ? factOf(props.personId) : undefined))
 
-// 다른 사람들의 고마움: 만난 사람 카드에서만 읽는다
+// 다른 사람들의 고마움: 만난 사람 카드에서만, 열린 뒤에만 읽는다
 const gratitude = useGratitude()
-watch([() => props.personId, met], ([id, isMet]) => { if (isMet) void gratitude.load(id) }, { immediate: true })
+watch([() => props.personId, met], ([id, isMet]) => { if (isMet && showOthers.value) void gratitude.load(id) }, { immediate: true })
 const others = computed(() => gratitude.counts[props.personId])
 
 // 사람 카드 소개: 보내기 버튼, 그리고 친구가 소개해 준 분이면 그 한 줄
@@ -33,8 +42,9 @@ const introducedBy = computed(() => (met.value ? share.introducedBy(props.person
 
 // 모두의 오늘: 오늘 이 분을 만난 사람 수
 const meets = useTodayMeets()
-watch([() => props.personId, met], ([, isMet]) => { if (isMet) void meets.load() }, { immediate: true })
+watch([() => props.personId, met], ([, isMet]) => { if (isMet && showToday.value) void meets.load() }, { immediate: true })
 const todayLine = computed(() => {
+  if (!showToday.value) return ''
   const n = meets.countOf(props.personId)
   const mine = meets.metToday(props.personId)
   return n === undefined && !mine ? '' : todayMeetLine(n ?? 0, mine)
@@ -59,7 +69,7 @@ onBeforeUnmount(() => clearTimeout(waveTimer))
   <article class="card" :class="`rarity-${person.rarity}`">
     <header class="top">
       <span class="mono no">{{ number ? `No.${String(number).padStart(3, '0')}` : place.country || '바다' }}</span>
-      <span class="badge">{{ badgeOf(person) }}</span>
+      <span v-if="showFriendship" class="badge">{{ badgeOf(person) }}</span>
     </header>
     <div class="art">
       <Character :person-id="personId" :size="150" bob :wave="waving" />
@@ -94,9 +104,9 @@ onBeforeUnmount(() => clearTimeout(waveTimer))
         </template>
         <p v-if="introducedBy" class="introduced">{{ introducedBy }}님이 소개해준 분이에요</p>
         <p v-if="todayLine" class="today-line">{{ todayLine }}</p>
-        <button class="intro-btn" @click="introOpen = true">이 분 소개하기</button>
+        <button v-if="showIntro" class="intro-btn" @click="introOpen = true">이 분 소개하기</button>
         <Teleport to="body"><IntroSheet v-if="introOpen" :person-id="personId" @close="introOpen = false" /></Teleport>
-        <p v-if="others && others.total" class="others">
+        <p v-if="showOthers && others && others.total" class="others">
           <strong>오늘 {{ others.today.toLocaleString('ko-KR') }}명이 고마워했어요</strong>
           <span>지금까지 {{ others.total.toLocaleString('ko-KR') }}번</span>
         </p>

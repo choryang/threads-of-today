@@ -281,8 +281,8 @@ const metPeople = computed(() => summary.value.people)
 
 // ── 모두의 오늘: 이번 여정 사람들을 오늘 만난 사람 수의 합 (끝 화면 한 줄) ──
 const meets = useTodayMeets()
-watch(() => journey.value?.done, (done) => { if (done) void meets.load() }, { immediate: true })
-const togetherLine = computed(() => journeyMeetLine(metPeople.value.reduce((sum, id) => sum + (meets.countOf(id) ?? 0), 0)))
+watch(() => journey.value?.done, (done) => { if (done && game.opens('today-count')) void meets.load() }, { immediate: true })
+const togetherLine = computed(() => !game.opens('today-count') ? '' : journeyMeetLine(metPeople.value.reduce((sum, id) => sum + (meets.countOf(id) ?? 0), 0)))
 
 // ── 끝 장면 ──
 const productId = computed(() => PRODUCTS.find((p) => p.name === journey.value?.name)?.id ?? '')

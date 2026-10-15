@@ -30,6 +30,8 @@ test('조건 판정: 주민 수·마친 여정 수·첫 단짝', () => {
   assert.ok(!isOpen('friendship', stats(4)))
   assert.ok(isOpen('friendship', stats(5)) && isOpen('dex', stats(5)))
   assert.ok(!isOpen('invite', stats(9)) && isOpen('invite', stats(10)) && isOpen('flowers', stats(10)) && isOpen('today-count', stats(10)))
+  // 사람 카드: 다른 사람들의 고마움도 모두의 오늘과 같이 주민 10명
+  assert.ok(!isOpen('others-thanks', stats(9)) && isOpen('others-thanks', stats(10)))
   assert.ok(!isOpen('mystery', stats(14)) && isOpen('mystery', stats(15)))
   assert.ok(!isOpen('records', stats(19)) && isOpen('records', stats(20)) && isOpen('sets', stats(20)))
   assert.ok(!isOpen('intro', stats(200)) && isOpen('intro', stats(1, 1, true)) && isOpen('workplace', stats(1, 1, true)))

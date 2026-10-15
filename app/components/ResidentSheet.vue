@@ -7,7 +7,10 @@ import { thanksReply } from '../../shared/thanks'
 import { todayMeetLine } from '../../shared/today'
 import { MOTION } from '../utils/motion'
 
-/** 주민 카드: 마을에서 주민을 누르면 아래에서 올라온다. 친해진 정도와 고마워요 */
+/**
+ * 주민 카드: 마을에서 주민을 누르면 아래에서 올라온다. 단계별로 보인다 (shared/unlocks.ts):
+ * 처음엔 이름·하는 일·이야기·고마워요만, 친해진 정도는 주민 5명, 다른 사람들의 고마움·모두의 오늘은 주민 10명, 소개하기는 첫 단짝 뒤
+ */
 const props = defineProps<{ personId: string }>()
 const emit = defineEmits<{ close: [] }>()
 const game = useGame()
@@ -22,8 +25,16 @@ const thankedToday = computed(() => game.thankedToday(props.personId))
 const reply = computed(() => (thankedToday.value ? thanksReply(props.personId) : ''))
 const others = computed(() => gratitude.counts[props.personId])
 const meets = useTodayMeets()
-watch(() => props.personId, (id) => { void gratitude.load(id); void meets.load() }, { immediate: true })
+const showFriendship = computed(() => game.opens('friendship'))
+const showOthers = computed(() => game.opens('others-thanks'))
+const showToday = computed(() => game.opens('today-count'))
+const showIntro = computed(() => game.opens('intro'))
+watch(() => props.personId, (id) => {
+  if (showOthers.value) void gratitude.load(id)
+  if (showToday.value) void meets.load()
+}, { immediate: true })
 const todayLine = computed(() => {
+  if (!showToday.value) return ''
   const n = meets.countOf(props.personId)
   const mine = meets.metToday(props.personId)
   return n === undefined && !mine ? '' : todayMeetLine(n ?? 0, mine)
@@ -61,14 +72,15 @@ onBeforeUnmount(() => clearTimeout(timer))
         </div>
       </div>
 
+      <p class="story">{{ person.story }}</p>
       <p v-if="todayLine" class="today-line">{{ todayLine }}</p>
-      <FriendshipPanel :person-id="personId" />
-      <button class="intro" @click="introOpen = true">이 분 소개하기</button>
+      <FriendshipPanel v-if="showFriendship" :person-id="personId" />
+      <button v-if="showIntro" class="intro" @click="introOpen = true">이 분 소개하기</button>
 
       <p v-if="reply" class="reply">“{{ reply }}”</p>
       <div class="thanks-row">
         <div class="counts">
-          <template v-if="others && others.total">
+          <template v-if="showOthers && others && others.total">
             <strong>오늘 {{ others.today.toLocaleString('ko-KR') }}명이 고마워했어요</strong>
             <span>지금까지 {{ others.total.toLocaleString('ko-KR') }}번</span>
           </template>
@@ -93,6 +105,7 @@ onBeforeUnmount(() => clearTimeout(timer))
   animation: sheet-up var(--motion-enter) var(--motion-ease);
 }
 @keyframes sheet-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.story { margin: 0; font-size: 14px; line-height: 1.6; word-break: keep-all; }
 .grip { width: 44px; height: 5px; border-radius: 3px; background: #c9c4b5; align-self: center; }
 .close {
   position: absolute; right: 12px; top: 12px; width: 44px; height: 44px; border-radius: 22px;

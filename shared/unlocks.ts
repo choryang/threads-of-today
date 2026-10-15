@@ -18,8 +18,8 @@ export type FeatureId =
   | 'journey-extras'
   // 주민 5명
   | 'friendship' | 'dex'
-  // 주민 10명
-  | 'invite' | 'flowers' | 'today-count'
+  // 주민 10명 ('others-thanks': 사람 카드의 다른 사람들의 고마움. 표의 '모두의 오늘 숫자'와 같이 연다)
+  | 'invite' | 'flowers' | 'today-count' | 'others-thanks'
   // 주민 15명
   | 'mystery'
   // 주민 20명
@@ -50,7 +50,7 @@ export const UNLOCK_STEPS: UnlockStep[] = [
   { id: 'day1', when: {}, features: ['test', 'journey', 'village', 'thanks', 'incoming'] },
   { id: 'second-journey', when: { journeys: 1 }, features: ['journey-extras'], notice: '이제 여정 중에 퀴즈가 나와요' },
   { id: 'residents-5', when: { residents: 5 }, features: ['friendship', 'dex'], notice: '주민과 친해질 수 있어요' },
-  { id: 'residents-10', when: { residents: 10 }, features: ['invite', 'flowers', 'today-count'], notice: '친구를 마을에 부를 수 있어요' },
+  { id: 'residents-10', when: { residents: 10 }, features: ['invite', 'flowers', 'today-count', 'others-thanks'], notice: '친구를 마을에 부를 수 있어요' },
   { id: 'residents-15', when: { residents: 15 }, features: ['mystery'], notice: '매일 새 미스터리 물건이 열려요' },
   { id: 'residents-20', when: { residents: 20 }, features: ['records', 'sets'], notice: '내 하루가 실로 이어졌어요' },
   { id: 'first-best', when: { bestFriend: true }, features: ['intro', 'workplace'], notice: '단짝을 친구에게 소개할 수 있어요' },
