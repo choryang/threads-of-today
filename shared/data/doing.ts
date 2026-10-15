@@ -35,20 +35,20 @@ export const DOING_DEFAULT: Record<DoingBucket | 'off', string> = {
 /** 낮 근무, 주말·공휴일에 쉬는 사람 */
 const WEEKDAYS = { days: 'weekdays' } as const
 
-/** 배에서 지내는 사람들 */
-const ABOARD = { eve: '쉬면서 집에 보낼 메시지를 녹음하고 있을지도 몰라요', sleep: '선실에서 자고 있을 거예요' }
+/** 배에서 지내는 사람들의 잠자리. 쉬는 시간(eve)은 사람마다 다르게 쓴다 (이야기가 있는 사람은 그 이야기에서) */
+const ABOARD = { sleep: '선실에서 자고 있을 거예요' }
 
 export const DOING: Record<string, Doing> = {
   // 운송
-  'sea-crew': { work: '갑판에서 짐을 살피고 있을 거예요', ...ABOARD },
-  'bulk-crew': { work: '화물칸 덮개가 잘 닫혔는지 살피고 있을 거예요', ...ABOARD },
-  'tanker-crew': { work: '배관 밸브를 하나씩 점검하고 있을 거예요', ...ABOARD },
-  'reefer-crew': { work: '냉동 창고 온도를 확인하고 있을 거예요', ...ABOARD },
+  'sea-crew': { work: '갑판에서 짐을 살피고 있을 거예요', eve: '식당에서 동료들과 고향 음식을 나눠 먹고 있을 거예요', ...ABOARD },
+  'bulk-crew': { work: '화물칸 덮개가 잘 닫혔는지 살피고 있을 거예요', eve: '갑판에 앉아 수첩에 오늘 바다를 그리고 있을 거예요', ...ABOARD },
+  'tanker-crew': { work: '배관 밸브를 하나씩 점검하고 있을 거예요', eve: '낮에 들은 기계 소리를 수첩에 옮겨 적고 있을 거예요', ...ABOARD },
+  'reefer-crew': { work: '냉동 창고 온도를 확인하고 있을 거예요', eve: '휴게실에서 동료들과 카드놀이를 하고 있을 거예요', ...ABOARD },
   'ship-cook': { work: '선원들 밥을 짓고 있을 거예요', hours: [5, 19], eve: '설거지를 마치고 내일 장거리를 세고 있을 거예요', sleep: ABOARD.sleep },
-  'reefer-tech': { work: '냉동 컨테이너 전원을 하나씩 확인하고 있을 거예요', ...ABOARD },
+  'reefer-tech': { work: '냉동 컨테이너 전원을 하나씩 확인하고 있을 거예요', eve: '다음 항구에서 받을 부품 목록을 정리하고 있을 거예요', ...ABOARD },
   'lashing-worker': { work: '컨테이너를 쇠막대로 단단히 묶고 있을 거예요' },
-  'barge-crew': { work: '강물을 따라 바지선을 밀고 있을 거예요', ...ABOARD },
-  'tuna-fisher': { work: '갑판에서 낚싯줄을 감고 있을 거예요', ...ABOARD },
+  'barge-crew': { work: '강물을 따라 바지선을 밀고 있을 거예요', eve: '강가 불빛을 보며 저녁을 먹고 있을 거예요', ...ABOARD },
+  'tuna-fisher': { work: '갑판에서 낚싯줄을 감고 있을 거예요', eve: '낚싯바늘을 손질하며 동료와 이야기하고 있을 거예요', ...ABOARD },
   // 오징어는 밤에 집어등을 켜고 잡는다
   'distant-squid-fisher': { work: '집어등 불빛 아래서 오징어를 끌어올리고 있을 거예요', hours: [18, 5], eve: '잡은 오징어를 상자에 담아 얼리고 있을 거예요', sleep: '밤 조업을 앞두고 선실에서 자고 있을 거예요' },
   'ulleung-squid-fisher': { work: '불을 밝힌 배에서 오징어를 잡고 있을 거예요', hours: [18, 4], eve: '항구로 돌아와 오징어를 내리고 있을 거예요', sleep: '밤 조업을 앞두고 자고 있을 거예요' },
