@@ -50,7 +50,7 @@ onBeforeUnmount(() => cancelAnimationFrame(raf))
       <strong>또 만났어요</strong>
       <span> · {{ info.prev ? `${info.prev}에서도 만났던 분이에요` : '전에 만났던 분이에요' }}</span>
     </p>
-    <!-- 친해진 정도 %는 주민 5명 뒤에 열린다 -->
+    <!-- 친해진 정도 %는 여정 3번 뒤에 열린다 -->
     <div v-if="game.opens('friendship')" class="row">
       <span class="bar" aria-hidden="true"><span class="fill" :style="{ width: `${shown}%` }" /></span>
       <span class="pct mono">{{ shown }}%</span>

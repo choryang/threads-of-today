@@ -106,7 +106,7 @@ const introLine = ref('')
 
 async function loadVillageSocial() {
   introLine.value = await share.introNotice(game.nickname.value)
-  // 꽃은 주민 10명(초대·꽃 남기기) 열림 뒤에만
+  // 꽃은 여정 5번(초대·꽃 남기기) 열림 뒤에만
   if (!villageLink.link.value || !game.opens('flowers')) return
   await villageLink.refresh()
   flowers.value = await villageLink.flowers()

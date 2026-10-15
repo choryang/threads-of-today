@@ -8,7 +8,7 @@ const all = [
   { to: '/', label: '마을', also: ['/add', '/mystery', '/test', '/arrival', '/result', '/threads'], icon: 'M4 11 12 4l8 7v9a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z' },
   { to: '/dex', label: '도감', feature: 'dex' as const, icon: 'M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3zM5 17a3 3 0 0 1 3-3h11M9 8h6' },
 ]
-/** 도감 탭은 주민 5명 뒤에 열린다 (shared/unlocks.ts) */
+/** 도감 탭은 여정 3번 뒤에 열린다 (shared/unlocks.ts) */
 const items = computed(() => all.filter((item) => !('feature' in item && item.feature) || game.opens(item.feature)))
 const active = (item: { to: string; also?: string[] }) =>
   (item.to === '/' ? route.path === '/' : route.path.startsWith(item.to)) || !!item.also?.some((p) => route.path.startsWith(p))

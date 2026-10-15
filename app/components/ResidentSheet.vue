@@ -9,7 +9,7 @@ import { MOTION } from '../utils/motion'
 
 /**
  * 주민 카드: 마을에서 주민을 누르면 아래에서 올라온다. 단계별로 보인다 (shared/unlocks.ts):
- * 처음엔 이름·하는 일·이야기·고마워요만, 친해진 정도는 주민 5명, 다른 사람들의 고마움·모두의 오늘은 주민 10명, 소개하기는 첫 단짝 뒤
+ * 처음엔 이름·하는 일·이야기·고마워요만, 친해진 정도는 여정 3번, 다른 사람들의 고마움·모두의 오늘은 여정 5번, 소개하기는 첫 단짝 뒤
  */
 const props = defineProps<{ personId: string }>()
 const emit = defineEmits<{ close: [] }>()

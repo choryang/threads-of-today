@@ -20,15 +20,16 @@ const thanked = computed(() => game.thankedToday(props.personId))
 const reply = computed(() => (thanked.value ? thanksReply(props.personId) : ''))
 /**
  * 사람 카드는 단계별로 보인다 (shared/unlocks.ts): 처음엔 이름·하는 일·이야기·고마워요만.
- * 친해진 정도(등급 표시·일하는 사실)는 주민 5명, 다른 사람들의 고마움·모두의 오늘은 주민 10명, 소개하기는 첫 단짝 뒤.
+ * 등급 배지·일하는 사실은 여정 3번, 다른 사람들의 고마움·모두의 오늘은 여정 5번, 소개하기는 첫 단짝 뒤.
  * 친구가 소개해 준 분이라는 한 줄은 받은 쪽(링크)이라 늘 보인다
  */
-const showFriendship = computed(() => game.opens('friendship'))
+const showBadge = computed(() => game.opens('rarity-badge'))
+const showFact = computed(() => game.opens('work-fact'))
 const showOthers = computed(() => game.opens('others-thanks'))
 const showToday = computed(() => game.opens('today-count'))
 const showIntro = computed(() => game.opens('intro'))
 /** 일하는 사실은 친해진 정도 50%에 열린다 */
-const fact = computed(() => (met.value && showFriendship.value && game.friendship(props.personId).percent >= UNLOCK.fact ? factOf(props.personId) : undefined))
+const fact = computed(() => (met.value && showFact.value && game.friendship(props.personId).percent >= UNLOCK.fact ? factOf(props.personId) : undefined))
 
 // 다른 사람들의 고마움: 만난 사람 카드에서만, 열린 뒤에만 읽는다
 const gratitude = useGratitude()
@@ -69,7 +70,7 @@ onBeforeUnmount(() => clearTimeout(waveTimer))
   <article class="card" :class="`rarity-${person.rarity}`">
     <header class="top">
       <span class="mono no">{{ number ? `No.${String(number).padStart(3, '0')}` : place.country || '바다' }}</span>
-      <span v-if="showFriendship" class="badge">{{ badgeOf(person) }}</span>
+      <span v-if="showBadge" class="badge">{{ badgeOf(person) }}</span>
     </header>
     <div class="art">
       <Character :person-id="personId" :size="150" bob :wave="waving" />

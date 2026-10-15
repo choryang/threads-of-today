@@ -196,12 +196,12 @@ test('하루 여정 횟수 제한이 없어서 하루 여정 20개도 동기화�
 })
 
 test('본 알림(unlockSeen) 동기화: 합집합, 둘 다 없으면 없는 채로, 모르는 id는 버린다', () => {
-  const a: Save = { ...emptySave(), unlockSeen: ['residents-5'] }
-  const b: Save = { ...emptySave(), unlockSeen: ['second-journey', 'residents-5'] }
-  assert.deepEqual(mergeSaves(a, b, TODAY).unlockSeen?.sort(), ['residents-5', 'second-journey'])
-  assert.deepEqual(mergeSaves(emptySave(), b, TODAY).unlockSeen?.sort(), ['residents-5', 'second-journey'])
+  const a: Save = { ...emptySave(), unlockSeen: ['journeys-3'] }
+  const b: Save = { ...emptySave(), unlockSeen: ['second-journey', 'journeys-3'] }
+  assert.deepEqual(mergeSaves(a, b, TODAY).unlockSeen?.sort(), ['journeys-3', 'second-journey'])
+  assert.deepEqual(mergeSaves(emptySave(), b, TODAY).unlockSeen?.sort(), ['journeys-3', 'second-journey'])
   assert.equal(mergeSaves(emptySave(), emptySave(), TODAY).unlockSeen, undefined)
   assert.equal('unlockSeen' in mergeSaves(emptySave(), emptySave(), TODAY), false)
-  assert.deepEqual(sanitizeSave({ unlockSeen: ['residents-5', 'nope', 3, 'residents-5'] }, TODAY).unlockSeen, ['residents-5'])
+  assert.deepEqual(sanitizeSave({ unlockSeen: ['journeys-3', 'nope', 3, 'journeys-3'] }, TODAY).unlockSeen, ['journeys-3'])
   assert.equal(sanitizeSave({}, TODAY).unlockSeen, undefined)
 })
