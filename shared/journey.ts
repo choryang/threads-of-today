@@ -271,3 +271,76 @@ export function tailMeeting(idOf: (tail: string) => string, materialIds: string[
   }
   return null
 }
+
+// ── 핵심 인물 (docs/key-people.md): 여정마다 세 사람만 한 화면씩 깊게 만난다 ──
+
+/** 건너온 손 후보: 바다·항구·비행기 사람. 물류센터(warehouse)는 넣지 않는다 */
+export const HUBS = ['sea-crew', 'bulk-crew', 'tanker-crew', 'reefer-crew', 'busan-crane', 'incheon-port', 'air-cargo']
+
+/** start: 시작한 손(출발지) · cross: 건너온 손(이어 준 사람) · hand: 건네준 손(내 손에 닿게 한 사람) */
+export type KeySlot = 'start' | 'cross' | 'hand'
+export interface KeyPerson {
+  slot: KeySlot
+  personId: string
+}
+
+/**
+ * 이 여정의 핵심 인물. 첫 재료(물건의 정체를 정하는 재료) 경로에서 고른다.
+ * 1. 시작한 손: 첫 재료 경로의 첫 사람 (이번 출발지의 첫 사람)
+ * 2. 건너온 손: 경로에 HUBS가 있으면 그중 하나를 여정 id 시드로. 없으면(국내 여정) 창고 바로 앞의 가공하는 사람
+ * 3. 건네준 손: 여정 끝 가게 사람. 없으면 마지막 사람
+ * 같은 사람이 두 자리에 걸리면 그 자리의 다음 후보. 세 명이 안 되면 있는 만큼만.
+ * 정방향은 1 → 2 → 3, 거꾸로 가는 여정은 3 → 2 → 1. timeline은 buildTimeline의 결과(어느 방향이든)
+ */
+export function keyPeople(timeline: TimelineItem[], journeyId?: string): KeyPerson[] {
+  const reverse = isReverseJourney(journeyId)
+  // 정방향 순서로 되돌려서 판단한다 (거꾸로 가는 여정은 칸 순서만 뒤집혀 있다)
+  const stages = timeline.filter((t): t is Extract<TimelineItem, { type: 'stage' }> => t.type === 'stage')
+  const body = stages.filter((t) => !t.closing)
+  const closing = stages.filter((t) => t.closing)
+  const forwardBody = reverse ? groupForward(body) : body
+  const forwardClosing = reverse ? [...closing].reverse() : closing
+
+  const firstMaterial = forwardBody[0]?.materialId
+  const route = forwardBody.filter((t) => t.materialId === firstMaterial).map((t) => t.personId)
+  if (!route.length) return []
+
+  const hubs = route.filter((id) => HUBS.includes(id))
+  // 시드는 방향 꼬리('-r')를 뺀 id: 같은 여정을 어느 방향으로 보든 같은 사람
+  const seedId = (journeyId ?? '').replace(/-r(?=(-first|-second)?$)/, '')
+  const offset = hubs.length ? hash(`key-cross:${seedId}`) % hubs.length : 0
+  const rotatedHubs = [...hubs.slice(offset), ...hubs.slice(0, offset)]
+  const warehouseAt = route.indexOf('warehouse')
+  const processor = warehouseAt > 0 ? route[warehouseAt - 1] : route[route.length - 1]
+  const lastPerson = (forwardClosing.length ? forwardClosing : forwardBody).at(-1)?.personId
+
+  const candidates: Record<KeySlot, Array<string | undefined>> = {
+    start: route,
+    cross: hubs.length ? rotatedHubs : [processor],
+    // 가게 사람(맨 끝) → 사무실 사람 → 마지막 사람
+    hand: [...[...forwardClosing].reverse().map((t) => t.personId), forwardBody.at(-1)?.personId, lastPerson],
+  }
+  const used = new Set<string>()
+  const picked: KeyPerson[] = []
+  for (const slot of ['start', 'cross', 'hand'] as KeySlot[]) {
+    const personId = candidates[slot].find((id): id is string => !!id && !used.has(id))
+    if (!personId) continue
+    used.add(personId)
+    picked.push({ slot, personId })
+  }
+  return reverse ? picked.reverse() : picked
+}
+
+/** 거꾸로 가는 여정의 재료별 칸(재료마다 내 손 → 원산지)을 재료 순서는 두고 칸만 정방향으로 */
+function groupForward<T extends { materialId: string }>(items: T[]): T[] {
+  const order: string[] = []
+  const by = new Map<string, T[]>()
+  for (const t of items) {
+    if (!by.has(t.materialId)) {
+      by.set(t.materialId, [])
+      order.push(t.materialId)
+    }
+    by.get(t.materialId)!.push(t)
+  }
+  return order.flatMap((m) => [...by.get(m)!].reverse())
+}
