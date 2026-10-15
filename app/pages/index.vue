@@ -6,6 +6,7 @@ import { UNLOCK } from '../../shared/friendship'
 import { dayStats, withJosa } from '../../shared/logic'
 import { arrivalShort, isArrived, isWaiting } from '../../shared/incoming'
 import { villageShareTitle } from '../../shared/share'
+import type { UnlockStep } from '../../shared/unlocks'
 import { countriesOf, villageLayout, type Placed } from '../../shared/village'
 import { flowerLabel, newFlowerNotice, type Flower } from '../../shared/visit'
 import { MOTION } from '../utils/motion'
@@ -65,6 +66,27 @@ async function celebrateNext() {
 // 주민 카드에서 고마워요로 100%가 되면 카드를 닫았을 때 연출한다
 watch([bestFriends, open], () => { void celebrateNext() })
 
+// ── 새 기능 열림 알림 (shared/unlocks.ts): 한 번에 하나씩, 띄우는 순간 본 것으로 적는다(동기화 합집합) ──
+const unlockShown = ref<UnlockStep | null>(null)
+let unlockTimer: ReturnType<typeof setTimeout> | undefined
+onBeforeUnmount(() => clearTimeout(unlockTimer))
+function showNextUnlock() {
+  const next = game.unlockNotice.value
+  if (unlockShown.value || !next) return
+  unlockShown.value = next
+  game.markUnlockSeen(next.id)
+  clearTimeout(unlockTimer)
+  unlockTimer = setTimeout(closeUnlockNotice, MOTION.unlockNoticeMs)
+}
+function closeUnlockNotice() {
+  clearTimeout(unlockTimer)
+  unlockShown.value = null
+  // 한 번에 여러 개가 열렸으면 다음 것을 이어서 (닫히는 걸 본 뒤)
+  unlockTimer = setTimeout(showNextUnlock, MOTION.enterMs)
+}
+watch(() => game.unlockNotice.value?.id, () => showNextUnlock())
+onMounted(() => showNextUnlock())
+
 // ── 꽃: 친구들이 내 마을 주민에게 남긴 고마워요 ──
 const flowers = ref<Flower[]>([])
 const notice = ref<{ text: string; flowers: Flower[] } | null>(null)
@@ -84,7 +106,8 @@ const introLine = ref('')
 
 async function loadVillageSocial() {
   introLine.value = await share.introNotice(game.nickname.value)
-  if (!villageLink.link.value) return
+  // 꽃은 주민 10명(초대·꽃 남기기) 열림 뒤에만
+  if (!villageLink.link.value || !game.opens('flowers')) return
   await villageLink.refresh()
   flowers.value = await villageLink.flowers()
   // 마지막으로 본 뒤 새로 생긴 꽃은 한 번만 알린다
@@ -199,7 +222,8 @@ onMounted(async () => {
       :arriving-label="arrivingLabel"
       :percent-of="percentOf"
       :best-friends="bestFriends"
-      :flowers="flowers"
+      :show-workplaces="game.opens('workplace')"
+      :flowers="game.opens('flowers') ? flowers : []"
       @resident="open = $event"
       @flower="showFlower"
     />
@@ -229,9 +253,13 @@ onMounted(async () => {
               주민 {{ layout.residents.length }}명 · {{ countries.length }}개 나라에서 왔어요<template v-if="bestFriends.length"> · 단짝 {{ bestFriends.length }}명</template>
             </p>
             <p v-else class="sub">오늘 쓴 물건을 넣으면 그 물건을 거쳐 온 사람들이 마을에 와요</p>
-            <button v-if="layout.residents.length" class="invite" @click="invite">내 마을 초대하기</button>
+            <button v-if="layout.residents.length && game.opens('invite')" class="invite" @click="invite">내 마을 초대하기</button>
           </div>
         </header>
+        <button v-if="unlockShown" class="notice unlock-notice" role="status" @click="closeUnlockNotice">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="#F2C14E" stroke="#2A2A35" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.5l2.6 6.2 6.7.6-5.1 4.4 1.6 6.6L12 16.8l-5.8 3.5 1.6-6.6-5.1-4.4 6.7-.6z" /></svg>
+          <span>{{ unlockShown.notice }}</span>
+        </button>
         <button v-if="notice" class="notice" :aria-expanded="noticeOpen" @click="noticeOpen = !noticeOpen">
           <FlowerMark color="#F9B9C9" :size="28" />
           <span>{{ notice.text }}</span>
@@ -259,26 +287,31 @@ onMounted(async () => {
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
           </button>
           <h2 class="menu-title">마을 메뉴</h2>
-          <button class="item" @click="invite(); menuOpen = false">내 마을 초대하기</button>
+          <button v-if="game.opens('invite')" class="item" @click="invite(); menuOpen = false">내 마을 초대하기</button>
           <NuxtLink to="/test" class="item">나의 하루 유형 테스트</NuxtLink>
           <!-- 지난 기록: 오늘의 기록·나의 실타래·분해해 본 물건 (하단 탭에서 옮겨 왔다) -->
-          <NuxtLink to="/result" class="item">지난 기록</NuxtLink>
+          <NuxtLink v-if="game.opens('records')" to="/result" class="item">지난 기록</NuxtLink>
           <button v-if="game.allThanked.value" class="item" @click="menuOpen = false; game.replayEnding()">엔딩 다시 보기</button>
 
-          <h3 class="menu-sub">다녀온 마을</h3>
-          <NuxtLink v-for="v in visited" :key="v.token" :to="`/v/${v.token}`" class="item">{{ v.nickname }}님의 마을</NuxtLink>
-          <p v-if="!visited.length" class="hint">친구가 보낸 초대 링크를 열면 여기에 남아요</p>
+          <!-- 다녀온 마을은 링크로 간 곳이라 열림과 상관없이, 아직 없으면 초대가 열린 뒤에만 안내 -->
+          <template v-if="visited.length || game.opens('invite')">
+            <h3 class="menu-sub">다녀온 마을</h3>
+            <NuxtLink v-for="v in visited" :key="v.token" :to="`/v/${v.token}`" class="item">{{ v.nickname }}님의 마을</NuxtLink>
+            <p v-if="!visited.length" class="hint">친구가 보낸 초대 링크를 열면 여기에 남아요</p>
+          </template>
 
           <h3 class="menu-sub">설정</h3>
           <!-- 닉네임·다른 기기에서 이어 하기 (도감에서 옮겨 왔다) -->
           <NicknameEditor />
           <DeviceTransfer />
-          <label class="item toggle">
-            <span>마을 방문 받기</span>
-            <input type="checkbox" :checked="acceptVisits" :disabled="!villageLink.link.value" @change="villageLink.setOpen(($event.target as HTMLInputElement).checked)">
-          </label>
-          <button class="item" :disabled="!villageLink.link.value" @click="renewLink">초대 링크 새로 만들기</button>
-          <p class="hint">새로 만들면 이전에 보낸 링크는 열리지 않아요</p>
+          <template v-if="game.opens('invite')">
+            <label class="item toggle">
+              <span>마을 방문 받기</span>
+              <input type="checkbox" :checked="acceptVisits" :disabled="!villageLink.link.value" @change="villageLink.setOpen(($event.target as HTMLInputElement).checked)">
+            </label>
+            <button class="item" :disabled="!villageLink.link.value" @click="renewLink">초대 링크 새로 만들기</button>
+            <p class="hint">새로 만들면 이전에 보낸 링크는 열리지 않아요</p>
+          </template>
         </section>
       </div>
     </Teleport>
@@ -318,6 +351,7 @@ onMounted(async () => {
 }
 .notice svg { flex-shrink: 0; }
 .intro-notice { margin: 0; cursor: default; }
+.unlock-notice { border: 3px solid #2a2a35; background: #fff3cf; }
 .notice-list { margin: 0; padding: 10px 14px; list-style: none; border-radius: 16px; background: #f3f1ea; color: #1a1a22; display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
 .bottom {
   position: absolute; left: 12px; right: 12px; bottom: calc(84px + env(safe-area-inset-bottom)); max-width: 456px; margin: 0 auto;

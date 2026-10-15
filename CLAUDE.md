@@ -30,7 +30,7 @@ shared/                 앱과 서버가 상대 경로로 함께 import (Nuxt �
   data/dictionary.json  미리 만든 물건 사전 (scripts/build-dictionary.ts가 생성). 서버에서만 import
   data/dictionary-client.json 앱용 사전(한마디 하나만, scripts/build-client-dictionary.ts). 화면에서 바로 매칭할 때 쓴다
   safety.ts             looksFactual: AI 문구에 숫자·나라 이름이 섞였는지 검사
-  progress.ts           Save 타입, mergeSaves(카드·물건 합집합, 날짜 기록 30일, 사람별 기록 합집합·OR, 오고 있는 물건은 여정 id로·연 기록 유지, 단짝 연출 본 주민 bestSeen 합집합), sanitizeSave(서버 입력 검사)
+  progress.ts           Save 타입, mergeSaves(카드·물건 합집합, 날짜 기록 30일, 사람별 기록 합집합·OR, 오고 있는 물건은 여정 id로·연 기록 유지, 단짝 연출 본 주민 bestSeen 합집합, 본 열림 알림 unlockSeen 합집합·없으면 없는 채로), sanitizeSave(서버 입력 검사)
   friendship.ts         친해진 정도: 사람별 기록(metItems·gratitudeDays·quizCorrect)에서 퍼센트 계산(저장하지 않음), 열리는 단계,
                         출처 있는 사실(workFact)·퀴즈(한 재료에만 나오는 사람의 일의 크기 퀴즈), 예전 기록 마이그레이션
   nickname.ts           기본 닉네임 조합·normalizeNickname(1~12자)
@@ -47,6 +47,8 @@ shared/                 앱과 서버가 상대 경로로 함께 import (Nuxt �
                         링크를 만든 기기의 관리 키 해시만 저장. 복구 코드·사용자 id는 토큰·저장 값·응답·로그 어디에도 넣지 않는다
   visit.ts              마을에 놀러 가서 꽃 남기기: 꽃(닉네임·주민·날짜) 색(구역별)·하루 한 송이·새 꽃 알림 문구, 못 만난 주민의 힌트 물건(없으면 세트 보상: setRewardOf)
   intro.ts              사람 카드 소개: 정해진 문구 4개(맛있어서는 먹는 대표 물건만), 소개 화면의 사람 크기 사실(workFactHuman), 보낸 사람 알림 문구
+  unlocks.ts            기능을 여는 순서 (docs/screen-cleanup.md 표 그대로): 단계·조건(주민 수·마친 여정 수·첫 단짝)·알림 문구, 순수 판정 함수.
+                        화면은 game.opens(기능)만 보고 보여 준다. 본 알림은 Save.unlockSeen(합집합). 링크로 들어온 화면(/d·/p·/v)은 조건과 상관없이
   today.ts              모두의 오늘: 숫자 포맷, "오늘 1,203명이 이 분을 만났어요"·여정 끝 합 문구, 사람마다 하루 한 번만 보내기, 스냅샷(MEET_SNAPSHOT_MINUTES, 기본 30분)·스냅샷 뒤 내 몫 더하기
   cleanup.ts            날짜 키 청소 규칙: 기간 없이 두는 meet:*·thanks:day:* 중 어제보다 이전 것
   character-svg.ts      캐릭터 SVG 조립(순수 함수)과 피부색. 앱(app/utils/character.ts)과 OG 스크립트가 같이 쓴다

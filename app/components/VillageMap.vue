@@ -24,10 +24,12 @@ const props = withDefaults(defineProps<{
   percentOf?: (personId: string) => number
   /** 친해진 정도 100%(단짝)인 주민: 발밑 금색 빛, 머리 위 하트, 옆에 일터 자리 */
   bestFriends?: string[]
+  /** 단짝의 일터 자리를 보여 줄지 (내 마을은 첫 단짝 열림 뒤, 친구 마을은 늘) */
+  showWorkplaces?: boolean
   flowers?: Flower[]
   /** 방금 핀 꽃 (피는 연출) */
   bloomAt?: number
-}>(), { lots: () => [], arriving: () => [], bestFriends: () => [], flowers: () => [], bloomAt: 0 })
+}>(), { lots: () => [], arriving: () => [], bestFriends: () => [], showWorkplaces: true, flowers: () => [], bloomAt: 0 })
 
 const emit = defineEmits<{ resident: [id: string]; flower: [flower: Flower] }>()
 
@@ -94,7 +96,7 @@ const hitStyle = (p: Placed) => ({ left: `${p.x}px`, top: `${p.y}px`, zIndex: p.
 const best = computed(() => new Set(props.bestFriends))
 /** 단짝의 일터 자리 (그림이 아직 없어 점선 자리 + 일터 이름표) */
 const workplaces = computed(() =>
-  props.residents.filter((r) => best.value.has(r.id)).map((r) => ({ ...r, name: WORKPLACES[PEOPLE[r.id]!.workplace] })),
+  !props.showWorkplaces ? [] : props.residents.filter((r) => best.value.has(r.id)).map((r) => ({ ...r, name: WORKPLACES[PEOPLE[r.id]!.workplace] })),
 )
 
 /** 주민 발치에 최근 꽃 세 송이까지 */

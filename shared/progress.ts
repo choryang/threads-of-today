@@ -16,12 +16,14 @@
  *  - 내 마을 초대 링크(village): 더 나중에 바꾼 쪽. 꽃을 본 시각(seenAt)은 큰 쪽.
  *  - 다녀온 마을(visitedVillages): 토큰으로 합집합, 최근 30곳. 상대에게 알리지 않는다.
  *  - 단짝 연출을 본 주민(bestSeen): 합집합. 한 기기에서 본 연출은 다른 기기에서 다시 띄우지 않는다.
+ *  - 본 열림 알림(unlockSeen, shared/unlocks.ts): 합집합. 둘 다 없으면 없는 채로 둔다(기존 사용자를 조용히 여는 표시라서).
  */
 import { MATERIALS, SETS } from './data/materials'
 import { PEOPLE, PEOPLE_LIST } from './data/people'
 import { LOG_CAP, legacyMeeting, mergePersonLog } from './friendship'
 import { isManageKey, isToken } from './share'
 import { normalizeNickname } from './nickname'
+import { UNLOCK_STEP_IDS } from './unlocks'
 
 export type JourneySource = 'text' | 'photo' | 'pick' | 'mystery'
 
@@ -138,6 +140,11 @@ export interface Save {
   visitedVillages: VisitedVillage[]
   /** 친해진 정도 100%(단짝) 연출을 이미 본 주민 id */
   bestSeen: string[]
+  /**
+   * 이미 본 열림 알림 단계 id (shared/unlocks.ts). 없으면 이 기능 전의 기록이라, 처음 열 때 이미 넘은 단계를 조용히 연다(silentSeen).
+   * 그래서 emptySave에도 넣지 않고, 병합할 때 둘 다 없으면 없는 채로 둔다
+   */
+  unlockSeen?: string[]
   nickname?: Nickname
 }
 
@@ -279,6 +286,7 @@ export function mergeSaves(a: Save, b: Save, todayKey: string): Save {
     incoming: mergeIncoming(a.incoming ?? [], b.incoming ?? [], todayKey),
     visitedVillages: mergeVisited(a.visitedVillages ?? [], b.visitedVillages ?? []),
     bestSeen: union(a.bestSeen ?? [], b.bestSeen ?? []),
+    ...(a.unlockSeen || b.unlockSeen ? { unlockSeen: union(a.unlockSeen ?? [], b.unlockSeen ?? []) } : {}),
     ...(mergeVillage(a.village, b.village) ? { village: mergeVillage(a.village, b.village) } : {}),
     days: pickRecent(days, todayKey),
     mystery: pickRecent(mystery, todayKey),
@@ -368,6 +376,7 @@ export function sanitizeSave(raw: unknown, todayKey: string): Save {
       if (nickname && !s.visitedVillages.some((x) => x.token === v.token)) s.visitedVillages.push({ token: v.token, nickname, at: v.at })
     }
   }
+  if (Array.isArray(raw.unlockSeen)) s.unlockSeen = strList(raw.unlockSeen, UNLOCK_STEP_IDS.length).filter((id) => (UNLOCK_STEP_IDS as string[]).includes(id))
   s.bestSeen = strList(raw.bestSeen, PEOPLE_COUNT).filter((id) => PEOPLE[id] && PEOPLE[id]!.kind !== 'link')
   s.seenScenes = strList(raw.seenScenes, SETS.length + 1).filter((id) => id === 'ending' || SETS.some((set) => set.id === id))
   if (isObj(raw.items)) {

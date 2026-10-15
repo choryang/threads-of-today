@@ -13,6 +13,7 @@ import { FIRST_SUFFIX, REVERSE_SUFFIX, buildTimeline, firstJourneyGift, quizFor,
 import { addJourneyToThreads, backfillThreads } from '../../shared/threads'
 import { everyoneThanked, sceneKey, thanksReply, unseenScenes, type ThanksScene } from '../../shared/thanks'
 import { emptySave, type DayLog, type Journey, type JourneySource, type MysteryLog, type Save } from '../../shared/progress'
+import { isOpen, pendingNotices, silentSeen, unlockStats, type FeatureId, type UnlockStepId } from '../../shared/unlocks'
 
 export type { DayLog, Journey, JourneySource, MysteryLog, Save } from '../../shared/progress'
 
@@ -43,6 +44,8 @@ let state: Save | null = null
 function getState(): Save {
   if (state) return state
   const loaded = load()
+  // 열림 알림 기록이 없으면(새 사용자 또는 이 기능 전의 기록) 이미 넘은 단계는 조용히 연다
+  if (!loaded.unlockSeen) loaded.unlockSeen = silentSeen(loaded)
   // 첫 방문에는 기본 닉네임을 준다. updatedAt 0이라 다른 기기에서 직접 정한 닉네임이 있으면 그쪽이 이긴다
   if (!loaded.nickname) loaded.nickname = { value: randomNickname(), updatedAt: 0 }
   state = reactive(loaded) as Save
@@ -84,6 +87,8 @@ export function replaceSave(next: Save) {
   s.incoming = next.incoming ?? []
   s.visitedVillages = next.visitedVillages ?? []
   s.bestSeen = next.bestSeen ?? []
+  // 예전 기기에서 받은 기록이면 알림 기록이 없다: 지금 기록 기준으로 조용히 연다
+  s.unlockSeen = next.unlockSeen ?? silentSeen(next)
   if (next.village) s.village = next.village
   if (next.nickname) s.nickname = next.nickname
 }
@@ -368,6 +373,17 @@ export function useGame() {
     return true
   }
 
+  // ── 기능 열림 (shared/unlocks.ts의 표만 본다) ──
+  const unlocks = computed(() => unlockStats(s))
+  /** 이 기능을 보여 줄지. 링크로 들어온 화면(/d, /p, /v)은 이 함수를 쓰지 않는다 */
+  const opens = (feature: FeatureId) => isOpen(feature, unlocks.value)
+  /** 새로 열렸는데 아직 안 본 알림 하나 (표 순서로 하나씩) */
+  const unlockNotice = computed(() => pendingNotices(unlocks.value, s.unlockSeen ?? [])[0] ?? null)
+  function markUnlockSeen(id: UnlockStepId) {
+    if (!s.unlockSeen) s.unlockSeen = []
+    if (!s.unlockSeen.includes(id)) s.unlockSeen.push(id)
+  }
+
   return {
     state: s,
     nickname,
@@ -400,5 +416,9 @@ export function useGame() {
     allThanked,
     replayEnding,
     showUnseenScenes,
+    unlocks,
+    opens,
+    unlockNotice,
+    markUnlockSeen,
   }
 }

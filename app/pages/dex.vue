@@ -61,7 +61,8 @@ const metLabel = computed(() => `${withJosa(game.nickname.value, '이', '가')} 
       <div class="bar" aria-hidden="true"><span :style="{ width: `${percent}%` }" /></div>
     </header>
 
-    <section aria-label="세트">
+    <!-- 세트는 주민 20명 뒤에 열린다 (shared/unlocks.ts) -->
+    <section v-if="game.opens('sets')" aria-label="세트">
       <h2 class="h2">세트 모으기</h2>
       <div class="sets">
         <div v-for="{ set, owned, complete } in sets" :key="set.id" class="set panel" :class="{ complete }">
