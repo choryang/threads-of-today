@@ -4,7 +4,7 @@ import { MATERIALS, PRODUCTS } from '../../../shared/data/materials'
 import { PEOPLE } from '../../../shared/data/people'
 import { PLACES } from '../../../shared/data/places'
 import { EVENTS } from '../../../shared/data/journey-extras'
-import { buildTimeline, forwardTimeline, isReverseJourney, optionOrder, quizFor, reverseTimeline } from '../../../shared/journey'
+import { buildTimeline, forwardTimeline, isKeyJourney, isReverseJourney, journeyScreens, optionOrder, quizFor, reverseTimeline, screenPeople, type KeySlot } from '../../../shared/journey'
 import { cargoName, departureLine, transportOf } from '../../../shared/incoming'
 import { dayStats, withJosa } from '../../../shared/logic'
 import { formatKm, reverseDistances, roundKm } from '../../../shared/distance'
@@ -22,9 +22,13 @@ const router = useRouter()
 const game = useGame()
 const journey = computed(() => game.findJourney(String(route.params.id)))
 const timeline = computed(() => (journey.value ? buildTimeline(journey.value.materialIds, journey.value.id, journey.value.name) : []))
-const current = computed(() => (journey.value ? timeline.value[journey.value.step] : undefined))
+/** 핵심 인물 여정('-k' id): 타임라인 칸 대신 화면 목록(시작 → 핵심 인물 셋, 그 사이는 묶음 칸)을 한 칸씩. 예전 여정은 타임라인 그대로 */
+const isKey = computed(() => isKeyJourney(journey.value?.id))
+const screens = computed(() => (journey.value && isKey.value ? journeyScreens(journey.value.materialIds, journey.value.id, journey.value.name) : []))
+const steps = computed(() => (isKey.value ? screens.value : timeline.value))
+const current = computed(() => (journey.value ? steps.value[journey.value.step] : undefined))
 const voice = computed(() => renderVoice(journey.value?.voice, game.nickname.value))
-const isLast = computed(() => !!journey.value && journey.value.step >= timeline.value.length - 1)
+const isLast = computed(() => !!journey.value && journey.value.step >= steps.value.length - 1)
 /** 내 손에서 원산지로 거슬러 올라가는 여정 ('-r' id). 예전 여정은 예전 순서 그대로 */
 const reverse = computed(() => isReverseJourney(journey.value?.id))
 const reduced = reducedMotion()
@@ -46,23 +50,51 @@ function metAgain(cardId: string) {
   return `${withJosa(p?.name ?? jobOf(linkPersonOf(cardId) ?? ''), '을', '를')} 또 만났어요!`
 }
 
-const progressPct = computed(() => (journey.value && timeline.value.length ? ((journey.value.step + 1) / timeline.value.length) * 100 : 0))
+const progressPct = computed(() => (journey.value && steps.value.length ? ((journey.value.step + 1) / steps.value.length) * 100 : 0))
 
+/** 지금 칸의 재료 (시작 화면·묶음 칸은 없음) */
+const currentMaterialId = computed(() => (current.value && 'materialId' in current.value ? current.value.materialId : undefined))
 const materialIndex = computed(() => {
-  const mid = current.value?.materialId
+  const mid = currentMaterialId.value
   return mid ? journey.value!.materialIds.indexOf(mid) : -1
 })
-const material = computed(() => (current.value ? MATERIALS[current.value.materialId] : undefined))
+const material = computed(() => (currentMaterialId.value ? MATERIALS[currentMaterialId.value] : undefined))
 /** 거꾸로 가는 여정에서 가게·사무실 사람 칸 (재료가 갈라지기 전, 내 손 가까이) */
 const atClosing = computed(() => reverse.value && current.value?.type === 'stage' && !!current.value.closing)
-const barSub = computed(() =>
-  atClosing.value ? '내 손 가까이' : `재료 ${materialIndex.value + 1}/${journey.value?.materialIds.length ?? 0} · ${material.value?.name ?? ''}`,
-)
+const SLOT_LABEL: Record<KeySlot, string> = { start: '시작한 손', cross: '건너온 손', hand: '건네준 손' }
+const barSub = computed(() => {
+  if (isKey.value) {
+    const t = current.value
+    if (t?.type === 'key') return SLOT_LABEL[t.slot]
+    if (t?.type === 'group') return '그리고 이 사람들도요'
+    if (t?.type === 'quiz') return '퀴즈'
+    if (t?.type === 'hidden') return '숨은 만남'
+    return '여정 시작'
+  }
+  return atClosing.value ? '내 손 가까이' : `재료 ${materialIndex.value + 1}/${journey.value?.materialIds.length ?? 0} · ${material.value?.name ?? ''}`
+})
+/** 오른쪽 위 숫자: 핵심 인물 화면은 1/3·2/3·3/3, 예전 여정은 칸 번호 */
+const counter = computed(() => {
+  const t = current.value
+  if (isKey.value) return t?.type === 'key' ? `${t.index}/${t.total}` : ''
+  return `${(journey.value?.step ?? 0) + 1}/${timeline.value.length}`
+})
+
+// ── 핵심 인물 여정의 시작 화면: 세 사람(화면에 나오는 순서)과 그 밖에 거쳐 온 사람 수 ──
+const keyIds = computed(() => screens.value.flatMap((t) => (t.type === 'key' ? [t.personId] : [])))
+const otherHands = computed(() => {
+  const all = new Set(screens.value.flatMap((t) => (t.type === 'group' ? t.personIds : [])))
+  return all.size
+})
+/** 이 사람을 핵심 자리에서 만난 횟수 (이번 포함). 여러 편 있는 이야기의 몇 번째 편인지 */
+function keyMeetCount(_personId: string) {
+  return 1
+}
 
 // ── 되감기 변신: 칸마다 물건의 형태 ──
 const forms = computed(() => (journey.value ? formsAlong(timeline.value, journey.value.materialIds, journey.value.id, journey.value.name) : []))
 const currentForm = computed(() => forms.value[journey.value?.step ?? 0])
-const kicker = computed(() => (reverse.value && journey.value ? reverseKicker(timeline.value, forms.value, journey.value.step) : ''))
+const kicker = computed(() => (reverse.value && !isKey.value && journey.value ? reverseKicker(timeline.value, forms.value, journey.value.step) : ''))
 
 // ── 거리 계산기: 내 손에서 거슬러 올라간 거리. 예전 여정은 같은 여정을 뒤집어서 잰다 ──
 const distances = computed(() => {
@@ -73,7 +105,7 @@ const distances = computed(() => {
 const kmSoFar = computed(() => (reverse.value && journey.value ? distances.value.at[journey.value.step] ?? 0 : 0))
 
 // ── 다음 정거장 맞히기: 항구·바다 칸에서 보기 2개. 맞히면 반짝임만, 보상 없음. 저장하지 않는다 ──
-const stop = computed(() => (reverse.value && journey.value && current.value?.type === 'stage' ? stopQuestion(timeline.value, journey.value.step, journey.value.id) : null))
+const stop = computed(() => (reverse.value && !isKey.value && journey.value && current.value?.type === 'stage' ? stopQuestion(timeline.value, journey.value.step, journey.value.id) : null))
 const stopPick = ref<number | null>(null)
 watch(() => journey.value?.step, () => { stopPick.value = null })
 
@@ -174,7 +206,11 @@ function next() {
 
 const nextLabel = computed(() => {
   if (isLast.value) return reverse.value ? '이제 다시 내 손까지' : '여정 마치기'
-  const after = timeline.value[(journey.value?.step ?? 0) + 1]
+  const after = steps.value[(journey.value?.step ?? 0) + 1]
+  if (isKey.value) {
+    if (current.value?.type === 'intro') return '만나러 가기'
+    return screenPeople(after).length ? '다음 사람' : '다음'
+  }
   const person = after?.type === 'stage' || after?.type === 'hidden' || after?.type === 'pass'
   if (reverse.value) return person ? '그 전으로' : '다음'
   return person ? '다음 사람 만나기' : '다음'
@@ -205,8 +241,7 @@ watch(
 const nextPerson = computed(() => {
   const j = journey.value
   if (!j) return ''
-  const t = timeline.value.slice(j.step + 1).find((x) => x.type === 'stage' || x.type === 'hidden')
-  return t?.type === 'stage' || t?.type === 'hidden' ? t.personId : ''
+  return steps.value.slice(j.step + 1).flatMap((x) => screenPeople(x))[0] ?? ''
 })
 watch(nextPerson, (id) => {
   const p = id ? PEOPLE[id] : undefined
@@ -400,6 +435,9 @@ function followTeaser(p: Product) {
         <NuxtLink to="/add" class="text-btn">다른 물건 고르기</NuxtLink>
       </div>
 
+      <!-- 핵심 인물 이야기는 직접 지어낸 이야기 (docs/key-people.md) -->
+      <p v-if="isKey" class="fiction-note">이야기 속 사람들은 실제 일을 바탕으로 지어낸 사람이에요.</p>
+
       <!-- 추천을 따라와 다시 만난 사람: 평소 연결 카드보다 크게 -->
       <div v-if="reunionCard && reunionOpen" class="reunion-wrap" role="dialog" aria-modal="true" aria-labelledby="reunion-title">
         <div class="reunion">
@@ -425,14 +463,14 @@ function followTeaser(p: Product) {
           <span class="name">{{ journey.name }}</span>
           <span class="mono muted small">{{ barSub }}</span>
         </div>
-        <span class="mono muted small">{{ journey.step + 1 }}/{{ timeline.length }}</span>
+        <span class="mono muted small">{{ counter }}</span>
       </header>
 
       <div class="progress" aria-hidden="true">
         <span :style="{ width: `${progressPct}%` }" />
       </div>
 
-      <ol ref="facesEl" class="faces" aria-label="지금까지 만난 사람">
+      <ol v-if="!isKey" ref="facesEl" class="faces" aria-label="지금까지 만난 사람">
         <li v-for="(pid, i) in metFaces" :key="pid + i" class="face" :class="{ now: i === metFaces.length - 1 }">
           <Character :person-id="pid" :size="36" />
           <span class="sr-only">{{ jobOf(pid) }}</span>
@@ -440,12 +478,12 @@ function followTeaser(p: Product) {
         <li v-if="hasNext" class="face next-face" aria-label="다음 사람">?</li>
       </ol>
 
-      <div v-if="reverse && currentForm" class="rewind">
+      <div v-if="reverse && !isKey && currentForm" class="rewind">
         <FormBadge :form="currentForm" :product-id="productId" label="지금 모습" />
         <p v-if="roundKm(kmSoFar)" class="km">벌써 약 <strong class="mono">{{ formatKm(kmSoFar) }}</strong>km를 거슬러 왔어요</p>
       </div>
 
-      <ol v-if="!atClosing" class="route" aria-label="경유지">
+      <ol v-if="!isKey && !atClosing" class="route" aria-label="경유지">
         <li v-for="(stop, i) in routeStops" :key="stop.pid + i" :class="{ reached: stop.reached, here: stop.here }">
           <span class="dot" />
           <span class="label">{{ stop.reached ? stop.label : '?' }}</span>
@@ -460,7 +498,18 @@ function followTeaser(p: Product) {
         @pointerup="onPointerUp"
         @pointercancel="onPointerCancel"
       >
-        <section v-if="current.type === 'stage'" class="stage">
+        <!-- 핵심 인물 여정: 시작 화면 · 핵심 인물 · 그리고 이 사람들도요 -->
+        <KeyIntro v-if="current.type === 'intro'" :people="keyIds" :item-name="journey.name" :more="otherHands" />
+        <KeyPerson
+          v-else-if="current.type === 'key'"
+          :key="`key-${journey.step}`"
+          :person-id="current.personId"
+          :meet-count="keyMeetCount(current.personId)"
+          :is-new="journey.newCards.includes(current.personId)"
+        />
+        <KeyGroup v-else-if="current.type === 'group'" :person-ids="current.personIds" :new-ids="journey.newCards" />
+
+        <section v-else-if="current.type === 'stage'" class="stage">
           <p v-if="kicker" class="kicker-q">{{ kicker }}</p>
           <!-- 건네기: 지금 사람이 앞사람에게서 물건을 받아 든다 -->
           <span v-if="reverse && currentForm && (currentForm.icon || currentForm.product) && !reduced" class="handover" aria-hidden="true">
@@ -697,6 +746,7 @@ function followTeaser(p: Product) {
 .touched strong { color: var(--accent); font-size: 22px; font-weight: 500; }
 
 .departed { margin: 0; text-align: center; font-size: 14px; font-weight: 700; color: var(--accent); word-break: keep-all; }
+.fiction-note { margin: 0; text-align: center; font-size: 12px; color: var(--faint); word-break: keep-all; }
 .text-btn {
   align-self: center; min-height: 44px; padding: 0 12px; border: 0; background: none; color: var(--text);
   display: inline-flex; align-items: center; justify-content: center;

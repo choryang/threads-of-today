@@ -5,7 +5,7 @@ import { seoulDateKey, type Decomposed } from '../../shared/logic'
 import type { Journey, JourneySource } from '../composables/useGame'
 import { PEOPLE } from '../../shared/data/people'
 import { PLACES } from '../../shared/data/places'
-import { buildTimeline } from '../../shared/journey'
+import { journeySteps, screenPeople } from '../../shared/journey'
 import { shrinkImage } from '../utils/image'
 import { matchLocal } from '../utils/local-match'
 import { productIconSvg } from '../utils/product-icon'
@@ -63,17 +63,17 @@ const trips = computed(() => {
 /** 여정마다 지금 위치(나라 또는 '바다 위')와 몇 번째 장면인지 */
 function tripStatus(j: Journey): { where: string; left: string; state: 'arrived' | 'quiz' | 'moving' } {
   if (j.done) return { where: '', left: '도착했어요', state: 'arrived' }
-  const timeline = buildTimeline(j.materialIds, j.id, j.name)
+  const timeline = journeySteps(j.materialIds, j.id, j.name)
   const item = timeline[j.step]
   if (item?.type === 'quiz' && j.quiz[item.materialId] === undefined) return { where: '', left: '퀴즈가 기다리고 있어요', state: 'quiz' }
   return { where: whereAt(timeline, j.step), left: `${j.step + 1}/${timeline.length} · 이어 보기`, state: 'moving' }
 }
 
 /** index 칸에서 물건이 있는 곳. 이야기·퀴즈 칸은 바로 앞 사람의 자리 */
-function whereAt(timeline: ReturnType<typeof buildTimeline>, index: number): string {
+function whereAt(timeline: ReturnType<typeof journeySteps>, index: number): string {
   for (let i = Math.min(index, timeline.length - 1); i >= 0; i--) {
     const t = timeline[i]!
-    const personId = t.type === 'stage' || t.type === 'hidden' ? t.personId : t.type === 'pass' ? t.personIds[t.personIds.length - 1] : undefined
+    const personId = screenPeople(t).at(-1)
     if (!personId) continue
     const place = PLACES[PEOPLE[personId]?.placeId ?? '']
     return place?.continent === 'sea' ? '바다 위' : place?.country ?? ''

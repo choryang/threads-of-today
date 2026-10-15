@@ -1,6 +1,20 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { HUBS, buildTimeline, forwardTimeline, keyPeople, type TimelineItem } from '../shared/journey'
+import {
+  HUBS,
+  buildTimeline,
+  forwardTimeline,
+  isFirstJourney,
+  isKeyJourney,
+  isReverseJourney,
+  isSecondJourney,
+  journeyScreens,
+  journeySteps,
+  keyPeople,
+  screenPeople,
+  timelinePeople,
+  type TimelineItem,
+} from '../shared/journey'
 import { MATERIALS } from '../shared/data/materials'
 
 const shopOf = (timeline: TimelineItem[]) => timeline.filter((t) => t.type === 'stage' && t.closing).map((t) => (t as { personId: string }).personId)
@@ -63,4 +77,41 @@ test('같은 사람이 두 자리에 걸리면 다음 후보, 모자라면 있�
   ]
   assert.deepEqual(keyPeople(timeline).map((k) => k.personId), ['rice-farmer', 'rice-mill'])
   assert.deepEqual(keyPeople([]), [])
+})
+
+test('핵심 인물 여정 화면: 시작 → 핵심 인물 셋, 사이 사람은 묶음 칸, 모든 사람이 어느 칸엔가 나온다', () => {
+  for (const [materialIds, name] of [[['coffee', 'plastic'], '아이스 아메리카노'], [['rice', 'laver', 'tuna', 'plastic'], '참치마요 삼각김밥']] as const) {
+    for (let i = 0; i < 60; i++) {
+      for (const tail of ['-k', '-r-k', '-r-k-first', '-r-k-second']) {
+        const id = `2026-10-15-1-s${i.toString(36)}${tail}`
+        assert.ok(isKeyJourney(id), id)
+        const screens = journeyScreens([...materialIds], id, name)
+        assert.equal(screens[0]!.type, 'intro')
+        assert.ok(!screens.some((t) => (t as { type: string }).type === 'event'), '이야기 칸은 없다')
+        const keys = screens.filter((t) => t.type === 'key')
+        assert.deepEqual(keys.map((k) => k.personId), keyPeople(buildTimeline([...materialIds], id, name), id).map((k) => k.personId))
+        assert.deepEqual(keys.map((k) => (k as { index: number }).index), [1, 2, 3])
+        // 타임라인의 모든 사람(가게·숨은 만남 포함)이 화면 어딘가에서 카드를 받는다
+        const want = new Set(timelinePeople([...materialIds], id, name).map((p) => p.personId))
+        const got = new Set(screens.flatMap((t) => screenPeople(t)))
+        assert.deepEqual([...want].filter((p) => !got.has(p)), [], id)
+        // 핵심 인물 사이에서는 묶음 칸이 퀴즈·숨은 만남보다 앞
+        let extraSeen = false
+        for (const t of screens) {
+          if (t.type === 'key') extraSeen = false
+          else if (t.type === 'quiz' || t.type === 'hidden') extraSeen = true
+          else if (t.type === 'group') assert.ok(!extraSeen, `${id}: 퀴즈 뒤에 묶음 칸`)
+        }
+      }
+    }
+  }
+})
+
+test("'-k'가 없는 예전 여정은 타임라인 그대로", () => {
+  const id = '2026-10-15-1-abcd-r'
+  assert.equal(isKeyJourney(id), false)
+  assert.deepEqual(journeySteps(['coffee'], id, '아이스 아메리카노'), buildTimeline(['coffee'], id, '아이스 아메리카노'))
+  assert.ok(isReverseJourney('2026-10-15-1-abcd-r-k-first'))
+  assert.ok(isFirstJourney('2026-10-15-1-abcd-r-k-first'))
+  assert.ok(isSecondJourney('2026-10-15-1-abcd-r-k-second'))
 })

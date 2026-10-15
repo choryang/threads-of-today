@@ -38,24 +38,33 @@ export type TimelineItem =
   /** 거꾸로 가는 여정에서 앞 재료와 같은 길(이미 만난 사람들)을 한 칸으로 줄인 것 */
   | { type: 'pass'; materialId: string; personIds: string[] }
 
-const NEW_ID = /^\d{4}-\d{2}-\d{2}-\d+-[0-9a-z]+(-r)?(-first|-second)?$/
+const NEW_ID = /^\d{4}-\d{2}-\d{2}-\d+-[0-9a-z]+(-r)?(-k)?(-first|-second)?$/
 /** 사용자의 첫 여정 id 꼬리 */
 export const FIRST_SUFFIX = '-first'
 /** 사용자의 두 번째 여정 id 꼬리 */
 export const SECOND_SUFFIX = '-second'
 /** 거꾸로 가는 여정 id 꼬리. 첫 여정이면 '-r-first' */
 export const REVERSE_SUFFIX = '-r'
+/**
+ * 핵심 인물 여정 id 꼬리('-r-k', '-r-k-first'). 이 꼬리가 붙은 여정은 타임라인 칸 대신 화면 목록(journeyScreens)을 한 칸씩 간다:
+ * 시작 화면 → 핵심 인물 세 사람 → 그 사이 사람들은 묶음 칸 하나. 여정 이벤트는 없다. 이 꼬리가 없는 예전 여정은 예전 칸 그대로
+ */
+export const KEY_SUFFIX = '-k'
 
 export function isFirstJourney(journeyId?: string): boolean {
-  return !!journeyId && /^\d{4}-\d{2}-\d{2}-\d+-[0-9a-z]+(-r)?-first$/.test(journeyId)
+  return !!journeyId && /^\d{4}-\d{2}-\d{2}-\d+-[0-9a-z]+(-r)?(-k)?-first$/.test(journeyId)
 }
 
 export function isSecondJourney(journeyId?: string): boolean {
-  return !!journeyId && /^\d{4}-\d{2}-\d{2}-\d+-[0-9a-z]+(-r)?-second$/.test(journeyId)
+  return !!journeyId && /^\d{4}-\d{2}-\d{2}-\d+-[0-9a-z]+(-r)?(-k)?-second$/.test(journeyId)
 }
 
 export function isReverseJourney(journeyId?: string): boolean {
-  return !!journeyId && /^\d{4}-\d{2}-\d{2}-\d+-[0-9a-z]+-r(-first|-second)?$/.test(journeyId)
+  return !!journeyId && /^\d{4}-\d{2}-\d{2}-\d+-[0-9a-z]+-r(-k)?(-first|-second)?$/.test(journeyId)
+}
+
+export function isKeyJourney(journeyId?: string): boolean {
+  return !!journeyId && /^\d{4}-\d{2}-\d{2}-\d+-[0-9a-z]+(-r)?-k(-first|-second)?$/.test(journeyId)
 }
 
 /**
@@ -307,7 +316,7 @@ export function keyPeople(timeline: TimelineItem[], journeyId?: string): KeyPers
 
   const hubs = route.filter((id) => HUBS.includes(id))
   // 시드는 방향 꼬리('-r')를 뺀 id: 같은 여정을 어느 방향으로 보든 같은 사람
-  const seedId = (journeyId ?? '').replace(/-r(?=(-first|-second)?$)/, '')
+  const seedId = (journeyId ?? '').replace(/-r(?=(-k)?(-first|-second)?$)/, '')
   const offset = hubs.length ? hash(`key-cross:${seedId}`) % hubs.length : 0
   const rotatedHubs = [...hubs.slice(offset), ...hubs.slice(0, offset)]
   const warehouseAt = route.indexOf('warehouse')
@@ -343,4 +352,84 @@ function groupForward<T extends { materialId: string }>(items: T[]): T[] {
     by.get(t.materialId)!.push(t)
   }
   return order.flatMap((m) => [...by.get(m)!].reverse())
+}
+
+// ── 핵심 인물 여정의 화면 목록 ──
+
+export type ScreenItem =
+  /** 시작 화면: 세 사람의 그곳 시각 */
+  | { type: 'intro' }
+  /** 핵심 인물 한 사람. index는 화면에 보이는 순서(1부터), total은 핵심 인물 수 */
+  | { type: 'key'; materialId: string; personId: string; slot: KeySlot; index: number; total: number }
+  /** 그리고 이 사람들도요: 핵심 인물 사이에 있던 사람들 (이 여정에서 처음 나오는 사람만) */
+  | { type: 'group'; personIds: string[] }
+  | Extract<TimelineItem, { type: 'hidden' | 'quiz' }>
+
+/**
+ * 핵심 인물 여정의 화면 목록 (docs/key-people.md). 타임라인 순서(정방향·거꾸로)를 따라가며
+ * 핵심 인물 칸 앞에 그 사이 사람들을 묶음 칸 하나로, 그 뒤에 퀴즈·숨은 만남을 둔다. 마지막 핵심 인물 뒤에 남은 사람·퀴즈도 같은 방식.
+ * 여정 이벤트는 넣지 않는다. 카드는 칸마다 그 칸의 사람을 받는다(screenPeople): 타임라인의 모든 사람이 어느 칸엔가 들어간다
+ */
+export function journeyScreens(materialIds: string[], journeyId?: string, itemName?: string): ScreenItem[] {
+  const timeline = buildTimeline(materialIds, journeyId, itemName)
+  const keys = keyPeople(timeline, journeyId)
+  const reverse = isReverseJourney(journeyId)
+  const firstMaterial = timeline.find((t) => t.type === 'stage' && !t.closing)?.materialId
+
+  // 핵심 인물이 서는 타임라인 칸
+  const keyAt = new Map<number, KeyPerson>()
+  for (const k of keys) {
+    const spots = timeline.flatMap((t, i) => (t.type === 'stage' && t.personId === k.personId && !keyAt.has(i) ? [i] : []))
+    const isClosing = (i: number) => timeline[i]?.type === 'stage' && !!(timeline[i] as { closing?: true }).closing
+    let at: number | undefined
+    if (k.slot === 'hand') at = spots.find(isClosing) ?? (reverse ? spots[0] : spots.at(-1))
+    else at = spots.find((i) => timeline[i]!.materialId === firstMaterial && !isClosing(i)) ?? spots[0]
+    if (at !== undefined) keyAt.set(at, k)
+  }
+  const keyIds = new Set(keys.map((k) => k.personId))
+
+  const out: ScreenItem[] = [{ type: 'intro' }]
+  const shown = new Set<string>()
+  let people: string[] = []
+  let extras: ScreenItem[] = []
+  const flush = () => {
+    const fresh = people.filter((id) => !keyIds.has(id) && !shown.has(id))
+    const unique = [...new Set(fresh)]
+    if (unique.length) {
+      out.push({ type: 'group', personIds: unique })
+      unique.forEach((id) => shown.add(id))
+    }
+    out.push(...extras)
+    people = []
+    extras = []
+  }
+  let index = 0
+  timeline.forEach((t, i) => {
+    const k = keyAt.get(i)
+    if (k && t.type === 'stage') {
+      flush()
+      out.push({ type: 'key', materialId: t.materialId, personId: k.personId, slot: k.slot, index: ++index, total: keys.length })
+      shown.add(k.personId)
+      return
+    }
+    if (t.type === 'stage') people.push(t.personId)
+    else if (t.type === 'pass') people.push(...t.personIds)
+    else if (t.type === 'hidden' || t.type === 'quiz') extras.push(t)
+    // 여정 이벤트(이야기 칩)는 핵심 인물 이야기로 대신한다
+  })
+  flush()
+  return out
+}
+
+/** 그 칸에서 만나는(카드를 받는) 사람 */
+export function screenPeople(item: ScreenItem | TimelineItem | undefined): string[] {
+  if (!item) return []
+  if (item.type === 'key' || item.type === 'hidden' || item.type === 'stage') return [item.personId]
+  if (item.type === 'group' || item.type === 'pass') return item.personIds
+  return []
+}
+
+/** 이 여정이 한 칸씩 가는 목록: 핵심 인물 여정은 화면 목록, 예전 여정은 타임라인 */
+export function journeySteps(materialIds: string[], journeyId?: string, itemName?: string): Array<ScreenItem | TimelineItem> {
+  return isKeyJourney(journeyId) ? journeyScreens(materialIds, journeyId, itemName) : buildTimeline(materialIds, journeyId, itemName)
 }

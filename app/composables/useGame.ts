@@ -9,7 +9,7 @@ import { addGratitude, addMeeting, friendshipOf, migratePeople, quizOf, UNLOCK }
 import { createIncoming } from '../../shared/incoming'
 import { mysteryHints } from '../../shared/mystery'
 import { normalizeNickname, randomNickname } from '../../shared/nickname'
-import { REVERSE_SUFFIX, buildTimeline, journeyOrderSuffix, quizFor, secondJourneyGift, tailMeeting, timelinePeople } from '../../shared/journey'
+import { KEY_SUFFIX, REVERSE_SUFFIX, buildTimeline, journeySteps, journeyOrderSuffix, quizFor, screenPeople, secondJourneyGift, tailMeeting, timelinePeople } from '../../shared/journey'
 import { addJourneyToThreads, backfillThreads } from '../../shared/threads'
 import { villagers } from '../../shared/village'
 import { everyoneThanked, sceneKey, thanksReply, unseenScenes, type ThanksScene } from '../../shared/thanks'
@@ -208,12 +208,13 @@ export function useGame() {
   function startJourney(item: Decomposed, source: JourneySource, opts: { teaser?: string; meet?: string } = {}): Journey {
     const day = ensureToday()
     const head = `${todayKey}-${day.journeys.length + 1}-`
-    const tailEnd = `${REVERSE_SUFFIX}${journeyOrderSuffix(firstVisit.value, Object.values(s.days).flatMap((d) => d.journeys.map((j) => j.id)))}`
+    const tailEnd = `${REVERSE_SUFFIX}${KEY_SUFFIX}${journeyOrderSuffix(firstVisit.value, Object.values(s.days).flatMap((d) => d.journeys.map((j) => j.id)))}`
     const salt = Math.random().toString(36).slice(2, 6)
     const meetTail = opts.meet ? tailMeeting((tail) => `${head}${tail}${tailEnd}`, item.materialIds, item.name, opts.meet, salt) : null
     const journey: Journey = {
       // 여러 기기의 기록을 합칠 때 겹치지 않게 무작위 꼬리를 붙인다 (앞 10글자는 날짜, '-꼬리'가 있으면 새 여정 규칙을 쓴다)
       // '-r': 내 손에서 원산지로 거슬러 올라가는 여정. 이 꼬리가 없는 예전 여정은 예전 순서 그대로 끝난다
+      // '-k': 핵심 인물 세 사람만 깊게 만나는 화면 목록(journeyScreens)으로 간다. 이 꼬리가 없는 예전 여정은 타임라인 칸 그대로
       // 첫 여정에는 '-first'(사람 카드만), 두 번째 여정에는 '-second'(숨은 만남 또는 퀴즈 보상 보장)를 더 붙인다 (shared/journey.ts)
       id: `${head}${meetTail ?? salt}${tailEnd}`,
       name: item.name,
@@ -230,8 +231,8 @@ export function useGame() {
     day.journeys.push(journey)
     if (!s.items[item.name]) s.items[item.name] = todayKey
     const saved = day.journeys[day.journeys.length - 1]!
-    // 첫 번째 사람은 여정을 시작하자마자 만난다
-    const first = buildTimeline(saved.materialIds, saved.id, saved.name)[0]
+    // 첫 칸이 사람 칸이면 여정을 시작하자마자 만난다 (핵심 인물 여정은 첫 칸이 시작 화면이라 없음)
+    const first = journeySteps(saved.materialIds, saved.id, saved.name)[0]
     if (first?.type === 'stage') saved.newCards.push(...collect(first.personId, saved))
     return saved
   }
@@ -244,16 +245,19 @@ export function useGame() {
     return undefined
   }
 
-  /** 타임라인 다음 칸을 펼친다. 사람 칸이면 카드를 얻는다. 답하지 않은 퀴즈 칸에서는 넘어가지 않는다 */
+  /**
+   * 다음 칸을 펼친다(핵심 인물 여정은 화면 목록, 예전 여정은 타임라인). 사람이 있는 칸이면 그 사람들의 카드를 얻는다.
+   * 답하지 않은 퀴즈 칸에서는 넘어가지 않는다
+   */
   function revealNext(journey: Journey): string[] {
-    const timeline = buildTimeline(journey.materialIds, journey.id, journey.name)
-    const item = timeline[journey.step]
+    const steps = journeySteps(journey.materialIds, journey.id, journey.name)
+    const item = steps[journey.step]
     if (!item) return []
     if (item.type === 'quiz' && journey.quiz[item.materialId] === undefined) return []
     journey.step++
-    const next = timeline[journey.step]
-    // 같은 길(pass)의 사람은 앞에서 이미 만났지만, 카드가 빠진 기록이어도 얻게 한다
-    const ids = next?.type === 'stage' || next?.type === 'hidden' ? [next.personId] : next?.type === 'pass' ? next.personIds : []
+    const next = steps[journey.step]
+    // 같은 길(pass)의 사람은 앞에서 이미 만났지만, 카드가 빠진 기록이어도 얻게 한다. 묶음 칸은 그 사람들 모두
+    const ids = screenPeople(next)
     const gained = ids.flatMap((id) => collect(id, journey))
     journey.newCards.push(...gained)
     return gained

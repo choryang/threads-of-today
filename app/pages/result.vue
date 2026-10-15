@@ -2,7 +2,7 @@
 import { computed, nextTick, onMounted, ref } from 'vue'
 import { MATERIALS } from '../../shared/data/materials'
 import { PEOPLE } from '../../shared/data/people'
-import { buildTimeline, reverseTimeline } from '../../shared/journey'
+import { journeySteps, reverseTimeline } from '../../shared/journey'
 import { dayStats } from '../../shared/logic'
 import { formatKm, reverseDistances, roundKm } from '../../shared/distance'
 
@@ -33,7 +33,7 @@ function materialNames(ids: string[]) {
   return ids.map((id) => MATERIALS[id]?.name).join(' · ')
 }
 function journeyProgress(materialIds: string[], step: number, id: string, name: string) {
-  const len = buildTimeline(materialIds, id, name).length
+  const len = journeySteps(materialIds, id, name).length
   return Math.round(((step + 1) / len) * 100)
 }
 const newToday = computed(() => Object.values(game.state.cards).filter((d) => d === game.todayKey).length)
