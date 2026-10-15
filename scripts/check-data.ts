@@ -6,11 +6,12 @@ import { PLACES } from '../shared/data/places'
 import { DEFAULT_HOURS, DOING, DOING_DEFAULT } from '../shared/data/doing'
 import { COUNTRY_CODE, HOLIDAY_YEARS, holidayCountries } from '../shared/data/calendar'
 import { PERSON_SCENE, SCENES } from '../shared/data/scenes'
+import { KEY_STORIES } from '../shared/data/stories'
 import dictionary from '../shared/data/dictionary.json'
 import { EVENTS, HIDDEN_RULES } from '../shared/data/journey-extras'
 import { SYNONYM_GROUPS } from '../shared/data/synonyms'
 import { SET_THANKS_SCENES, THANKS_BY_PERSON } from '../shared/data/thanks'
-import { CLOSINGS, CLOSING_PEOPLE, closingKind, type ClosingKind } from '../shared/data/shops'
+import { CLOSINGS, CLOSING_PEOPLE, IMPORT_OFFICE, closingKind, type ClosingKind } from '../shared/data/shops'
 import { thanksRepliesOf } from '../shared/thanks'
 import { buildTimeline, forwardTimeline, quizzesOf, resolveStages, reverseTimeline, timelinePeople } from '../shared/journey'
 import { FORMS } from '../shared/data/forms'
@@ -80,6 +81,60 @@ for (const [pid, sid] of Object.entries(PERSON_SCENE)) {
 for (const scene of Object.values(SCENES)) {
   if (!scene.alt.trim()) errors.push(`장면 ${scene.id}: 대체 글 없음`)
   if (!existsSync(new URL(`../public/scenes/${scene.id}.webp`, import.meta.url))) console.log(`장면 ${scene.id}: 그림 아직 없음 (단색 하늘로 보여요)`)
+}
+
+// 핵심 인물 이야기 (docs/key-people.md 쓰는 규칙): 있는 사람만, 한 편 200자 이내,
+// 여러 재료(의 경로)에 나오는 사람의 이야기에는 재료 이름을 쓰지 않는다("오늘 당신의 물건").
+// 가게·사무실 사람은 재료 경로에 없어서 경고만: 그 사람이 건네는 물건 모두에 들어 있지 않은 재료 이름이면 알려 준다
+// (예: 바리스타는 녹차라떼·에이드도 건네니 '커피'는 커피가 없는 여정에서도 나온다)
+const STORY_MAX = 200
+const materialWords = (id: string) => {
+  const m = MATERIAL_LIST.find((x) => x.id === id)
+  return m ? [...new Set([m.name, ...m.aliases])].filter((w) => w.length >= 2) : []
+}
+const routeMaterials = (pid: string) =>
+  MATERIAL_LIST.filter((m) => m.stages.includes(pid) || m.origins?.some((o) => o.head.includes(pid))).map((m) => m.id)
+const allItems = [...PRODUCTS.map((p) => ({ name: p.name, materialIds: p.materialIds })), ...(dictionary as Array<{ key: string; materialIds: string[] }>).map((e) => ({ name: e.key, materialIds: e.materialIds }))]
+/** 여러 재료의 경로에 나오는 사람: 쓰면 안 되는 재료 id (오류) */
+function forbiddenMaterials(pid: string): string[] {
+  const own = routeMaterials(pid)
+  return own.length >= 2 ? own : []
+}
+/** 가게·사무실 사람: 건네는 물건 중 일부에만 있는 재료 id (경고) */
+function partialMaterials(pid: string): string[] {
+  if (!CLOSING_PEOPLE.includes(pid)) return []
+  // 가게·사무실 사람: 건네는 물건마다의 재료. 모두에 들어 있지 않은 재료가 금지
+  const items = allItems.filter((it) => it.materialIds.length && (pid === IMPORT_OFFICE || (() => {
+    const c = CLOSINGS[closingKind(it.name, it.materialIds)]
+    return c.shop.includes(pid) || c.office.includes(pid)
+  })()))
+  const every = (mid: string) => items.every((it) => it.materialIds.includes(mid))
+  return [...new Set(items.flatMap((it) => it.materialIds))].filter((mid) => !every(mid))
+}
+for (const [pid, story] of Object.entries(KEY_STORIES)) {
+  if (!PEOPLE[pid]) {
+    errors.push(`이야기 ${pid}: 사람 없음`)
+    continue
+  }
+  const texts = [story.story, ...(story.episodes ?? [])].filter((t): t is string => !!t)
+  if (!texts.length) errors.push(`이야기 ${pid}: story나 episodes가 없음`)
+  texts.forEach((t, i) => {
+    if (t.length > STORY_MAX) errors.push(`이야기 ${pid} ${i + 1}편: ${t.length}자 (200자 이내)`)
+  })
+  for (const mid of forbiddenMaterials(pid)) {
+    for (const w of materialWords(mid)) {
+      texts.forEach((t, i) => {
+        if (t.includes(w)) errors.push(`이야기 ${pid} ${i + 1}편: 여러 재료에 나오는 사람인데 재료 이름 '${w}'(${mid})가 있음`)
+      })
+    }
+  }
+  for (const mid of partialMaterials(pid)) {
+    for (const w of materialWords(mid)) {
+      texts.forEach((t, i) => {
+        if (t.includes(w)) console.log(`경고: 이야기 ${pid} ${i + 1}편의 '${w}'(${mid}): 이 사람이 건네는 물건 중 ${mid}가 없는 것도 있어요`)
+      })
+    }
+  }
 }
 
 const personIds = new Set<string>()
