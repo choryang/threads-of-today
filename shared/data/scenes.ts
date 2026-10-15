@@ -27,6 +27,9 @@ export const SCENES: Record<string, Scene> = {
   'tanker-deck': { id: 'tanker-deck', alt: '배관과 밸브가 가득한 탱커선 갑판' },
   'desert-oil-field': { id: 'desert-oil-field', alt: '사막 한가운데의 유전 설비' },
   'kansas-wheat-harvest': { id: 'kansas-wheat-harvest', alt: '지평선까지 펼쳐진 대평원의 밀 수확' },
+  'neighborhood-convenience-store': { id: 'neighborhood-convenience-store', alt: '손님이 없는 시간, 동네 편의점의 진열대와 계산대' },
+  'seoul-alley-delivery': { id: 'seoul-alley-delivery', alt: '오토바이 한 대가 선 서울 골목의 오르막 계단' },
+  'jeonbuk-rice-paddy': { id: 'jeonbuk-rice-paddy', alt: '물을 댄 전북의 넓은 논과 논둑' },
 }
 
 /** 사람 → 장면 (docs/scenes/prompts.md의 '사람') */
@@ -44,6 +47,9 @@ export const PERSON_SCENE: Record<string, string> = {
   'tanker-crew': 'tanker-deck',
   'oil-worker': 'desert-oil-field',
   'wheat-farmer': 'kansas-wheat-harvest',
+  'cvs-clerk': 'neighborhood-convenience-store',
+  'delivery-rider': 'seoul-alley-delivery',
+  'rice-farmer': 'jeonbuk-rice-paddy',
 }
 
 export function sceneSrc(id: string): string {

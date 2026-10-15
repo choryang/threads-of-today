@@ -1,6 +1,6 @@
-# 장면 그림 프롬프트 (다시 기획 1차: 13명)
+# 장면 그림 프롬프트 (다시 기획 1차: 16명)
 
-새 기획(오늘의 나 → 물건 → 같은 마음의 한 사람)에서 이야기가 있는 13명의 장면이다. 한 사람에 한 장면.
+새 기획(오늘의 나 → 물건 → 같은 마음의 한 사람)에서 이야기가 있는 16명의 장면이다. 한 사람에 한 장면.
 - 모든 프롬프트는 같은 틀이다: 첫 줄 + Scene + Style + Avoid. Style·Avoid는 바꾸지 않는다(실내는 하늘 문구만 soft natural daylight).
 - 참고 이미지: art/style-ref.webp (시다마 커피 밭 그림, 그림체 기준으로만 쓴다). 요청마다 함께 첨부한다.
 - 결과: art/scenes/<장면 id>.png → npm run scenes → public/scenes/<장면 id>.webp
@@ -200,6 +200,51 @@ Avoid: photorealistic, 3D render, glossy, neon, oversaturated, visible face, clo
 Create a 4:3 landscape illustration.
 
 Scene: Wheat harvest on the Great Plains of Kansas, USA. Golden wheat fields stretching flat to the horizon, a combine harvester cutting through the wheat with a grain truck waiting at the edge of the field, a tall concrete grain elevator far away. In the middle ground, a farmer in a cap and work shirt seen from behind, standing at the field edge and rubbing a head of wheat between his hands to check it.
+
+Style: editorial illustration matching the attached reference image, gouache and watercolor texture with visible soft brushstrokes, realistic proportions but gently simplified shapes, muted earthy palette with warm cream highlights, clear midday light with short soft shadows, open sky in the top third, calm and quiet mood. One worker in the middle ground absorbed in their work, face not visible, dignified and skilled, ordinary practical work clothes. No other people up close, no readable text, no logos, no flags.
+
+Avoid: photorealistic, 3D render, glossy, neon, oversaturated, visible face, close-up portrait, crowd, poverty, exotic costume, sunset, night.
+```
+
+## neighborhood-convenience-store
+
+- 사람: cvs-clerk (지민 · 편의점 직원)
+- 대체 글: 손님이 없는 시간, 동네 편의점의 진열대와 계산대
+
+```text
+Create a 4:3 landscape illustration.
+
+Scene: Inside a small neighborhood convenience store in Seoul during the quiet hours of the night shift, with no customers. Neat aisles of snacks and drinks with blank labels, a glass-door drinks fridge glowing softly, a hot water dispenser and a small microwave on a side counter, a checkout counter with a register, a stack of delivery crates waiting to be unpacked, a dark window onto an empty street. In the middle ground, a young woman clerk in a store vest seen from behind, kneeling by a shelf and restocking it with fresh items from a crate.
+
+Style: editorial illustration matching the attached reference image, gouache and watercolor texture with visible soft brushstrokes, realistic proportions but gently simplified shapes, muted earthy palette with warm cream highlights, soft natural daylight, calm and quiet mood. One worker in the middle ground absorbed in their work, face not visible, dignified and skilled, ordinary practical work clothes. No other people up close, no readable text, no logos, no flags.
+
+Avoid: photorealistic, 3D render, glossy, neon, oversaturated, visible face, close-up portrait, crowd, poverty, exotic costume, sunset, night.
+```
+
+## seoul-alley-delivery
+
+- 사람: delivery-rider (우진 · 배달 라이더)
+- 대체 글: 오토바이 한 대가 선 서울 골목의 오르막 계단
+
+```text
+Create a 4:3 landscape illustration.
+
+Scene: A narrow residential alley in Seoul. Old low-rise brick houses with small balconies and potted plants, a steep outdoor stairway climbing between them, a delivery scooter with an insulated food box parked at the bottom of the stairs, a convex traffic mirror on a pole, a quiet crossroad with a crosswalk at the end of the alley. In the middle ground, a young man delivery rider in a helmet and rain jacket seen from behind, climbing the stairs carrying a food delivery bag carefully with both hands.
+
+Style: editorial illustration matching the attached reference image, gouache and watercolor texture with visible soft brushstrokes, realistic proportions but gently simplified shapes, muted earthy palette with warm cream highlights, clear midday light with short soft shadows, open sky in the top third, calm and quiet mood. One worker in the middle ground absorbed in their work, face not visible, dignified and skilled, ordinary practical work clothes. No other people up close, no readable text, no logos, no flags.
+
+Avoid: photorealistic, 3D render, glossy, neon, oversaturated, visible face, close-up portrait, crowd, poverty, exotic costume, sunset, night.
+```
+
+## jeonbuk-rice-paddy
+
+- 사람: rice-farmer (영수 · 벼농사 농부)
+- 대체 글: 물을 댄 전북의 넓은 논과 논둑
+
+```text
+Create a 4:3 landscape illustration.
+
+Scene: Wide flat rice paddies in Jeollabuk-do, South Korea, in the early morning. Young green rice plants in neat rows standing in shallow water that reflects the sky, narrow grassy levees between the fields, a small concrete water channel with a wooden sluice board, a low village with tiled roofs and a few persimmon trees far away, thin mist lifting off distant hills. In the middle ground, an older man farmer in a cap, long-sleeved work shirt and rubber boots seen from behind, walking along a levee with a shovel on his shoulder and stopping to adjust the water gate.
 
 Style: editorial illustration matching the attached reference image, gouache and watercolor texture with visible soft brushstrokes, realistic proportions but gently simplified shapes, muted earthy palette with warm cream highlights, clear midday light with short soft shadows, open sky in the top third, calm and quiet mood. One worker in the middle ground absorbed in their work, face not visible, dignified and skilled, ordinary practical work clothes. No other people up close, no readable text, no logos, no flags.
 
