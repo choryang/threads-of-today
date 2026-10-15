@@ -330,6 +330,8 @@ export interface QuoteCardInput {
   quote: string
   /** '아이스 아메리카노로 이어진 사람' */
   via: string
+  /** 머리말: '오늘 나와 같은 하루를 보낸 사람' 또는 '오늘 내 하루에 닿은 사람' */
+  header: string
 }
 
 const Q_SIDE = 88
@@ -387,7 +389,7 @@ export async function drawQuoteCard(canvas: HTMLCanvasElement, input: QuoteCardI
   ctx.textAlign = 'left'
   ctx.font = `500 32px ${BODY}`
   ctx.fillStyle = input.moodColor
-  ctx.fillText('오늘 나와 같은 하루를 보낸 사람', Q_SIDE, y)
+  ctx.fillText(input.header, Q_SIDE, y)
   y += 32 + 16
   ctx.font = `700 72px ${BODY}`
   ctx.fillStyle = Q_INK

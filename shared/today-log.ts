@@ -1,11 +1,16 @@
 import { repliesFor } from './data/replies'
-import type { Met } from './pick'
+import type { Met, PickHow } from './pick'
 import type { TodayRecord } from './progress'
 import { memoryLine } from './today-text'
 
 /**
  * 오늘 흐름의 하루 기록(Save.todays)에서 읽는 것들 (docs/redesign/README.md "저장").
  */
+
+/** 그 사람을 고른 방식. 예전 기록(how 없음)은 카드 문구면 'none', 아니면 'mood' */
+export function recordHow(r: TodayRecord): PickHow {
+  return r.how ?? (r.episode === null ? 'none' : 'mood')
+}
 
 /** 날짜순(오래된 것부터) 지난 만남. 한 사람 고르기(shared/pick.ts)의 본 편·만난 횟수 */
 export function historyOf(todays: Record<string, TodayRecord> | undefined, exceptDate?: string): Met[] {

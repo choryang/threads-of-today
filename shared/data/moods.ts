@@ -46,6 +46,16 @@ export const MOOD_LIST: Mood[] = [
   { id: 'tired', label: '지쳤어요', past: '지쳤던', cell: LOW_UNEASY, color: '#4C7BD9', scene: '끝없는 일을 버틴 날', title: '지친 하루였어요', memory: '지쳤다고', dot: { x: 66, y: 276 } },
 ]
 
+/**
+ * 칸 문장: 4번 화면에서 오늘 마음과 같은 태그의 편은 없지만 같은 칸의 편으로 고른 사람의 제목 꼴
+ * ('{이름}도 오늘,' + '마음이 무거운 하루였어요.')
+ */
+export function cellTitle(mood: MoodId): string {
+  const { energy, ease } = MOODS[mood].cell
+  if (ease === 'ease') return energy === 'high' ? '마음이 들뜬 하루였어요' : '마음이 잔잔한 하루였어요'
+  return energy === 'high' ? '마음이 시끄러운 하루였어요' : '마음이 무거운 하루였어요'
+}
+
 export const MOODS: Record<MoodId, Mood> = Object.fromEntries(MOOD_LIST.map((m) => [m.id, m])) as Record<MoodId, Mood>
 export const MOOD_IDS = MOOD_LIST.map((m) => m.id)
 

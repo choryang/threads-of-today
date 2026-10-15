@@ -6,7 +6,8 @@ import { PLACES } from '../../../shared/data/places'
 import { clockAt, clockLabel, dayInfo, doingLine } from '../../../shared/local-time'
 import { storyEpisodes } from '../../../shared/key-story'
 import { placeLabel } from '../../../shared/rewind'
-import { moodTitle, pathHeader, plainTitle } from '../../../shared/today-text'
+import { pathHeader, personTitle } from '../../../shared/today-text'
+import type { PickHow } from '../../../shared/pick'
 
 /**
  * 4번 화면 (시안 V2Person): 그 사람의 오늘. 장면 그림(그곳 시각으로 물든), 머리말(마음 색), 제목, 이야기, 이름·일·지금은 아마.
@@ -18,6 +19,8 @@ const props = defineProps<{
   itemName: string
   personId: string
   episode: number | null
+  /** 그 사람을 고른 방식 (pickPerson의 how): 제목이 달라진다 */
+  how: PickHow
   memory?: string
   action?: string
   /** 이름 줄 옆 '지금은 아마'를 빼기 (오늘 결과 화면은 아래에 실시간 한 줄이 따로 있다) */
@@ -33,7 +36,7 @@ const day = computed(() => local.value.h >= 6 && local.value.h < 18)
 const doing = computed(() => doingLine(props.personId, local.value.h, dayInfo(place.value.country, place.value.tz, now.value)))
 const name = computed(() => person.value.name ?? person.value.job)
 const story = computed(() => (props.episode === null ? person.value.story : storyEpisodes(props.personId)[props.episode] ?? person.value.story))
-const title = computed(() => (props.episode === null ? plainTitle(props.itemName) : moodTitle(name.value, props.mood)))
+const title = computed(() => personTitle(name.value, props.mood, props.episode === null ? 'none' : props.how, props.itemName))
 </script>
 
 <template>

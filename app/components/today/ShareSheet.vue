@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue'
 import type { TodayRecord } from '../../../shared/progress'
 import { savePng } from '../../utils/share-image'
+import { threadHeader } from '../../../shared/share'
 import { MOTION } from '../../utils/motion'
 import { drawThreadCard, threadPayload } from '../../composables/useThreadShare'
 
@@ -35,7 +36,7 @@ const filename = () => `내-하루에-닿은-사람-${props.date}.png`
 async function send() {
   const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, 'image/png'))
   const file = blob ? new File([blob], filename(), { type: 'image/png' }) : null
-  const data: ShareData = { title: '오늘 나와 같은 하루를 보낸 사람', ...(link.value ? { url: link.value } : {}) }
+  const data: ShareData = { title: threadHeader(threadPayload(props.date, props.record)), ...(link.value ? { url: link.value } : {}) }
   try {
     if (file && navigator.canShare?.({ files: [file] })) await navigator.share({ ...data, files: [file] })
     else if (navigator.share) await navigator.share(data)
@@ -67,7 +68,7 @@ async function copy() {
       </button>
       <h2 class="title">카드로 남기기</h2>
       <div class="preview">
-        <img v-if="preview" :src="preview" alt="오늘 나와 같은 하루를 보낸 사람 카드">
+        <img v-if="preview" :src="preview" :alt="`${threadHeader(threadPayload(date, record))} 카드`">
       </div>
       <p class="hint">한 줄과 직접 쓴 말은 카드와 링크에 들어가지 않아요.</p>
       <div class="buttons">

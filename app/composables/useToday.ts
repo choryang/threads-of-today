@@ -4,7 +4,7 @@ import { hash } from '../../shared/random'
 import { seoulDateKey } from '../../shared/logic'
 import { pickPerson, type Pick } from '../../shared/pick'
 import type { TodayRecord } from '../../shared/progress'
-import { historyOf, memoryFor } from '../../shared/today-log'
+import { historyOf, memoryFor, recordHow } from '../../shared/today-log'
 import { localDay, setLocalDay } from '../utils/today-local'
 import type { JobId } from '../../shared/data/jobs'
 import { shouldAskJob } from '../../shared/job'
@@ -67,7 +67,7 @@ export function useToday() {
     }
     draft.mood = rec.mood
     draft.item = { name: rec.item, materialIds: draft.item?.name === rec.item ? draft.item.materialIds : [] }
-    draft.pick = draft.pick?.personId === rec.personId ? draft.pick : { personId: rec.personId, episode: rec.episode, how: rec.episode === null ? 'none' : 'mood', route: [], hands: [] }
+    draft.pick = draft.pick?.personId === rec.personId ? draft.pick : { personId: rec.personId, episode: rec.episode, how: recordHow(rec), route: [], hands: [] }
     draft.reply = replyOf(rec, date)
     draft.memory = memoryFor(todays(), rec.personId, date, (d) => localDay(d).own)
     if (draft.reply) draft.step = 'done'
@@ -102,7 +102,7 @@ export function useToday() {
     const { mood, item, pick, date } = draft
     if (!mood || !item || !pick || todays()?.[date]) return
     if (!game.state.todays) game.state.todays = {}
-    game.state.todays[date] = { mood, item: item.name, personId: pick.personId, episode: pick.episode }
+    game.state.todays[date] = { mood, item: item.name, personId: pick.personId, episode: pick.episode, how: pick.how }
   }
   function go(step: TodayStep) {
     if (step === 'person') meet()

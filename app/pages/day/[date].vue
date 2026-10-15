@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { memoryFor, replyText } from '../../../shared/today-log'
+import { memoryFor, recordHow, replyText } from '../../../shared/today-log'
 import { shortDate } from '../../../shared/today-text'
 import { localDay } from '../../utils/today-local'
 
@@ -38,6 +38,7 @@ function back() {
       :item-name="record.item"
       :person-id="record.personId"
       :episode="record.episode"
+      :how="recordHow(record)"
       :memory="memory"
     >
       <div class="said">

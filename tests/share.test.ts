@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { SHARE_KINDS, createShares, dayShareTitle, isToken, threadQuote, threadShareTitle, threadWho, withEuro, type ShareStore } from '../shared/share'
+import { SHARE_KINDS, createShares, dayShareTitle, isToken, threadHeader, threadQuote, threadShareTitle, threadWho, withEuro, type ShareStore } from '../shared/share'
 
 function memoryStore() {
   const data = new Map<string, string>()
@@ -113,4 +113,12 @@ test('오늘의 실 문구: 인용은 그 편의 첫 문장, 이름은 장소와
   assert.equal(withEuro('아이스 아메리카노'), '아이스 아메리카노로')
   assert.equal(withEuro('물'), '물로')
   assert.equal(threadShareTitle({ date: '2026-10-15', mood: 'wronged', personId: 'coffee-picker', episode: 2, item: '라면' }), '오늘 나와 같은 하루를 보낸 사람, 에티오피아 시다마의 알마즈')
+})
+
+test('오늘의 실 카드 머리말: 다음 편으로 만난 사람이면 "오늘 내 하루에 닿은 사람"', () => {
+  assert.equal(threadHeader({ how: 'next' }), '오늘 내 하루에 닿은 사람')
+  assert.equal(threadHeader({ how: 'mood' }), '오늘 나와 같은 하루를 보낸 사람')
+  assert.equal(threadHeader({ how: 'cell' }), '오늘 나와 같은 하루를 보낸 사람')
+  assert.equal(threadHeader({}), '오늘 나와 같은 하루를 보낸 사람')
+  assert.equal(threadShareTitle({ date: '2026-10-15', mood: 'lonely', personId: 'sea-crew', episode: 0, item: '운동화', how: 'next' }), '오늘 내 하루에 닿은 사람, 바다 위의 로널드')
 })

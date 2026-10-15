@@ -134,6 +134,7 @@ const tightTop = computed(() => d.step === 'item' || d.step === 'person' || d.st
       :item-name="d.item.name"
       :person-id="d.pick.personId"
       :episode="d.pick.episode"
+      :how="d.pick.how"
       :memory="d.memory"
       action="한마디 건네기"
       @next="today.go('reply')"
@@ -158,6 +159,7 @@ const tightTop = computed(() => d.step === 'item' || d.step === 'person' || d.st
       :item-name="d.item.name"
       :person-id="d.pick.personId"
       :episode="d.pick.episode"
+      :how="d.pick.how"
       :memory="d.memory"
       no-doing
     >

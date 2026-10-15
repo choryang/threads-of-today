@@ -1,4 +1,5 @@
-import { MOODS, type MoodId } from './data/moods'
+import { MOODS, cellTitle, type MoodId } from './data/moods'
+import type { PickHow } from './pick'
 import type { Place } from './types'
 import { withJosa } from './logic'
 import { clockLabel, utcOffsetMinutes, SEOUL_TZ, type Clock } from './local-time'
@@ -36,6 +37,20 @@ export function pathHeader(itemName: string): string {
 /** 4번 제목 두 줄: ['알마즈도 오늘,', '억울한 하루였어요.'] */
 export function moodTitle(name: string, mood: MoodId): [string, string] {
   return [`${name}도 오늘,`, `${MOODS[mood].title}.`]
+}
+
+/**
+ * 4번 제목 두 줄을 고른 방식(pickPerson의 how)에 따라 (docs/redesign/README.md "화면 문구"):
+ *  - mood: '{이름}도 오늘,' + '{제목 꼴}.'          그 편에 오늘 마음 태그
+ *  - cell: '{이름}도 오늘,' + '{칸 문장}.'          같은 칸의 마음 태그
+ *  - next: '당신이 {마음}던 오늘,' + '{이름}의 하루는 이랬어요.'   마음과 상관없이 다음 편
+ *  - none: 마음을 붙이지 않는다 (이야기 없는 사람)
+ */
+export function personTitle(name: string, mood: MoodId, how: PickHow, itemName: string): [string, string] {
+  if (how === 'none') return plainTitle(itemName)
+  if (how === 'cell') return [`${name}도 오늘,`, `${cellTitle(mood)}.`]
+  if (how === 'next') return [`당신이 ${MOODS[mood].past} 오늘,`, `${name}의 하루는 이랬어요.`]
+  return moodTitle(name, mood)
 }
 
 /** 이야기 사람이 없을 때 제목 두 줄 (마음을 지어 붙이지 않는다) */

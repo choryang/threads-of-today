@@ -1,7 +1,8 @@
 import { MOODS } from '../../shared/data/moods'
 import { sceneOf, sceneSrc } from '../../shared/data/scenes'
 import type { TodayRecord } from '../../shared/progress'
-import { threadQuote, threadWho, withEuro, type ThreadPayload } from '../../shared/share'
+import { threadHeader, threadQuote, threadWho, withEuro, type ThreadPayload } from '../../shared/share'
+import { recordHow } from '../../shared/today-log'
 import { shortDate } from '../../shared/today-text'
 import { drawQuoteCard } from '../utils/share-image'
 
@@ -36,7 +37,7 @@ function save(v: Record<string, Mine>) {
 }
 
 export function threadPayload(date: string, rec: TodayRecord): ThreadPayload {
-  return { date, mood: rec.mood, personId: rec.personId, episode: rec.episode, item: rec.item }
+  return { date, mood: rec.mood, personId: rec.personId, episode: rec.episode, item: rec.item, how: recordHow(rec) }
 }
 
 /** 카드 그림을 캔버스에 그린다 */
@@ -50,6 +51,7 @@ export async function drawThreadCard(canvas: HTMLCanvasElement, p: ThreadPayload
     who: threadWho(p),
     quote: threadQuote(p),
     via: `${withEuro(p.item)} 이어진 사람`,
+    header: threadHeader(p),
   })
 }
 

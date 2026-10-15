@@ -104,6 +104,8 @@ export interface ThreadPayload {
   episode: number | null
   /** 물건 이름 */
   item: string
+  /** 그 사람을 고른 방식. next(마음과 상관없이 다음 편)면 카드 머리말이 "오늘 내 하루에 닿은 사람" */
+  how?: 'mood' | 'cell' | 'next' | 'none'
 }
 
 function validateThread(raw: unknown): ThreadPayload | null {
@@ -115,7 +117,8 @@ function validateThread(raw: unknown): ThreadPayload | null {
   if (episode === undefined) return null
   const item = typeof r.item === 'string' ? r.item.trim().slice(0, 40) : ''
   if (!item) return null
-  return { date: r.date, mood: r.mood, personId: r.personId, episode, item }
+  const how = r.how === 'mood' || r.how === 'cell' || r.how === 'next' || r.how === 'none' ? r.how : undefined
+  return { date: r.date, mood: r.mood, personId: r.personId, episode, item, ...(how ? { how } : {}) }
 }
 
 export const SHARE_KINDS: { day: ShareKindSpec<DayPayload>; person: ShareKindSpec<PersonPayload>; village: ShareKindSpec<VillagePayload>; thread: ShareKindSpec<ThreadPayload> } = {
@@ -325,9 +328,14 @@ export function threadWho(p: Pick<ThreadPayload, 'personId'>): string {
   return `${place ? placeLabel(place) : ''}의 ${person?.name ?? person?.job ?? ''}`
 }
 
+/** 카드 머리말: 마음으로 고른 사람이면 '오늘 나와 같은 하루를 보낸 사람', 다음 편으로 만난 사람(next)이면 '오늘 내 하루에 닿은 사람' */
+export function threadHeader(p: Pick<ThreadPayload, 'how'>): string {
+  return p.how === 'next' ? '오늘 내 하루에 닿은 사람' : '오늘 나와 같은 하루를 보낸 사람'
+}
+
 /** OG 제목·설명 */
 export function threadShareTitle(p: ThreadPayload): string {
-  return `오늘 나와 같은 하루를 보낸 사람, ${threadWho(p)}`
+  return `${threadHeader(p)}, ${threadWho(p)}`
 }
 export function threadShareLine(p: ThreadPayload): string {
   return `${MOODS[p.mood].past} 날, ${withEuro(p.item)} 이어진 사람. 당신의 오늘은 어땠어요?`
