@@ -52,18 +52,18 @@ async function share() {
 <template>
   <main class="page">
     <header class="head">
-      <p class="mono muted kicker">TODAY'S MYSTERY</p>
+      <p class="muted kicker">오늘의 미스터리</p>
       <h1 class="display title">오늘의 미스터리 물건</h1>
       <p class="muted small">힌트가 하나씩 열려요. 적은 힌트로 맞힐수록 좋아요. 맞히면 보너스 여정이 열려요.</p>
     </header>
 
     <ol class="hints">
       <li v-for="(h, i) in shownHints" :key="i" class="hint panel">
-        <span class="mono n">HINT {{ i + 1 }}</span>
+        <span class="n">힌트 {{ i + 1 }}</span>
         <span>{{ h }}</span>
       </li>
       <li v-for="i in hints.length - shownHints.length" :key="`locked${i}`" class="hint locked">
-        <span class="mono n">HINT {{ shownHints.length + i }}</span>
+        <span class="n">힌트 {{ shownHints.length + i }}</span>
         <span>틀리면 열려요</span>
       </li>
     </ol>
@@ -85,7 +85,7 @@ async function share() {
     </section>
 
     <section v-else class="result panel" :class="{ solved: log.solved }">
-      <p class="mono kicker" :class="log.solved ? 'ok' : 'bad'">{{ log.solved ? 'SOLVED' : 'TRY AGAIN TOMORROW' }}</p>
+      <p class="kicker" :class="log.solved ? 'ok' : 'bad'">{{ log.solved ? '맞혔어요' : '내일 또 만나요' }}</p>
       <p class="r-title">정답은 <strong>{{ answer.name }}</strong></p>
       <p class="muted small">{{ log.solved ? `${log.guesses.length}번 만에 맞혔어요!` : '내일 새로운 미스터리가 열려요.' }}</p>
       <button v-if="log.solved" class="btn btn-primary btn-block" @click="bonus">
@@ -98,14 +98,14 @@ async function share() {
 
 <style scoped>
 .head { display: flex; flex-direction: column; gap: 8px; }
-.kicker { margin: 0; font-size: 11px; letter-spacing: 1.5px; }
+.kicker { margin: 0; font-size: 12px; font-weight: 700; }
 .title { font-size: 30px; }
 .small { margin: 0; font-size: 13px; line-height: 1.55; }
 .h2 { margin: 0 0 10px; font-size: 15px; }
 
 .hints { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .hint { display: flex; flex-direction: column; gap: 4px; font-size: 15px; line-height: 1.5; animation: rise var(--motion-enter) var(--motion-ease); }
-.hint .n { font-size: 11px; color: var(--accent); }
+.hint .n { font-size: 12px; font-weight: 700; color: var(--accent); white-space: nowrap; }
 .hint.locked { padding: 14px 16px; border-radius: 18px; border: 1px dashed var(--line); color: var(--faint); font-size: 14px; }
 .hint.locked .n { color: var(--faint); }
 

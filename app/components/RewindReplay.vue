@@ -32,7 +32,7 @@ onBeforeUnmount(() => clearInterval(timer))
 
 <template>
   <section class="replay" :aria-label="`${withJosa(itemName, '이', '가')} 다시 내 손까지 오는 길`">
-    <p class="mono kicker">REWIND</p>
+    <p class="kicker">되감기</p>
     <p class="title display">이제 다시 내 손까지</p>
     <div v-if="frame" class="who">
       <!-- 사람마다 key를 바꿔 지나가는 효과 -->
@@ -54,7 +54,7 @@ onBeforeUnmount(() => clearInterval(timer))
   padding: 20px 16px; border-radius: 20px;
   background: linear-gradient(180deg, var(--surface), var(--ground)); border: 1px solid var(--line);
 }
-.kicker { margin: 0; font-size: 11px; letter-spacing: 1.5px; color: var(--accent); }
+.kicker { margin: 0; font-size: 12px; font-weight: 700; color: var(--accent); }
 .title { margin: 0; font-size: 24px; }
 .who { display: flex; flex-direction: column; align-items: center; gap: 8px; min-height: 190px; }
 .pass { animation: walk-by var(--motion-replay) linear; }

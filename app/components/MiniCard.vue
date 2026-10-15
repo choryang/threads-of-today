@@ -10,7 +10,7 @@ const place = computed(() => PLACES[person.value.placeId]!)
 
 <template>
   <div class="mini" :class="[`rarity-${person.rarity}`, { locked }]">
-    <span v-if="isNew" class="new mono">NEW</span>
+    <span v-if="isNew" class="new">새로</span>
     <svg v-if="thanked && !locked" class="thanked" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" role="img" aria-label="고마움을 전함"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z" /></svg>
     <Character :person-id="personId" :locked="locked" :size="72" />
     <span class="job">{{ locked ? '???' : person.job }}</span>
@@ -38,7 +38,7 @@ const place = computed(() => PLACES[person.value.placeId]!)
 .thanked { position: absolute; top: 7px; left: 7px; color: var(--bad); }
 .new {
   position: absolute; top: 6px; right: 6px;
-  font-size: 10px; padding: 2px 5px; border-radius: 6px;
+  font-size: 11px; font-weight: 700; padding: 2px 5px; border-radius: 6px;
   background: var(--bad); color: #fff;
 }
 </style>

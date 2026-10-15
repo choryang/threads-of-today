@@ -253,7 +253,7 @@ function start() {
         <p v-if="preview.twist" class="twist">{{ preview.twist }}</p>
         <div class="p-top">
           <p class="p-name">{{ preview.name }}</p>
-          <span v-if="!game.knowsItem(preview.name)" class="first mono">FIRST</span>
+          <span v-if="!game.knowsItem(preview.name)" class="first">처음</span>
         </div>
         <p v-if="previewVoice" class="voice">“{{ previewVoice }}”</p>
         <template v-if="preview.materialIds.length">
@@ -376,7 +376,7 @@ function start() {
 .photo { width: 100%; max-height: 180px; object-fit: cover; border-radius: 14px; }
 .p-top { display: flex; align-items: center; gap: 8px; padding-right: 44px; }
 .p-name { margin: 0; font-size: 20px; font-weight: 700; }
-.first { font-size: 11px; padding: 3px 7px; border-radius: 6px; background: var(--r-epic); color: var(--ink); }
+.first { font-size: 12px; font-weight: 700; padding: 3px 7px; border-radius: 6px; background: var(--r-epic); color: var(--ink); }
 .twist { margin: 0; padding-right: 44px; font-size: 13px; color: var(--accent); }
 .voice {
   margin: 0; padding: 10px 14px; border-radius: 14px 14px 14px 4px;

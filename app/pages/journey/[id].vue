@@ -346,7 +346,6 @@ function followTeaser(p: Product) {
     <!-- 도착 -->
     <template v-else-if="journey.done">
       <header class="head">
-        <p class="mono muted kicker">ARRIVED</p>
         <h1 class="display title">도착했어요</h1>
       </header>
 
@@ -362,7 +361,7 @@ function followTeaser(p: Product) {
       <p v-if="voice" class="voice">“{{ voice }}”</p>
 
       <section v-if="linkGained.length && !reunionCard" class="link-banner">
-        <p class="mono kicker gold">CONNECTION FOUND</p>
+        <p class="kicker gold">다시 만났어요</p>
         <p class="lb-title">여정이 서로 겹쳤어요!</p>
         <p v-for="id in linkGained" :key="id" class="lb-met">{{ metAgain(id) }}</p>
         <p class="small">오늘 지나온 재료들이 같은 사람을 거쳐 왔어요. 에픽 카드를 얻었어요.</p>
@@ -406,7 +405,7 @@ function followTeaser(p: Product) {
       <!-- 추천을 따라와 다시 만난 사람: 평소 연결 카드보다 크게 -->
       <div v-if="reunionCard && reunionOpen" class="reunion-wrap" role="dialog" aria-modal="true" aria-labelledby="reunion-title">
         <div class="reunion">
-          <p class="mono kicker gold">CONNECTION FOUND</p>
+          <p class="kicker gold">다시 만났어요</p>
           <Character :person-id="reunionPerson" :size="132" wave />
           <p id="reunion-title" class="reunion-title display">{{ metAgain(reunionCard) }}</p>
           <p class="reunion-text">{{ withJosa(jobOf(reunionPerson), '이', '가') }} 두 물건을 모두 날랐어요. 에픽 카드를 얻었어요.</p>
@@ -501,7 +500,7 @@ function followTeaser(p: Product) {
         </section>
 
         <section v-else-if="current.type === 'hidden'" class="stage hidden-meet">
-          <p class="mono kicker gold">숨은 만남</p>
+          <p class="kicker gold">숨은 만남</p>
           <MeetAgain :key="`again-${journey.step}`" :person-id="current.personId" :journey-id="journey.id" :journey-name="journey.name" />
           <PersonCard :person-id="current.personId" :is-new="journey.newCards.includes(current.personId)" />
         </section>
@@ -516,7 +515,7 @@ function followTeaser(p: Product) {
         </section>
 
         <section v-else-if="quiz" class="quiz panel">
-          <p class="mono kicker gold">QUIZ · 맞히면 레어 카드</p>
+          <p class="kicker gold">퀴즈 · 맞히면 드문 분을 만나요</p>
           <p class="q">{{ quiz.q }}</p>
           <div class="options">
             <button
@@ -568,7 +567,7 @@ function followTeaser(p: Product) {
 
 <style scoped>
 .head { display: flex; flex-direction: column; gap: 8px; }
-.kicker { margin: 0; font-size: 11px; letter-spacing: 1.5px; }
+.kicker { margin: 0; font-size: 12px; font-weight: 700; }
 .gold { color: var(--accent); }
 .title { font-size: 30px; line-height: 1.25; }
 .voice {

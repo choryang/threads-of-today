@@ -28,7 +28,7 @@ const lines = computed(() => {
     </div>
     <div class="inner">
       <template v-if="current.type === 'set' && set">
-        <p class="mono kicker">THANK YOU</p>
+        <p class="kicker">고마워요</p>
         <h2 class="display title">{{ set.name }}</h2>
         <div class="crowd">
           <Character v-for="id in setPeople" :key="id" :person-id="id" :size="56" bob />

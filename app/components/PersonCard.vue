@@ -63,7 +63,7 @@ onBeforeUnmount(() => clearTimeout(waveTimer))
     </header>
     <div class="art">
       <Character :person-id="personId" :size="150" bob :wave="waving" />
-      <span v-if="isNew" class="new">NEW</span>
+      <span v-if="isNew" class="new">새로</span>
     </div>
     <div class="body">
       <h3 class="who">
@@ -143,8 +143,8 @@ onBeforeUnmount(() => clearTimeout(waveTimer))
   position: absolute;
   top: 12px;
   right: 14px;
-  font-family: var(--font-mono);
   font-size: 12px;
+  font-weight: 700;
   padding: 4px 8px;
   border-radius: 8px;
   background: var(--bad);
