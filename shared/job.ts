@@ -1,4 +1,4 @@
-import { isJobId, type JobId } from './data/jobs'
+import { normalizeJobId, type JobId } from './data/jobs'
 import type { TodayRecord } from './progress'
 
 /**
@@ -32,7 +32,8 @@ export function mergeJob(a: JobChoice | undefined, b: JobChoice | undefined): Jo
 export function sanitizeJob(v: unknown): JobChoice | undefined {
   if (!v || typeof v !== 'object') return undefined
   const r = v as Record<string, unknown>
-  const value = r.value === 'declined' ? 'declined' : isJobId(r.value) ? r.value : undefined
+  // 예전 id(만들기 make)는 지금 id(제조)로 옮긴다
+  const value = r.value === 'declined' ? 'declined' : normalizeJobId(r.value)
   if (!value || typeof r.at !== 'number' || !Number.isFinite(r.at) || r.at < 0) return undefined
   return { value, at: r.at }
 }

@@ -1,3 +1,4 @@
+import { sanitizeJob } from '../../shared/job'
 import { computed, effectScope, reactive, ref, watch } from 'vue'
 import { LINK_RULES, SETS } from '../../shared/data/materials'
 import { PEOPLE } from '../../shared/data/people'
@@ -35,6 +36,12 @@ function load(): Save {
     if (!parsed.threads) save.threads = backfillThreads(save)
     // 친해진 정도 기능 전의 기록: 남은 여정·가진 카드·고마워요로 사람별 기록을 채운다
     if (!parsed.people) save.people = migratePeople(save)
+    // 하는 일: 예전 id(만들기 make)는 제조로, 모르는 값은 버린다 (shared/job.ts)
+    if (parsed.job) {
+      const job = sanitizeJob(parsed.job)
+      if (job) save.job = job
+      else delete save.job
+    }
     return save
   } catch {
     return emptySave()

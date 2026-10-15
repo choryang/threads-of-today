@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
+import { JOBS, jobLabel } from '../shared/data/jobs'
 import { mergeJob, sanitizeJob, shouldAskJob } from '../shared/job'
 import { emptySave, mergeSaves, sanitizeSave, type Save, type TodayRecord } from '../shared/progress'
 
@@ -33,4 +34,12 @@ test('하는 일 합치기: 고른 일이 declined보다 우선, 둘 다 일이�
   assert.equal(sanitizeJob({ value: 'astronaut', at: 1 }), undefined)
   assert.equal(sanitizeJob({ value: 'dev' }), undefined)
   assert.deepEqual(sanitizeSave({ ...emptySave(), job: { value: 'declined', at: 3, note: 'x' } }, '2026-10-15')?.job, { value: 'declined', at: 3 })
+})
+
+test('만드는 일은 제조·농사·어업·공예·창작으로 나뉘고, 예전 만들기(make)는 제조로 옮긴다', () => {
+  assert.deepEqual(sanitizeJob({ value: 'make', at: 3 }), { value: 'manufacture', at: 3 })
+  for (const id of ['manufacture', 'farm', 'craft', 'create']) assert.deepEqual(sanitizeJob({ value: id, at: 1 }), { value: id, at: 1 })
+  assert.equal(sanitizeSave({ ...emptySave(), job: { value: 'make', at: 3 } }, '2026-10-15')?.job?.value, 'manufacture')
+  assert.equal(JOBS.length, 14)
+  assert.deepEqual(['manufacture', 'farm', 'craft', 'create'].map((id) => jobLabel(id as never)), ['제조', '농사·어업', '공예', '창작'])
 })
