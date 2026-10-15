@@ -166,6 +166,7 @@ const tightTop = computed(() => d.step === 'item' || d.step === 'person' || d.st
         <p class="done-now" aria-live="polite">{{ nowLine }}</p>
         <p class="done-bye">내일 저녁에 또 만나요</p>
         <button class="t-btn secondary" @click="sharing = true">카드로 남기기</button>
+        <NuxtLink to="/walk" class="walk-link">오늘 만남은 여기까지예요. 다른 물건의 길을 걸어 볼래요?</NuxtLink>
       </div>
     </TodayPersonScreen>
     <TodayShareSheet v-if="sharing && record" :date="d.date" :record="record" @close="sharing = false" />
@@ -178,5 +179,6 @@ const tightTop = computed(() => d.step === 'item' || d.step === 'person' || d.st
 .done-note { margin: 0; display: flex; align-items: center; gap: 8px; font-size: 15px; color: var(--t-quiet); word-break: keep-all; }
 .done-said { margin: 0; font-size: 14px; color: var(--t-sub); word-break: keep-all; }
 .done-now { margin: 8px 0 0; font-size: 15px; line-height: 1.6; color: var(--t-text); word-break: keep-all; }
+.walk-link { margin-top: 4px; min-height: 44px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; color: var(--t-sub); text-decoration: underline; word-break: keep-all; }
 .done-bye { margin: 12px 0 0; font-size: 17px; font-weight: 700; text-align: center; }
 </style>
