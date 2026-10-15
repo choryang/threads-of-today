@@ -160,6 +160,8 @@ const MAX_KEY_MEETS = 100_000
 // journeysPerDay: 하루 여정 횟수 제한이 없어져서 서버 입력 검사용 상한만 둔다
 const LIMITS = { items: 2000, journeysPerDay: 60, name: 40, voice: 80, guesses: 10 }
 const DATE = /^\d{4}-\d{2}-\d{2}$/
+/** 여정 id 길이 상한: '2026-10-15-12-abcdef-r-k-second'(31자)에 여유를 둔다 */
+const JOURNEY_ID_MAX = 48
 
 export function emptySave(): Save {
   return { v: 1, cards: {}, days: {}, streak: { last: '', count: 0 }, mystery: {}, items: {}, thanks: {}, seenScenes: [], threads: {}, people: {}, incoming: [], visitedVillages: [], bestSeen: [] }
@@ -330,7 +332,7 @@ function sanitizeJourney(v: unknown): Journey | null {
   if (isObj(v.quiz)) for (const [k, n] of Object.entries(v.quiz)) if (Number.isInteger(n) && (n as number) >= 0 && (n as number) < 10) quiz[k.slice(0, 20)] = n as number
   const source = (['text', 'photo', 'pick', 'mystery'] as const).find((s) => s === v.source) ?? 'text'
   return {
-    id: v.id.slice(0, 30),
+    id: v.id.slice(0, JOURNEY_ID_MAX),
     name: str(v.name, LIMITS.name),
     ...(v.twist ? { twist: str(v.twist, LIMITS.voice) } : {}),
     ...(v.voice ? { voice: str(v.voice, LIMITS.voice) } : {}),
@@ -380,7 +382,7 @@ export function sanitizeSave(raw: unknown, todayKey: string): Save {
       if (!PEOPLE[x.personId] || !Number.isFinite(x.departAt) || !Number.isFinite(x.arriveAt) || x.arriveAt < x.departAt) continue
       seen.add(x.journeyId)
       s.incoming.push({
-        journeyId: x.journeyId.slice(0, 30), departAt: x.departAt, arriveAt: x.arriveAt, personId: x.personId,
+        journeyId: x.journeyId.slice(0, JOURNEY_ID_MAX), departAt: x.departAt, arriveAt: x.arriveAt, personId: x.personId,
         ...(Number.isFinite(x.openedAt) ? { openedAt: x.openedAt } : {}),
       })
     }

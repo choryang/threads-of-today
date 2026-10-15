@@ -225,3 +225,9 @@ test('핵심 자리에서 만난 횟수(keyMeets) 동기화: 사람마다 큰 �
   const clean = sanitizeSave({ ...emptySave(), keyMeets: { 'sea-crew': 2, nobody: 5, barista: -1, roaster: 1.5, 'busan-crane': '3' } }, TODAY)
   assert.deepEqual(clean?.keyMeets, { 'sea-crew': 2 })
 })
+
+test('긴 여정 id(핵심 인물·거꾸로·두 번째 꼬리)도 잘리지 않고 남는다', () => {
+  const id = `${TODAY}-12-abcdef-r-k-second`
+  const s = sanitizeSave({ days: { [TODAY]: { journeys: [{ ...journey(id, 1) }] } }, incoming: [{ journeyId: id, departAt: 1, arriveAt: 2, personId: PEOPLE_LIST[0]!.id }] }, TODAY)
+  assert.equal(s?.days[TODAY]?.journeys[0]?.id, id)
+})
