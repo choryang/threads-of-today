@@ -3,11 +3,11 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { PEOPLE } from '../../shared/data/people'
 import { WORKPLACES } from '../../shared/data/village'
 import { UNLOCK } from '../../shared/friendship'
-import { dayStats, withJosa } from '../../shared/logic'
+import { dayStats, seoulDateKey, withJosa } from '../../shared/logic'
 import { arrivalShort, isArrived, isWaiting } from '../../shared/incoming'
 import { villageShareTitle } from '../../shared/share'
 import type { UnlockStep } from '../../shared/unlocks'
-import { countriesOf, villageLayout, type Placed } from '../../shared/village'
+import { VILLAGE_CAPACITY, countriesOf, nextResident, villageLayout, type Placed } from '../../shared/village'
 import { flowerLabel, newFlowerNotice, type Flower } from '../../shared/visit'
 import { MOTION } from '../utils/motion'
 
@@ -115,20 +115,33 @@ async function loadVillageSocial() {
   if (notice.value) villageLink.markSeen(Math.max(...notice.value.flowers.map((f) => f.at)))
 }
 
-// ── 제목 카드 접기: 지도를 더 넓게 보도록 한 줄로 접는다. 이 기기에서만 기억한다(편의 설정이라 진행 상황에 넣지 않는다) ──
-const FOLD_KEY = 'my-day-people:village-card-folded'
-const folded = ref(false)
+// ── 마을 목표 두 줄 (docs/screen-cleanup.md): 마을 주민 n / 살 수 있는 사람 수, 다음 주민 힌트 ──
+const capacity = VILLAGE_CAPACITY
+const residentPct = computed(() => Math.round((layout.value.residents.length / capacity) * 100))
+const { status } = useSync()
+/** 오늘(서울)과 사용자 id로 하루 동안 같은 사람. id가 아직 없으면(첫 동기화 전) 닉네임으로 */
+const next = computed(() => nextResident(Object.keys(game.state.cards), seoulDateKey(), status.profile?.id ?? game.nickname.value))
+function goNext() {
+  const p = next.value?.product
+  if (!p) return
+  const journey = game.startJourney({ name: p.name, materialIds: [...p.materialIds] }, 'pick')
+  router.push(`/journey/${journey.id}`)
+}
+
+// ── 제목 카드 자세히: 나라 수·단짝 수는 펼쳤을 때만. 이 기기에서만 기억한다(편의 설정이라 진행 상황에 넣지 않는다) ──
+const DETAILS_KEY = 'my-day-people:village-card-details'
+const details = ref(false)
 onMounted(() => {
   try {
-    folded.value = window.localStorage.getItem(FOLD_KEY) === '1'
+    details.value = window.localStorage.getItem(DETAILS_KEY) === '1'
   } catch {
-    // 저장소를 못 쓰면 펼친 채로
+    // 저장소를 못 쓰면 접은 채로
   }
 })
-function toggleFold() {
-  folded.value = !folded.value
+function toggleDetails() {
+  details.value = !details.value
   try {
-    window.localStorage.setItem(FOLD_KEY, folded.value ? '1' : '0')
+    window.localStorage.setItem(DETAILS_KEY, details.value ? '1' : '0')
   } catch {
     // 이번 방문 동안만
   }
@@ -230,31 +243,39 @@ onMounted(async () => {
 
     <div class="overlay">
       <div class="top">
-        <header class="title-card" :class="{ folded }">
+        <header class="title-card">
           <div class="title-row">
             <h1 class="display title">내 하루 마을</h1>
             <div class="title-btns">
               <button
                 class="icon-btn"
-                :aria-label="folded ? '마을 카드 펼치기' : '마을 카드 접기'"
-                :aria-expanded="!folded"
-                aria-controls="village-card-body"
-                @click="toggleFold"
+                :aria-label="details ? '자세히 접기' : '자세히 보기'"
+                :aria-expanded="details"
+                aria-controls="village-card-details"
+                @click="toggleDetails"
               >
-                <svg class="chevron" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6" /></svg>
+                <svg class="chevron" :class="{ up: details }" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
               </button>
               <button class="icon-btn" aria-label="마을 메뉴" :aria-expanded="menuOpen" @click="menuOpen = true">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
               </button>
             </div>
           </div>
-          <div v-show="!folded" id="village-card-body" class="card-body">
-            <p v-if="layout.residents.length" class="sub">
-              주민 {{ layout.residents.length }}명 · {{ countries.length }}개 나라에서 왔어요<template v-if="bestFriends.length"> · 단짝 {{ bestFriends.length }}명</template>
-            </p>
-            <p v-else class="sub">오늘 쓴 물건을 넣으면 그 물건을 거쳐 온 사람들이 마을에 와요</p>
-            <button v-if="layout.residents.length && game.opens('invite')" class="invite" @click="invite">내 마을 초대하기</button>
+          <!-- 목표 두 줄: 늘 보인다 -->
+          <div class="goal">
+            <p class="goal-count">마을 주민 <strong class="mono">{{ layout.residents.length }}</strong> / {{ capacity }}명</p>
+            <div class="goal-bar" role="progressbar" :aria-valuenow="layout.residents.length" aria-valuemin="0" :aria-valuemax="capacity" aria-label="마을 주민">
+              <span :style="{ width: `${residentPct}%` }" />
+            </div>
           </div>
+          <button v-if="next" class="next-resident" @click="goNext">
+            다음 주민은 <strong>{{ next.product.name }}</strong> 속에 있어요
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
+          </button>
+          <p v-else class="sub">마을에 살 수 있는 사람을 모두 만났어요</p>
+          <p v-if="details" id="village-card-details" class="sub details">
+            {{ countries.length }}개 나라에서 왔어요<template v-if="bestFriends.length"> · 단짝 {{ bestFriends.length }}명</template>
+          </p>
         </header>
         <button v-if="unlockShown" class="notice unlock-notice" role="status" @click="closeUnlockNotice">
           <svg width="26" height="26" viewBox="0 0 24 24" fill="#F2C14E" stroke="#2A2A35" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.5l2.6 6.2 6.7.6-5.1 4.4 1.6 6.6L12 16.8l-5.8 3.5 1.6-6.6-5.1-4.4 6.7-.6z" /></svg>
@@ -334,16 +355,19 @@ onMounted(async () => {
 .title-btns { display: flex; margin: -6px -4px -6px 0; }
 .icon-btn { width: 44px; height: 44px; border: 0; border-radius: 14px; background: none; color: var(--text); display: flex; align-items: center; justify-content: center; cursor: pointer; }
 .chevron { transition: transform var(--motion-enter) var(--motion-ease); }
-.card-body { display: flex; flex-direction: column; gap: 3px; animation: rise var(--motion-enter) var(--motion-ease); }
-/* 접으면 제목 한 줄만 왼쪽에 작게 (지도를 가리지 않게) */
-.title-card.folded { align-self: flex-start; padding: 8px 10px 8px 16px; border-radius: 18px; }
-.title-card.folded .title { font-size: 18px; }
-.title-card.folded .chevron { transform: rotate(180deg); }
-.sub { margin: 0; font-size: 13px; color: #c9cfd9; word-break: keep-all; }
-.invite {
-  align-self: flex-start; min-height: 44px; margin-top: 6px; padding: 0 16px; border-radius: 14px; border: 2px solid var(--accent);
-  background: none; color: var(--accent); font-size: 14px; font-weight: 700; cursor: pointer;
+.chevron.up { transform: rotate(180deg); }
+.goal { display: flex; flex-direction: column; gap: 5px; margin-top: 2px; }
+.goal-count { margin: 0; font-size: 14px; color: #f3f1ea; }
+.goal-count strong { color: var(--accent); font-size: 17px; font-weight: 500; }
+.goal-bar { height: 8px; border-radius: 4px; background: #2e3d55; overflow: hidden; }
+.goal-bar span { display: block; height: 100%; border-radius: 4px; background: var(--accent); }
+.next-resident {
+  align-self: flex-start; min-height: 44px; margin-top: 2px; padding: 0; border: 0; background: none; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 4px; color: #f3f1ea; font-size: 14px; text-align: left; word-break: keep-all;
 }
+.next-resident strong { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+.details { animation: rise var(--motion-enter) var(--motion-ease); }
+.sub { margin: 0; font-size: 13px; color: #c9cfd9; word-break: keep-all; }
 .notice {
   display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 8px 14px; border-radius: 16px; border: 0;
   background: #f3f1ea; color: #1a1a22; font-size: 14px; font-weight: 700; text-align: left; cursor: pointer; word-break: keep-all;

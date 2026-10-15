@@ -10,6 +10,8 @@ import { PLACES } from './data/places'
 import { ZONES, ZONE_BY_ID, type ZoneId } from './data/village'
 import type { PersonLog } from './progress'
 import { hash } from './random'
+import { hintProductOf } from './visit'
+import type { Product } from './types'
 
 export interface Placed {
   id: string
@@ -113,4 +115,25 @@ export function villageLayout(cards: Record<string, string>, people: Record<stri
 /** "주민 23명 · 9개 나라에서 왔어요"의 나라 수 (바다 위 사람은 나라가 없다) */
 export function countriesOf(ids: string[]): string[] {
   return [...new Set(ids.map((id) => PLACES[PEOPLE[id]?.placeId ?? '']?.country).filter((c): c is string => !!c))]
+}
+
+/** 마을에 살 수 있는 사람 수 (연결 카드는 이미 사는 원래 사람이라 뺀다). "마을 주민 n / 이 수" */
+export const VILLAGE_CAPACITY = PEOPLE_LIST.filter((p) => p.kind !== 'link').length
+
+/**
+ * "다음 주민은 {물건} 속에 있어요": 아직 못 만난 여정 사람(stage) 중 하나와, 그 사람이 나오는 대표 물건.
+ * 오늘 날짜(서울)와 사용자 id로 정해서 하루 동안 바뀌지 않는다. 대표 물건에 나오지 않는 사람은 고르지 않는다.
+ * 모두 만났으면 null
+ */
+export function nextResident(owned: Iterable<string>, seoulDate: string, seed: string): { personId: string; product: Product } | null {
+  const have = new Set(owned)
+  let best: { personId: string; product: Product; h: number } | null = null
+  for (const p of PEOPLE_LIST) {
+    if (p.kind !== 'stage' || have.has(p.id)) continue
+    const product = hintProductOf(p.id)
+    if (!product) continue
+    const h = hash(`next-resident:${seoulDate}:${seed}:${p.id}`)
+    if (!best || h < best.h || (h === best.h && p.id < best.personId)) best = { personId: p.id, product, h }
+  }
+  return best ? { personId: best.personId, product: best.product } : null
 }

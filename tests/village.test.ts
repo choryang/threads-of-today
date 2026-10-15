@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { PEOPLE_LIST } from '../shared/data/people'
 import { HOME_POINT, MAP_H, MAP_W, ZONES, ZONE_BY_ID } from '../shared/data/village'
-import { OVERFLOW_GAP, emptyLots, placeAll, villageLayout, villagers } from '../shared/village'
+import { OVERFLOW_GAP, VILLAGE_CAPACITY, emptyLots, nextResident, placeAll, villageLayout, villagers } from '../shared/village'
 import { FAR_SCALE, HIT_BELOW, fitBox, MAX_SCALE, MIN_HIT_PX, centerOn, clampScale, clampView, hitBox, minScale, zoneLabelScale, zoomAt, type Size } from '../app/utils/pan-zoom'
 
 const stage = PEOPLE_LIST.filter((p) => p.kind !== 'link')
@@ -142,4 +142,21 @@ test('마을로 모시기: 이번에 만난 사람들 상자가 화면에 다 �
   assert.ok(wide.scale * 2100 <= 390 + 1e-9 && wide.scale * 3300 <= 844 + 1e-9)
   // 지도 최소 배율보다는 작아지지 않는다
   assert.ok(fitBox(0, 0, MAP_W * 3, MAP_H * 3, PHONE).scale >= 390 / MAP_W - 1e-12)
+})
+
+test('마을 목표: 살 수 있는 사람 수는 연결 카드를 뺀 수, 다음 주민은 하루 동안 같고 못 만난 사람만', () => {
+  assert.equal(VILLAGE_CAPACITY, PEOPLE_LIST.filter((p) => p.kind !== 'link').length)
+  assert.notEqual(VILLAGE_CAPACITY, PEOPLE_LIST.length)
+  const a = nextResident([], '2026-10-15', 'u_a')!
+  assert.deepEqual(nextResident([], '2026-10-15', 'u_a'), a)
+  // 그 사람이 대표 물건의 재료 여정에 나온다
+  assert.ok(PEOPLE_LIST.find((p) => p.id === a.personId)?.kind === 'stage')
+  assert.ok(a.product.materialIds.length > 0)
+  // 날짜나 사용자가 바뀌면 (대개) 다른 사람
+  const others = ['2026-10-16', '2026-10-17', '2026-10-18'].map((d) => nextResident([], d, 'u_a')!.personId)
+  assert.ok(others.some((id) => id !== a.personId))
+  // 만난 사람은 고르지 않는다
+  assert.notEqual(nextResident([a.personId], '2026-10-15', 'u_a')!.personId, a.personId)
+  // 모두 만났으면 없음
+  assert.equal(nextResident(PEOPLE_LIST.map((p) => p.id), '2026-10-15', 'u_a'), null)
 })
