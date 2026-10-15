@@ -5,7 +5,7 @@ import { HOME_POINT, MAP_H, MAP_W, RESIDENT_H, RESIDENT_W, WORKPLACES, ZONES } f
 import type { Placed } from '../../shared/village'
 import { flowerColor, flowerLabel, type Flower } from '../../shared/visit'
 import { MOTION, reducedMotion } from '../utils/motion'
-import { FAR_SCALE, FAR_TAP_SCALE, centerOn, hitBox, zoneLabelScale } from '../utils/pan-zoom'
+import { FAR_SCALE, FAR_TAP_SCALE, centerOn, hitBox, zoneLabelScale, type View } from '../utils/pan-zoom'
 
 /**
  * 마을 지도 (내 마을과 친구 마을이 같이 쓴다): 지도·구역 이름표·주민·빈 집터·도착 예정·단짝 표시·일터 자리·꽃, 확대·축소·우리 집 버튼.
@@ -32,20 +32,56 @@ const props = withDefaults(defineProps<{
 const emit = defineEmits<{ resident: [id: string]; flower: [flower: Flower] }>()
 
 const viewport = ref<HTMLElement | null>(null)
-const pz = usePanZoom(viewport, { w: MAP_W, h: MAP_H }, (s) => centerOn(HOME_POINT.x, HOME_POINT.y, HOME_POINT.scale, s))
-const transform = computed(() => `translate(${pz.view.value.x}px, ${pz.view.value.y}px) scale(${pz.view.value.scale})`)
-const far = computed(() => pz.view.value.scale < FAR_SCALE)
-/** 누르는 영역·구역 이름표 크기는 배율에 따라 CSS 변수 몇 개로만 바꾼다(주민마다 다시 그리지 않게) */
-const worldVars = computed(() => {
-  const b = hitBox(pz.view.value.scale)
-  return {
-    '--hit-w': `${b.w}px`,
-    '--hit-h': `${b.h}px`,
-    '--hit-l': `${b.left}px`,
-    '--hit-t': `${b.top}px`,
-    '--label-k': String(far.value ? zoneLabelScale(pz.view.value.scale) : 1),
+const world = ref<HTMLElement | null>(null)
+
+/**
+ * 지금 보기를 지도 요소에 직접 쓴다 (usePanZoom이 한 프레임에 한 번 부른다). 반응형 상태를 거치지 않아 움직여도 이 컴포넌트는 다시 그려지지 않는다.
+ * transform은 매번, 나머지는 값이 바뀔 때만: 누르는 영역 크기(배율 약 0.31 미만에서만 바뀐다), 멀리 보기 class(0.25 경계),
+ * 구역 이름표 배율(이름표 다섯 개에만 직접), 미끄러지기 class.
+ * 누르는 영역은 상속되는 CSS 변수로 쓰면 주민 캐릭터 SVG 1만여 개 요소까지 스타일을 다시 계산해서, 이 지도 전용 규칙 한 줄로 쓴다
+ * (주민 버튼과 바로 아래 .body에만 닿는다)
+ */
+/** 이 지도 전용 규칙의 선택자 (내 마을·친구 마을이 같은 화면에 겹쳐도 섞이지 않게) */
+const mapId = `m${Math.random().toString(36).slice(2, 9)}`
+let hitSheet: HTMLStyleElement | null = null
+onBeforeUnmount(() => hitSheet?.remove())
+function writeHitRule(b: ReturnType<typeof hitBox>) {
+  if (!hitSheet) {
+    hitSheet = document.createElement('style')
+    document.head.appendChild(hitSheet)
   }
-})
+  const sel = `.world[data-map="${mapId}"]`
+  hitSheet.textContent =
+    `${sel} .resident{width:${b.w}px;height:${b.h}px;margin-left:${b.left}px;margin-top:${b.top}px}` +
+    `${sel} .resident>.body{left:${-RESIDENT_W / 2 - b.left}px;top:${-RESIDENT_H - b.top}px}`
+}
+const painted = { hit: '', far: false, label: '', glide: false }
+function paint(v: View, gliding: boolean) {
+  const el = world.value
+  if (!el) return
+  el.style.transform = `translate(${v.x}px, ${v.y}px) scale(${v.scale})`
+  const b = hitBox(v.scale)
+  const hit = `${b.w}|${b.h}`
+  if (hit !== painted.hit) {
+    writeHitRule(b)
+    painted.hit = hit
+  }
+  const isFar = v.scale < FAR_SCALE
+  if (isFar !== painted.far) {
+    el.classList.toggle('far', isFar)
+    painted.far = isFar
+  }
+  const k = isFar ? zoneLabelScale(v.scale).toFixed(3) : '1'
+  if (k !== painted.label) {
+    for (const label of el.querySelectorAll<HTMLElement>('.zone-label')) label.style.setProperty('--label-k', k)
+    painted.label = k
+  }
+  if (gliding !== painted.glide) {
+    el.classList.toggle('gliding', gliding)
+    painted.glide = gliding
+  }
+}
+const pz = usePanZoom(viewport, { w: MAP_W, h: MAP_H }, (s) => centerOn(HOME_POINT.x, HOME_POINT.y, HOME_POINT.scale, s), paint)
 
 /** 멀리 보기에서 이름표를 키우는 방향: 구역 가운데보다 아래에 붙은 이름표는 위로, 위에 붙은 이름표는 아래로 (옆 구역 이름표와 겹치지 않게) */
 const labelOrigin = (z: (typeof ZONES)[number]) => (z.label[1] > (z.bounds[1] + z.bounds[3]) / 2 ? '0 100%' : '0 0')
@@ -53,7 +89,7 @@ const labelOrigin = (z: (typeof ZONES)[number]) => (z.label[1] > (z.bounds[1] + 
 const nameOf = (id: string) => PEOPLE[id]?.name ?? PEOPLE[id]?.job ?? ''
 const jobOf = (id: string) => PEOPLE[id]?.job ?? ''
 /** 누르는 상자: 발끝 + hitBox 위치. 캐릭터는 그 안에서 발끝 기준 (x - 70, y - 190)에 그린다 */
-const hitStyle = (p: Placed) => ({ left: `calc(${p.x}px + var(--hit-l))`, top: `calc(${p.y}px + var(--hit-t))`, zIndex: p.y })
+const hitStyle = (p: Placed) => ({ left: `${p.x}px`, top: `${p.y}px`, zIndex: p.y })
 
 const best = computed(() => new Set(props.bestFriends))
 /** 단짝의 일터 자리 (그림이 아직 없어 점선 자리 + 일터 이름표) */
@@ -82,7 +118,7 @@ const flowerSpots = computed(() => {
 function tapResident(r: Placed) {
   if (pz.dragged()) return
   // 멀리 보기: 카드를 열지 않고 그 자리로 다가간다
-  if (far.value) pz.goTo(r.x, r.y - RESIDENT_H / 2, FAR_TAP_SCALE, true)
+  if (pz.far.value) pz.goTo(r.x, r.y - RESIDENT_H / 2, FAR_TAP_SCALE, true)
   else emit('resident', r.id)
 }
 function tapFlower(f: Flower) {
@@ -94,7 +130,7 @@ const cheering = ref('')
 let cheerTimer: ReturnType<typeof setTimeout> | undefined
 onBeforeUnmount(() => clearTimeout(cheerTimer))
 function celebrate(p: Placed): Promise<void> {
-  pz.goTo(p.x, p.y - RESIDENT_H / 2, Math.max(pz.view.value.scale, 0.8), true)
+  pz.goTo(p.x, p.y - RESIDENT_H / 2, Math.max(pz.view().scale, 0.8), true)
   if (reducedMotion()) return Promise.resolve()
   return new Promise((resolve) => {
     clearTimeout(cheerTimer)
@@ -107,7 +143,7 @@ function celebrate(p: Placed): Promise<void> {
 
 defineExpose({
   /** 한 주민 자리로 화면을 옮긴다 */
-  focus: (p: Placed) => pz.goTo(p.x, p.y - RESIDENT_H / 2, Math.max(pz.view.value.scale, 0.8), true),
+  focus: (p: Placed) => pz.goTo(p.x, p.y - RESIDENT_H / 2, Math.max(pz.view().scale, 0.8), true),
   /** 단짝이 된 순간 연출 (옮기기 → 하트). 끝나면 resolve */
   celebrate,
 })
@@ -115,7 +151,8 @@ defineExpose({
 
 <template>
   <div ref="viewport" class="viewport">
-    <div class="world" :class="{ gliding: pz.gliding.value, far }" :style="{ width: `${MAP_W}px`, height: `${MAP_H}px`, transform, ...worldVars }">
+    <!-- transform·누르는 영역 변수·far·gliding class는 paint()가 직접 쓴다 (템플릿에 묶지 않는다) -->
+    <div ref="world" class="world" :data-map="mapId" :style="{ width: `${MAP_W}px`, height: `${MAP_H}px` }">
       <img src="/village/map.svg" :width="MAP_W" :height="MAP_H" alt="" draggable="false" class="map">
 
       <div v-for="lot in lots" :key="`lot-${lot.id}`" class="lot" :style="{ left: `${lot.x - 65}px`, top: `${lot.y - 150}px` }" aria-hidden="true">
@@ -194,7 +231,9 @@ defineExpose({
 <style scoped>
 .viewport { position: absolute; inset: 0; background: #7fc3de; touch-action: none; user-select: none; -webkit-user-select: none; cursor: grab; }
 .viewport:active { cursor: grabbing; }
-.world { position: absolute; left: 0; top: 0; transform-origin: 0 0; will-change: transform; }
+.world {
+  position: absolute; left: 0; top: 0; transform-origin: 0 0; will-change: transform;
+}
 .world.gliding { transition: transform var(--motion-pan) var(--motion-ease); }
 .map { position: absolute; left: 0; top: 0; display: block; pointer-events: none; -webkit-user-drag: none; }
 .zone-label {
@@ -204,11 +243,12 @@ defineExpose({
 }
 .zone-label.home { background: #f2c14e; }
 .resident {
-  position: absolute; width: var(--hit-w); height: var(--hit-h); padding: 0; border: 0; background: none; cursor: pointer;
+  position: absolute; width: 140px; height: 210px; margin: -190px 0 0 -70px; padding: 0; border: 0; background: none; cursor: pointer;
   display: block; -webkit-tap-highlight-color: transparent;
 }
-/* 캐릭터는 누르는 상자 안에서 발끝 기준 (x - 70, y - 190) */
-.body { position: absolute; display: block; left: calc(-70px - var(--hit-l)); top: calc(-190px - var(--hit-t)); pointer-events: none; }
+/* 주민 버튼의 left·top은 발끝, margin이 누르는 상자 위치(hitBox). 캐릭터는 상자 안에서 발끝 기준 (x - 70, y - 190).
+   아래 기본값은 배율 0.31 이상일 때 값이고, 더 작으면 paint()의 지도 전용 규칙이 덮는다 */
+.body { position: absolute; display: block; left: 0; top: 0; pointer-events: none; }
 .glow { position: absolute; left: -5px; top: 162px; }
 .heart { position: absolute; left: 48px; top: -58px; transform-origin: 50% 90%; }
 .resident.cheer .heart { animation: heart-pop var(--motion-heart) var(--motion-ease); }

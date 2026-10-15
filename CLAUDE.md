@@ -82,7 +82,9 @@ server/
 app/
   composables/useGame.ts  게임 상태·규칙 (effectScope로 저장 watch, 하루 여정 3번, 미스터리 보너스, 닉네임)
   composables/useTodayMeets.ts 모두의 오늘 보내기(모아서·하루 한 번)·읽기. plugins/meet.client.ts가 useGame의 onMeet에 붙인다
-  composables/usePanZoom.ts 마을 지도 끌기·두 손가락·휠 확대(라이브러리 없이), 8px 이상 끌면 클릭 무시
+  composables/usePanZoom.ts 마을 지도 끌기·두 손가락·휠 확대(라이브러리 없이), 8px 이상 끌면 클릭 무시.
+                          보기(위치·배율)는 반응형이 아니다: rAF로 한 프레임에 한 번 VillageMap의 paint()가 지도 요소에 직접 쓴다.
+                          반응형은 far(0.25 경계) 하나. 지도 위에 템플릿으로 transform·배율 값을 묶지 말 것(움직일 때마다 주민 213명을 다시 그린다)
   composables/useSync.ts  서버 동기화·복구 코드로 이어 하기 (plugins/sync.client.ts가 호출)
   components/             ResidentSheet(주민 카드) · FriendshipPanel(친해진 정도) · MeetAgain(또 만났어요)
                           NicknameEditor(도감) · DeviceTransfer(도감 "다른 기기에서 이어 하기") · RecordTabs(기록 탭 안 오늘/나의 실타래 전환)
@@ -134,6 +136,7 @@ tests/                    node:test + tsx 단위 테스트
 11. 일의 크기 숫자(workFact·work-quizzes)를 보강할 때는 시설 규모나 나라 전체 통계보다 한 사람의 하루(하루에 몇 개, 몇 시간, 몇 km)나
     한 그루·한 송이처럼 손에 잡히는 단위의 숫자를 먼저 고른다. 단위는 미터법(톤·kg·km)으로 환산하고 계산식을 주석에 남긴다.
 12. 친해진 정도와 희소도는 별개다. 친해진 정도·감사 수로 사람 순위를 매기지 않고, 연속 출석이나 "안 하면 사라져요" 같은 잃는 장치는 넣지 않는다.
+13. 작업 보고(채팅 답·마무리 보고)는 한국어 해요체로 쓴다. 파일 이름·명령·코드 식별자는 원래 표기 그대로 둔다.
 
 ## 알려진 상태
 
