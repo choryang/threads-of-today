@@ -6,7 +6,7 @@ import { hashIp, incrementCounter, incrementScores, readCounters, readScoresOf, 
  *
  * 저장 키 (날짜는 서울 기준)
  *   thanks:seen:{날짜}:{누가}:{사람}  같은 기기가 같은 날 같은 사람에게 두 번 세지지 않게 (2일 뒤 만료)
- *   thanks:day:{날짜}:{사람}         그날 고마워한 사람 수 (3일 뒤 만료)
+ *   thanks:day:{날짜}:{사람}         그날 고마워한 사람 수 (기간 없이 INCR만, 날짜 키 청소 api/cron/cleanup가 이틀 뒤 지운다)
  *   thanks:total                    사람 id → 지금까지 고마워한 횟수 (정렬 집합, 하루 한 번씩 쌓인다)
  * '누가'는 익명 사용자 id의 해시(없으면 IP 해시, visitorKey). 닉네임 같은 사용자 정보는 받지 않는다.
  */
@@ -18,7 +18,7 @@ const dayKey = (date: string, personId: string) => `thanks:day:${date}:${personI
 export async function recordGratitude(personId: string, who: string, now = Date.now()): Promise<boolean> {
   const date = seoulDateKey(now)
   if (!(await setIfAbsent(`thanks:seen:${date}:${who}:${personId}`, '1', 2 * DAY))) return false
-  await Promise.all([incrementCounter(dayKey(date, personId), 3 * DAY), incrementScores(TOTAL_KEY, [personId])])
+  await Promise.all([incrementCounter(dayKey(date, personId)), incrementScores(TOTAL_KEY, [personId])])
   return true
 }
 

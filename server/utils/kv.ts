@@ -31,17 +31,21 @@ export function kvPersistent(): boolean {
 
 export const kv = () => useStorage('kv')
 
-/** 카운터를 1 올리고 새 값을 돌려준다. Upstash에서는 INCR + EXPIRE를 한 번의 요청(pipeline)으로 보낸다. */
-export async function incrementCounter(key: string, ttlSeconds: number): Promise<number> {
+/**
+ * 카운터를 1 올리고 새 값을 돌려준다. 기간(EXPIRE)은 처음 만들 때(값이 1일 때)만 건다:
+ * 두 번째부터는 INCR 한 명령이다. ttlSeconds를 주지 않으면 기간 없이 두고 날짜 키 청소(api/cron/cleanup)가 지운다.
+ */
+export async function incrementCounter(key: string, ttlSeconds?: number): Promise<number> {
   const r = redisClient()
   if (r) {
     const full = `${KV_PREFIX}:${key}`
-    const [count] = await r.pipeline().incr(full).expire(full, ttlSeconds).exec<[number, number]>()
+    const count = await r.incr(full)
+    if (count === 1 && ttlSeconds) await r.expire(full, ttlSeconds)
     return count
   }
   // 메모리·파일 드라이버: 개발용이라 원자성은 보장하지 않는다
   const count = ((await kv().getItem<number>(key)) ?? 0) + 1
-  await kv().setItem(key, count)
+  await kv().setItem(key, count, ttlSeconds ? { ttl: ttlSeconds } : undefined)
   return count
 }
 
@@ -118,25 +122,23 @@ export async function readScoresOf(key: string, members: string[]): Promise<numb
 }
 
 /**
- * HyperLogLog: 키마다 member를 더한다(PFADD)고 기간을 건다(EXPIRE). 같은 member를 여러 번 더해도 한 번으로 센다.
+ * HyperLogLog: 키마다 member를 더한다(PFADD). 같은 member를 여러 번 더해도 한 번으로 센다.
+ * 기간(EXPIRE)은 걸지 않는다: 키 이름에 날짜가 있어 날짜 키 청소(api/cron/cleanup)가 지운다.
  * Upstash에서는 키 전부를 파이프라인 한 번으로 보낸다. 개발용 저장소에서는 배열로 흉내 낸다(정확히 센다).
  */
-export async function hllAdd(keys: string[], member: string, ttlSeconds: number): Promise<void> {
+export async function hllAdd(keys: string[], member: string): Promise<void> {
   if (!keys.length) return
   const r = redisClient()
   if (r) {
     const p = r.pipeline()
-    for (const k of keys) {
-      p.pfadd(`${KV_PREFIX}:${k}`, member)
-      p.expire(`${KV_PREFIX}:${k}`, ttlSeconds)
-    }
+    for (const k of keys) p.pfadd(`${KV_PREFIX}:${k}`, member)
     await p.exec()
     return
   }
   for (const k of keys) {
     const set = new Set((await kv().getItem<string[]>(k)) ?? [])
     set.add(member)
-    await kv().setItem(k, [...set], { ttl: ttlSeconds })
+    await kv().setItem(k, [...set])
   }
 }
 
@@ -150,4 +152,35 @@ export async function hllCount(keys: string[]): Promise<number[]> {
     return (await p.exec<number[]>()).map((n) => Number(n) || 0)
   }
   return Promise.all(keys.map(async (k) => ((await kv().getItem<string[]>(k)) ?? []).length))
+}
+
+/**
+ * 패턴(* 하나 이상)에 맞는 키를 모두 찾는다. Upstash에서는 SCAN을 커서가 0이 될 때까지(한 번에 1,000개씩).
+ * 돌려주는 키에는 mdp: 접두어가 없다. 하루 한 번 청소에만 쓴다.
+ */
+export async function scanKeys(pattern: string): Promise<string[]> {
+  const r = redisClient()
+  if (r) {
+    const out: string[] = []
+    let cursor: string | number = 0
+    do {
+      const [next, keys]: [string | number, string[]] = await r.scan(cursor, { match: `${KV_PREFIX}:${pattern}`, count: 1000 })
+      for (const k of keys) out.push(k.slice(KV_PREFIX.length + 1))
+      cursor = next
+    } while (String(cursor) !== '0')
+    return out
+  }
+  const escape = (s: string) => s.replace(/[.+?^$()|[\]{}\\]/g, '\\$&')
+  const re = new RegExp('^' + pattern.split('*').map(escape).join('.*') + '$')
+  return (await kv().getKeys()).filter((k) => re.test(k))
+}
+
+/** 키를 지운다 (Upstash에서는 DEL 한 번에 500개씩) */
+export async function deleteKeys(keys: string[]): Promise<void> {
+  const r = redisClient()
+  for (let i = 0; i < keys.length; i += 500) {
+    const chunk = keys.slice(i, i + 500)
+    if (r) await r.del(...chunk.map((k) => `${KV_PREFIX}:${k}`))
+    else await Promise.all(chunk.map((k) => kv().removeItem(k)))
+  }
 }

@@ -47,7 +47,8 @@ shared/                 앱과 서버가 상대 경로로 함께 import (Nuxt �
                         링크를 만든 기기의 관리 키 해시만 저장. 복구 코드·사용자 id는 토큰·저장 값·응답·로그 어디에도 넣지 않는다
   visit.ts              마을에 놀러 가서 꽃 남기기: 꽃(닉네임·주민·날짜) 색(구역별)·하루 한 송이·새 꽃 알림 문구, 못 만난 주민의 힌트 물건
   intro.ts              사람 카드 소개: 정해진 문구 4개(맛있어서는 먹는 대표 물건만), 소개 화면의 사람 크기 사실(workFactHuman), 보낸 사람 알림 문구
-  today.ts              모두의 오늘: 숫자 포맷, "오늘 1,203명이 이 분을 만났어요"·여정 끝 합 문구, 사람마다 하루 한 번만 보내기
+  today.ts              모두의 오늘: 숫자 포맷, "오늘 1,203명이 이 분을 만났어요"·여정 끝 합 문구, 사람마다 하루 한 번만 보내기, 스냅샷(10분)·스냅샷 뒤 내 몫 더하기
+  cleanup.ts            날짜 키 청소 규칙: 기간 없이 두는 meet:*·thanks:day:* 중 어제보다 이전 것
   character-svg.ts      캐릭터 SVG 조립(순수 함수)과 피부색. 앱(app/utils/character.ts)과 OG 스크립트가 같이 쓴다
   village.ts            마을 자리 배정(먼저 만난 사람부터 hash(id) 자리, 모자라면 빈 땅), 빈 집터, 주민 나라 수
   rewind.ts             거꾸로 가는 여정 연출: 칸마다 형태(formsAlong), 문구, '이 전엔 어디 있었을까요?', 되감기 엔딩 순서
@@ -66,10 +67,12 @@ server/
   api/share/[token]/thank  소개받은 사람의 고마워요(가입 없이, 링크마다 한 번, 감사 수 B에도) · api/share/intro-thanks(보낸 사람, 관리 키 목록). utils/intro.ts
   routes/v/[token].get.ts  /v/{token}: 마을 초대 OG(공통 이미지 og/village.png). /d·/v·/p는 utils/share-page.ts의 defineShareRoute 하나로
   utils/village.ts      마을 꽃 저장(village-flowers:{주인 해시} 최근 200개·60일, village-flower-day 하루 한 송이)
-  api/meet/             모두의 오늘: POST(만난 사람들, PFADD meet:{사람}:{YYYYMMDD} 48시간) · GET ?ids=(PFCOUNT 파이프라인, 60초 캐시). utils/meet.ts
+  api/meet/             모두의 오늘 보내기: POST(만난 사람들, PFADD meet:{사람}:{YYYYMMDD}, EXPIRE 없음). utils/meet.ts
+  api/today-snapshot.get.ts 모두의 오늘 읽기: 사람 전체 수를 한 번에 센 스냅샷 한 키(meet-snapshot, 10분 지나면 다시 셈). CDN s-maxage=600
+  api/cron/cleanup.get.ts Vercel Cron(서울 새벽 4시, nuxt.config의 nitro.vercel.config.crons). CRON_SECRET Bearer 검사 후 이틀 지난 날짜 키 SCAN·DEL
   api/thanks/           다른 사람들의 고마움: POST(고마워요 1번 세기, 같은 기기·같은 날·같은 사람은 한 번) · GET ?ids=(오늘 수·누적 수)
   plugins/kv.ts         useStorage('kv'): Upstash(env 있을 때) / 개발 .data/kv 파일 / 그 밖 메모리
-  utils/kv.ts           incrementCounter(INCR+EXPIRE), incrementScores(ZINCRBY), setIfAbsent, hashIp. 키는 Redis에서 mdp: 아래
+  utils/kv.ts           incrementCounter(INCR, EXPIRE는 처음 한 번만·없으면 청소가 지움), incrementScores(ZINCRBY), setIfAbsent, hllAdd/hllCount, scanKeys/deleteKeys, hashIp. 키는 Redis에서 mdp: 아래
   utils/ai-cache.ts     캐시 읽기·쓰기(hits, firstSeen), allowAiCall(한국 자정 기준), countMissing(준비 중 재료 집계)
   utils/gratitude.ts    고마움 수 키(thanks:day·thanks:total·thanks:seen). 사람 한 명씩만 읽고 순위는 만들지 않는다
   utils/users.ts        user:{id}(메타+진행 상황 한 값), code:{code}→id. 나중 로그인 연결 구조 주석

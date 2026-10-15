@@ -22,9 +22,9 @@ const thankedToday = computed(() => game.thankedToday(props.personId))
 const reply = computed(() => (thankedToday.value ? thanksReply(props.personId) : ''))
 const others = computed(() => gratitude.counts[props.personId])
 const meets = useTodayMeets()
-watch(() => props.personId, (id) => { void gratitude.load(id); void meets.load([id]) }, { immediate: true })
+watch(() => props.personId, (id) => { void gratitude.load(id); void meets.load() }, { immediate: true })
 const todayLine = computed(() => {
-  const n = meets.counts[props.personId]
+  const n = meets.countOf(props.personId)
   const mine = meets.metToday(props.personId)
   return n === undefined && !mine ? '' : todayMeetLine(n ?? 0, mine)
 })

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { compactDate, formatCount, journeyMeetLine, todayMeetLine, unsentToday } from '../shared/today'
+import { dateOfKey, daysBefore, expiredDatedKey } from '../shared/cleanup'
+import { compactDate, formatCount, journeyMeetLine, meetCountFor, snapshotStale, todayMeetLine, unsentToday } from '../shared/today'
 
 test('숫자 포맷: 천 단위 쉼표', () => {
   assert.equal(formatCount(0), '0')
@@ -25,4 +26,40 @@ test('사람마다 서울 날짜로 하루 한 번만 보낸다', () => {
   assert.deepEqual(unsentToday(['a', 'b'], { date: '2026-10-15', ids: ['a'] }, '2026-10-15'), ['b'])
   // 날짜가 바뀌면 다시 보낸다
   assert.deepEqual(unsentToday(['a'], { date: '2026-10-14', ids: ['a'] }, '2026-10-15'), ['a'])
+})
+
+test('스냅샷: 없거나 날짜가 바뀌었거나 10분이 지났을 때만 다시 센다', () => {
+  const t = Date.UTC(2026, 9, 15, 3, 0)
+  const snap = { date: '2026-10-15', at: t, counts: { a: 3 } }
+  assert.ok(snapshotStale(null, t, '2026-10-15'))
+  assert.ok(!snapshotStale(snap, t + 9 * 60_000, '2026-10-15'))
+  assert.ok(snapshotStale(snap, t + 10 * 60_000, '2026-10-15'))
+  assert.ok(snapshotStale(snap, t + 60_000, '2026-10-16'))
+})
+
+test('화면의 오늘 수: 스냅샷 뒤에 내가 보냈으면 나를 더하고, 어제 스냅샷은 0으로 본다', () => {
+  const snap = { date: '2026-10-15', at: 1000, counts: { a: 3 } }
+  assert.equal(meetCountFor(snap, 'a', '2026-10-15'), 3)
+  assert.equal(meetCountFor(snap, 'b', '2026-10-15'), 0)
+  assert.equal(meetCountFor(snap, 'a', '2026-10-15', 500), 3) // 이미 스냅샷에 들어 있다
+  assert.equal(meetCountFor(snap, 'a', '2026-10-15', 2000), 4)
+  assert.equal(meetCountFor(snap, 'a', '2026-10-16'), 0)
+  assert.equal(meetCountFor(snap, 'a', '2026-10-16', 2000), 1)
+  assert.equal(meetCountFor(null, 'a', '2026-10-15'), undefined)
+  assert.equal(meetCountFor(null, 'a', '2026-10-15', 2000), 1)
+})
+
+test('날짜 키 청소: 오늘·어제 키는 남기고 그 전 것만, 날짜 키가 아니면 건드리지 않는다', () => {
+  assert.equal(daysBefore('2026-10-01', 1), '2026-09-30')
+  assert.equal(daysBefore('2026-01-01', 2), '2025-12-30')
+  assert.equal(dateOfKey('meet:coffee-picker:20261013'), '2026-10-13')
+  assert.equal(dateOfKey('thanks:day:2026-10-13:coffee-picker'), '2026-10-13')
+  assert.equal(dateOfKey('thanks:total'), null)
+  assert.equal(dateOfKey('meet-snapshot'), null)
+  assert.ok(expiredDatedKey('meet:coffee-picker:20261013', '2026-10-15'))
+  assert.ok(!expiredDatedKey('meet:coffee-picker:20261014', '2026-10-15'))
+  assert.ok(!expiredDatedKey('meet:coffee-picker:20261015', '2026-10-15'))
+  assert.ok(expiredDatedKey('thanks:day:2026-10-13:barista', '2026-10-15'))
+  assert.ok(!expiredDatedKey('thanks:day:2026-10-14:barista', '2026-10-15'))
+  assert.ok(!expiredDatedKey('thanks:seen:2026-10-01:abc:barista', '2026-10-15')) // 기간이 걸린 키는 건드리지 않는다
 })

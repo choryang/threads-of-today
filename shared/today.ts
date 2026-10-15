@@ -27,8 +27,43 @@ export function journeyMeetLine(sum: number): string {
   return sum > 0 ? `오늘 당신과 같은 사람을 만난 사람이 모두 ${formatCount(sum)}명이에요` : ''
 }
 
+/** 이 기기가 오늘 보낸 사람들 (localStorage). at: 사람마다 보낸 시각 */
+export interface SentToday {
+  date: string
+  ids: string[]
+  at?: Record<string, number>
+}
+
 /** 오늘(서울 날짜) 아직 보내지 않은 사람만 (사람마다 하루 한 번만 서버에 보낸다) */
-export function unsentToday(ids: string[], sent: { date: string; ids: string[] } | null, seoulDate: string): string[] {
+export function unsentToday(ids: string[], sent: SentToday | null, seoulDate: string): string[] {
   const already = new Set(sent?.date === seoulDate ? sent.ids : [])
   return [...new Set(ids)].filter((id) => !already.has(id))
+}
+
+/**
+ * 오늘 모든 사람의 수를 한 번에 센 스냅샷 (server/api/today-snapshot). 화면은 이것만 읽는다.
+ * counts에는 0이 아닌 사람만 담는다. at은 센 시각(ms).
+ */
+export interface MeetSnapshot {
+  date: string
+  at: number
+  counts: Record<string, number>
+}
+
+/** 스냅샷을 다시 세는 간격 (서버 저장값·CDN 캐시·이 기기 모두 같다) */
+export const SNAPSHOT_MAX_AGE_MS = 10 * 60 * 1000
+
+/** 다시 세야 하는지: 없거나, 날짜가 바뀌었거나, 10분이 지났으면 */
+export function snapshotStale(s: MeetSnapshot | null | undefined, now: number, seoulDate: string): boolean {
+  return !s || s.date !== seoulDate || now - s.at >= SNAPSHOT_MAX_AGE_MS
+}
+
+/**
+ * 화면에 보일 오늘 수. 스냅샷은 최대 10분 늦으니, 내가 스냅샷 뒤에 보냈으면 나를 1 더한다.
+ * 어제 스냅샷이면 오늘 수는 0으로 본다. 스냅샷도 없고 나도 안 보냈으면 undefined(아무 말 안 함).
+ */
+export function meetCountFor(snapshot: MeetSnapshot | null, personId: string, seoulDate: string, mySentAt?: number): number | undefined {
+  const mine = mySentAt !== undefined && (!snapshot || snapshot.date !== seoulDate || mySentAt > snapshot.at) ? 1 : 0
+  if (!snapshot) return mine ? 1 : undefined
+  return (snapshot.date === seoulDate ? snapshot.counts[personId] ?? 0 : 0) + mine
 }

@@ -36,6 +36,7 @@ npm run cache:export   # AI 캐시를 조회 수 순으로 data/review/cache.csv
    | `KV_REST_API_URL` / `KV_REST_API_TOKEN` | 권장 | Upstash 연결 시 자동. 없으면 캐시·요청 제한이 인스턴스 메모리로만 동작하고, 진행 상황 서버 저장(다른 기기에서 이어 하기)은 꺼진다 |
    | `NUXT_AI_DAILY_LIMIT` | 선택 | IP별 하루 AI 호출 한도. 기본 20 |
    | `NUXT_IP_SALT` | 권장 | 요청 제한 키에 쓰는 IP 해시의 소금값. 아무 긴 문자열 |
+   | `CRON_SECRET` | 권장 | Vercel Cron(`/api/cron/cleanup`, 매일 서울 새벽 4시)이 보내는 Bearer 토큰. 없으면 청소가 늘 거절되어 이틀 지난 `meet:*`·`thanks:day:*` 키가 쌓인다. 16자 이상 무작위 문자열 |
 5. Deploy. 로컬에서 운영 저장소에 붙여 보려면 `vercel env pull .env`로 변수를 받아 온다.
 
 요청 하나에 출력 토큰은 최대 500개로 제한돼 있다.

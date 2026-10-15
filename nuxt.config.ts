@@ -3,6 +3,14 @@ export default defineNuxtConfig({
   // 진행 상황을 브라우저(localStorage)에 저장하는 게임이라 SPA로 동작한다. 서버는 /api만 쓴다.
   ssr: false,
   devtools: { enabled: false },
+  nitro: {
+    vercel: {
+      config: {
+        // Vercel Cron: 이틀 지난 날짜 키(meet:*, thanks:day:*) 청소. 서울 새벽 4시 = UTC 19시. CRON_SECRET 환경 변수 필요
+        crons: [{ path: '/api/cron/cleanup', schedule: '0 19 * * *' }],
+      },
+    },
+  },
   css: ['~/assets/css/main.css'],
   runtimeConfig: {
     // NUXT_ANTHROPIC_API_KEY, NUXT_ANTHROPIC_MODEL 환경 변수로 덮어쓴다.

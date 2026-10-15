@@ -33,9 +33,9 @@ const introducedBy = computed(() => (met.value ? share.introducedBy(props.person
 
 // 모두의 오늘: 오늘 이 분을 만난 사람 수
 const meets = useTodayMeets()
-watch([() => props.personId, met], ([id, isMet]) => { if (isMet) void meets.load([id]) }, { immediate: true })
+watch([() => props.personId, met], ([, isMet]) => { if (isMet) void meets.load() }, { immediate: true })
 const todayLine = computed(() => {
-  const n = meets.counts[props.personId]
+  const n = meets.countOf(props.personId)
   const mine = meets.metToday(props.personId)
   return n === undefined && !mine ? '' : todayMeetLine(n ?? 0, mine)
 })
