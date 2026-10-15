@@ -50,10 +50,10 @@ async function share() {
 </script>
 
 <template>
-  <!-- 오늘의 미스터리는 주민 15명 뒤에 열린다 (shared/unlocks.ts). 주소로 바로 와도 그 전에는 안내만 -->
+  <!-- 오늘의 미스터리는 여정 7번 뒤에 열린다 (shared/unlocks.ts). 주소로 바로 와도 그 전에는 안내만 -->
   <main v-if="!game.opens('mystery')" class="page">
     <section class="panel locked-panel">
-      <p class="r-title">마을 주민이 15명이 되면 열려요</p>
+      <p class="r-title">여정을 7번 떠나면 열려요</p>
       <p class="muted small">그때부터 매일 새 미스터리 물건이 열려요.</p>
       <NuxtLink to="/" class="btn btn-primary btn-block">마을로</NuxtLink>
     </section>
