@@ -121,6 +121,7 @@ scripts/import-foodsafety.ts (선택, 실행 보류) 식품안전나라 원재�
 scripts/update-origins.ts (실행 보류) 관세청 수출입실적 → 출발지 가중치 제안 뼈대
 scripts/time-ai.ts        AI 분해 응답 시간 재기 (node --env-file=.env --import tsx scripts/time-ai.ts)
 scripts/export-cache.ts   AI 캐시를 조회 수 순으로 data/review/cache.csv (사용자 입력이 들어 있어 커밋하지 않음)
+scripts/user-stats.ts     운영 사용자 현황 집계(npm run stats). .env.stats(vercel env pull .env.stats --environment=production)만 읽어 SCAN·MGET만, 숫자만 출력. 집계는 scripts/user-stats-summary.ts
 tests/                    node:test + tsx 단위 테스트
 ```
 
