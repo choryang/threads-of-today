@@ -1,8 +1,8 @@
 import type { Continent, Hat, Person } from '../../shared/types'
 
-/** 대륙별 피부색. 파츠의 var(--skin)에 들어간다 */
+/** 대륙별 피부색. 파츠의 var(--skin)에 들어간다. 대한민국도 아시아라 아시아와 같은 색 */
 export const BODY_COLORS: Record<Continent, string> = {
-  korea: '#FFC9A8',
+  korea: '#FFE08A',
   asia: '#FFE08A',
   africa: '#B8E0A0',
   europe: '#B9D4F5',
