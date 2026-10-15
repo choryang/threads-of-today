@@ -122,9 +122,11 @@ const { status } = useSync()
 /** 오늘(서울)과 사용자 id로 하루 동안 같은 사람. id가 아직 없으면(첫 동기화 전) 닉네임으로 */
 const next = computed(() => nextResident(Object.keys(game.state.cards), seoulDateKey(), status.profile?.id ?? game.nickname.value))
 function goNext() {
-  const p = next.value?.product
-  if (!p) return
-  const journey = game.startJourney({ name: p.name, materialIds: [...p.materialIds] }, 'pick')
+  const n = next.value
+  if (!n) return
+  const p = n.product
+  // 그 사람이 반드시 나오는 출발지로 떠난다 (여정 id 꼬리를 고른다)
+  const journey = game.startJourney({ name: p.name, materialIds: [...p.materialIds] }, 'pick', { meet: n.personId })
   router.push(`/journey/${journey.id}`)
 }
 

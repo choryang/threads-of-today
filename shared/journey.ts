@@ -257,3 +257,17 @@ export function timelinePeople(materialIds: string[], journeyId?: string, itemNa
 export function secondJourneyGift(materialIds: string[], journeyId: string): boolean {
   return isSecondJourney(journeyId) && !buildTimeline(materialIds, journeyId).some((t) => t.type === 'hidden')
 }
+
+/**
+ * 이 사람이 반드시 나오는 여정 id 꼬리 ("다음 주민은 {물건} 속에 있어요"를 눌러 떠날 때).
+ * 출발지·가게 사람은 여정 id 시드로 정해지므로, 사람 id로 만든 후보 꼬리를 차례로 넣어 보고 그 사람이 나오는 첫 꼬리를 고른다.
+ * idOf: 꼬리 → 여정 id 전체(날짜·번호·'-r'·첫/두 번째 꼬리까지). salt: 기기마다 다른 값(다른 기기의 같은 여정 id와 겹치지 않게).
+ * 못 찾으면 null(그때는 무작위 꼬리로 떠난다)
+ */
+export function tailMeeting(idOf: (tail: string) => string, materialIds: string[], itemName: string, personId: string, salt = '', tries = 400): string | null {
+  for (let i = 0; i < tries; i++) {
+    const tail = mix32(hash(`meet:${personId}:${salt}:${i}`)).toString(36).padStart(4, '0').slice(0, 6)
+    if (timelinePeople(materialIds, idOf(tail), itemName).some((p) => p.personId === personId)) return tail
+  }
+  return null
+}

@@ -2,6 +2,8 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { PEOPLE_LIST } from '../shared/data/people'
 import { HOME_POINT, MAP_H, MAP_W, ZONES, ZONE_BY_ID } from '../shared/data/village'
+import { buildTimeline, tailMeeting } from '../shared/journey'
+import { hintProductOf } from '../shared/visit'
 import { OVERFLOW_GAP, VILLAGE_CAPACITY, emptyLots, nextResident, placeAll, villageLayout, villagers } from '../shared/village'
 import { FAR_SCALE, HIT_BELOW, fitBox, MAX_SCALE, MIN_HIT_PX, centerOn, clampScale, clampView, hitBox, minScale, zoneLabelScale, zoomAt, type Size } from '../app/utils/pan-zoom'
 
@@ -159,4 +161,33 @@ test('마을 목표: 살 수 있는 사람 수는 연결 카드를 뺀 수, 다�
   assert.notEqual(nextResident([a.personId], '2026-10-15', 'u_a')!.personId, a.personId)
   // 모두 만났으면 없음
   assert.equal(nextResident(PEOPLE_LIST.map((p) => p.id), '2026-10-15', 'u_a'), null)
+})
+
+test('다음 주민 여정: 고른 사람이 반드시 나오는 여정 id 꼬리가 있다 (첫·두 번째·그 밖의 여정 모두)', () => {
+  const candidates = PEOPLE_LIST.filter((p) => p.kind === 'stage' && hintProductOf(p.id))
+  assert.ok(candidates.length > 150)
+  const missed: string[] = []
+  for (const p of candidates) {
+    const product = hintProductOf(p.id)!
+    for (const end of ['-r', '-r-first', '-r-second']) {
+      const idOf = (tail: string) => `2026-10-15-3-${tail}${end}`
+      const tail = tailMeeting(idOf, product.materialIds, product.name, p.id, 'ab12')
+      if (!tail) { missed.push(`${p.id}${end}`); continue }
+      // 화면에 나오는 순서(거꾸로 가는 타임라인)에서도 그 사람이 나온다
+      const t = buildTimeline(product.materialIds, idOf(tail), product.name)
+      const shown = t.some((x) => ((x.type === 'stage' || x.type === 'hidden') && x.personId === p.id) || (x.type === 'pass' && x.personIds.includes(p.id)))
+      if (!shown) missed.push(`${p.id}${end} (화면)`)
+    }
+  }
+  assert.deepEqual(missed, [])
+  // 같은 사람·같은 소금이면 같은 꼬리, 소금이 다르면 (대개) 다른 꼬리
+  const p = candidates[0]!
+  const product = hintProductOf(p.id)!
+  const idOf = (tail: string) => `2026-10-15-3-${tail}-r`
+  assert.equal(tailMeeting(idOf, product.materialIds, product.name, p.id, 'x'), tailMeeting(idOf, product.materialIds, product.name, p.id, 'x'))
+  // 하루 동안 고른 다음 주민도 늘 만날 수 있다
+  for (const date of ['2026-10-15', '2026-10-16', '2026-10-17', '2026-11-01']) {
+    const n = nextResident([], date, 'u_a')!
+    assert.ok(tailMeeting((tail) => `${date}-1-${tail}-r`, n.product.materialIds, n.product.name, n.personId, 'zz'), date)
+  }
 })

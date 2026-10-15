@@ -9,7 +9,7 @@ import { addGratitude, addMeeting, friendshipOf, migratePeople, quizOf, UNLOCK }
 import { createIncoming } from '../../shared/incoming'
 import { mysteryHints } from '../../shared/mystery'
 import { normalizeNickname, randomNickname } from '../../shared/nickname'
-import { REVERSE_SUFFIX, buildTimeline, journeyOrderSuffix, quizFor, secondJourneyGift, timelinePeople } from '../../shared/journey'
+import { REVERSE_SUFFIX, buildTimeline, journeyOrderSuffix, quizFor, secondJourneyGift, tailMeeting, timelinePeople } from '../../shared/journey'
 import { addJourneyToThreads, backfillThreads } from '../../shared/threads'
 import { everyoneThanked, sceneKey, thanksReply, unseenScenes, type ThanksScene } from '../../shared/thanks'
 import { emptySave, type DayLog, type Journey, type JourneySource, type MysteryLog, type Save } from '../../shared/progress'
@@ -200,14 +200,19 @@ export function useGame() {
    * 여정을 떠난다. 하루 횟수 제한은 없다(물건 고르기는 로컬 데이터라 비용이 없다). AI를 부르는 직접 쓰기·사진만
    * 서버가 IP별 하루 한도(NUXT_AI_DAILY_LIMIT)로 막는다.
    * teaser: 지난 여정의 '다음 여정 추천'을 따라 떠날 때, 말을 건 사람 id
+   * meet: 이 사람이 반드시 나오게 여정 id 꼬리를 고른다 ('다음 주민은 {물건} 속에 있어요'를 눌러 떠날 때)
    */
-  function startJourney(item: Decomposed, source: JourneySource, opts: { teaser?: string } = {}): Journey {
+  function startJourney(item: Decomposed, source: JourneySource, opts: { teaser?: string; meet?: string } = {}): Journey {
     const day = ensureToday()
+    const head = `${todayKey}-${day.journeys.length + 1}-`
+    const tailEnd = `${REVERSE_SUFFIX}${journeyOrderSuffix(firstVisit.value, Object.values(s.days).flatMap((d) => d.journeys.map((j) => j.id)))}`
+    const salt = Math.random().toString(36).slice(2, 6)
+    const meetTail = opts.meet ? tailMeeting((tail) => `${head}${tail}${tailEnd}`, item.materialIds, item.name, opts.meet, salt) : null
     const journey: Journey = {
       // 여러 기기의 기록을 합칠 때 겹치지 않게 무작위 꼬리를 붙인다 (앞 10글자는 날짜, '-꼬리'가 있으면 새 여정 규칙을 쓴다)
       // '-r': 내 손에서 원산지로 거슬러 올라가는 여정. 이 꼬리가 없는 예전 여정은 예전 순서 그대로 끝난다
       // 첫 여정에는 '-first'(사람 카드만), 두 번째 여정에는 '-second'(숨은 만남 또는 퀴즈 보상 보장)를 더 붙인다 (shared/journey.ts)
-      id: `${todayKey}-${day.journeys.length + 1}-${Math.random().toString(36).slice(2, 6)}${REVERSE_SUFFIX}${journeyOrderSuffix(firstVisit.value, Object.values(s.days).flatMap((d) => d.journeys.map((j) => j.id)))}`,
+      id: `${head}${meetTail ?? salt}${tailEnd}`,
       name: item.name,
       twist: item.twist,
       voice: item.voice,
