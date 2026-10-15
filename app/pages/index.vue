@@ -52,6 +52,11 @@ function openResident(id: string) {
 /** ?focus=사람 id: 그 사람 자리로 화면을 옮긴다 (밤사이 도착한 주민을 마을로 모실 때) */
 onMounted(async () => {
   const focus = typeof route.query.focus === 'string' ? route.query.focus : ''
+  // 처음 온 사람(만난 사람도 떠난 여정도 없음)은 10초 테스트부터
+  if (game.firstVisit.value && !Object.values(game.state.days).some((d) => d.journeys.length)) {
+    router.replace('/test')
+    return
+  }
   // 도착했는데 아직 열지 않은 물건이 있으면 도착 화면부터 (도착 후 처음 열 때)
   const due = waiting.value.find((x) => isArrived(x, Date.now()))
   if (!focus && due) {
@@ -123,7 +128,10 @@ const goHome = () => pz.goTo(HOME_POINT.x, HOME_POINT.y, HOME_POINT.scale, true)
 
     <div class="overlay">
       <header class="title-card">
-        <h1 class="display title">내 하루 마을</h1>
+        <div class="title-row">
+          <h1 class="display title">내 하루 마을</h1>
+          <NuxtLink to="/test" class="menu-link">나의 하루 유형</NuxtLink>
+        </div>
         <p v-if="layout.residents.length" class="sub">주민 {{ layout.residents.length }}명 · {{ countries.length }}개 나라에서 왔어요</p>
         <p v-else class="sub">오늘 쓴 물건을 넣으면 그 물건을 거쳐 온 사람들이 마을에 와요</p>
       </header>
@@ -201,6 +209,11 @@ const goHome = () => pz.goTo(HOME_POINT.x, HOME_POINT.y, HOME_POINT.scale, true)
   display: flex; flex-direction: column; gap: 3px; padding: 14px 18px; border-radius: 20px; background: rgba(15, 27, 45, 0.9);
 }
 .title { margin: 0; font-size: 24px; line-height: 1.15; }
+.title-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.menu-link {
+  display: inline-flex; align-items: center; min-height: 44px; padding: 0 12px; margin: -8px -6px -8px 0; border-radius: 14px;
+  color: var(--accent); font-size: 13px; font-weight: 700; text-decoration: none; white-space: nowrap;
+}
 .sub { margin: 0; font-size: 13px; color: #c9cfd9; word-break: keep-all; }
 .zoom { position: absolute; right: max(12px, calc(50% - 228px)); top: calc(max(16px, env(safe-area-inset-top)) + 92px); display: flex; flex-direction: column; gap: 8px; }
 .zbtn {

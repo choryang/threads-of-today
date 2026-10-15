@@ -2,7 +2,7 @@
 const route = useRoute()
 const items = [
   // 마을 탭은 물건 넣기(/add)·미스터리(/mystery)에서도 켜져 있다 (그 흐름이 마을에서 시작한다)
-  { to: '/', label: '마을', also: ['/add', '/mystery'], icon: 'M4 11 12 4l8 7v9a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z' },
+  { to: '/', label: '마을', also: ['/add', '/mystery', '/test', '/arrival'], icon: 'M4 11 12 4l8 7v9a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z' },
   { to: '/dex', label: '도감', icon: 'M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3zM5 17a3 3 0 0 1 3-3h11M9 8h6' },
   { to: '/result', label: '기록', also: ['/threads'], icon: 'M4 20V10M10 20V4M16 20v-7M22 20H2' },
 ]

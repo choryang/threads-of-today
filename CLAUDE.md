@@ -69,9 +69,12 @@ app/
   components/             ResidentSheet(주민 카드) · FriendshipPanel(친해진 정도) · MeetAgain(또 만났어요)
                           NicknameEditor(도감) · DeviceTransfer(도감 "다른 기기에서 이어 하기") · RecordTabs(기록 탭 안 오늘/나의 실타래 전환)
                           FormBadge(지금 물건의 형태) · RewindReplay(빨리 감기 엔딩) · IncomingCard(오고 있는 물건)
-  pages/                  index(내 하루 마을: 지도·주민·주민 카드·오고 있는 물건) · arrival/[id](밤사이 도착했어요) · add(오늘 쓴 물건 넣기: 물건 타일 + 직접 쓰기·사진, 미스터리로 가는 길)
+  pages/                  index(내 하루 마을: 지도·주민·주민 카드·오고 있는 물건, 처음 온 사람은 /test로) · test(10초 테스트)·test/result
+                          arrival/[id](밤사이 도착했어요) · add(오늘 쓴 물건 넣기: 물건 타일 + 직접 쓰기·사진, 미스터리로 가는 길)
                           journey/[id] · mystery · dex(통계) · result(기록: 오늘 여정·html-to-image 공유) · threads(기록 안 나의 실타래)
                           하단 탭은 3개(마을·도감·기록). 미스터리는 물건 넣기 화면에서 연다
+  utils/share-image.ts    공유 이미지 1080×1350을 캔버스로 그린다(나의 하루 유형·두 사람의 하루). 글씨는 위아래 80px 안쪽
+  utils/day-test.ts       테스트 물건 18개의 형태 아이콘(가장 가까운 것, exact: false는 대신 쓴 것)
   utils/pan-zoom.ts       지도 배율·위치 제한, 한 점 기준 확대 (usePanZoom.ts가 쓰는 순수 함수)
   utils/motion.ts         모든 시간 값(전환 0.3초·토스트·고마워요 손 흔들기·자동 넘김 3~6초). CSS는 plugins/motion.client.ts가 넣는 --motion-* 변수
   utils/local-match.ts    대표 물건 + 앱용 사전으로 서버 없이 즉시 분해
