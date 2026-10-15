@@ -1,6 +1,7 @@
 import { reactive, ref } from 'vue'
 import { seoulDateKey } from '../../shared/logic'
-import { SNAPSHOT_DEFAULT_MINUTES, meetCountFor, unsentToday, type MeetSnapshot, type SentToday } from '../../shared/today'
+import { SNAPSHOT_DEFAULT_MINUTES, meetCountFor, moodCountFor, unsentToday, type MeetSnapshot, type SentToday } from '../../shared/today'
+import type { MoodId } from '../../shared/data/moods'
 import { useSync } from './useSync'
 
 /**
@@ -9,6 +10,16 @@ import { useSync } from './useSync'
  * 스냅샷 뒤에 내가 만난 사람은 나를 1 더해 보여 준다(meetCountFor). 서버를 쓸 수 없으면 조용히 비워 둔다.
  */
 const SENT_KEY = 'my-day-people:meet-sent'
+/** 오늘 마음을 보낸 날·시각 (새 기획: 실을 묶으면 하루 한 번) */
+const MOOD_SENT_KEY = 'my-day-people:mood-sent'
+interface MoodSent { date: string; mood: string; at: number }
+function loadMoodSent(): MoodSent | null {
+  try {
+    return JSON.parse(window.localStorage.getItem(MOOD_SENT_KEY) ?? 'null')
+  } catch {
+    return null
+  }
+}
 const SEND_DELAY_MS = 1500
 
 const snapshot = ref<MeetSnapshot | null>(null)
@@ -100,5 +111,28 @@ export function useTodayMeets() {
     return meetCountFor(snapshot.value, personId, date, sentAt[personId])
   }
 
-  return { report, metToday, load, flush, countOf }
+  /** 오늘 이 마음으로 실을 묶었다 (하루 한 번만 보낸다). 마음 id만 보낸다 */
+  async function tieMood(mood: MoodId) {
+    const date = seoulDateKey()
+    if (loadMoodSent()?.date === date) return
+    try {
+      window.localStorage.setItem(MOOD_SENT_KEY, JSON.stringify({ date, mood, at: Date.now() }))
+    } catch {
+      // 저장이 막히면 다시 보낼 수 있다(서버가 같은 사람으로 센다)
+    }
+    try {
+      await $fetch('/api/mood', { method: 'POST', body: { mood, id: status.profile?.id } })
+    } catch {
+      // 오프라인: 몇 명 덜 세어도 괜찮다
+    }
+  }
+
+  /** 오늘 그 마음으로 실을 묶은 사람 수 (나 포함). 아직 모르면 undefined */
+  function moodCount(mood: MoodId): number | undefined {
+    const date = seoulDateKey()
+    const mine = loadMoodSent()
+    return moodCountFor(snapshot.value, mood, date, mine?.date === date && mine.mood === mood ? mine.at : undefined)
+  }
+
+  return { report, metToday, load, flush, countOf, tieMood, moodCount }
 }

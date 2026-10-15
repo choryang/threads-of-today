@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { dateOfKey, daysBefore, expiredDatedKey } from '../shared/cleanup'
-import { compactDate, formatCount, journeyMeetLine, meetCountFor, snapshotMinutes, snapshotStale, todayMeetLine, unsentToday } from '../shared/today'
+import { compactDate, formatCount, journeyMeetLine, meetCountFor, moodCountFor, snapshotMinutes, snapshotStale, todayMeetLine, unsentToday } from '../shared/today'
 
 test('숫자 포맷: 천 단위 쉼표', () => {
   assert.equal(formatCount(0), '0')
@@ -74,4 +74,23 @@ test('날짜 키 청소: 오늘·어제 키는 남기고 그 전 것만, 날짜 
   assert.ok(expiredDatedKey('thanks:day:2026-10-13:barista', '2026-10-15'))
   assert.ok(!expiredDatedKey('thanks:day:2026-10-14:barista', '2026-10-15'))
   assert.ok(!expiredDatedKey('thanks:seen:2026-10-01:abc:barista', '2026-10-15')) // 기간이 걸린 키는 건드리지 않는다
+})
+
+test('모두의 오늘 마음 수: 스냅샷 + 스냅샷 뒤에 내가 묶었으면 1, 날짜가 다르면 스냅샷을 쓰지 않는다', () => {
+  const snap = { date: '2026-10-15', at: 1000, counts: {}, moods: { wronged: 12 } }
+  assert.equal(moodCountFor(snap, 'wronged', '2026-10-15'), 12)
+  assert.equal(moodCountFor(snap, 'wronged', '2026-10-15', 500), 12) // 이미 들어 있다
+  assert.equal(moodCountFor(snap, 'wronged', '2026-10-15', 2000), 13)
+  assert.equal(moodCountFor(snap, 'glad', '2026-10-15'), 0)
+  assert.equal(moodCountFor(snap, 'glad', '2026-10-15', 2000), 1)
+  assert.equal(moodCountFor(snap, 'wronged', '2026-10-16'), undefined)
+  assert.equal(moodCountFor(null, 'wronged', '2026-10-16', 2000), 1)
+  // 예전 스냅샷(마음 수 없음)
+  assert.equal(moodCountFor({ date: '2026-10-15', at: 1000, counts: {} }, 'wronged', '2026-10-15'), 0)
+})
+
+test('마음 키도 이틀 지나면 청소한다', () => {
+  assert.equal(dateOfKey('mood:wronged:20261013'), '2026-10-13')
+  assert.ok(expiredDatedKey('mood:wronged:20261013', '2026-10-15'))
+  assert.ok(!expiredDatedKey('mood:wronged:20261014', '2026-10-15'))
 })

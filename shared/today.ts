@@ -48,6 +48,20 @@ export interface MeetSnapshot {
   date: string
   at: number
   counts: Record<string, number>
+  /** 오늘 마음 id별로 실을 묶은 사람 수 (새 기획 5번 화면). 예전 스냅샷에는 없다 */
+  moods?: Record<string, number>
+}
+
+/**
+ * 오늘 그 마음으로 실을 묶은 사람 수. 스냅샷 뒤에 내가 묶었으면 나를 1 더한다(myTiedAt: 이 기기가 보낸 시각).
+ * 스냅샷이 없으면 내가 묶었을 때만 1, 아니면 undefined
+ */
+export function moodCountFor(snapshot: MeetSnapshot | null, mood: string, seoulDate: string, myTiedAt?: number): number | undefined {
+  const fresh = snapshot?.date === seoulDate ? snapshot : null
+  const base = fresh?.moods?.[mood] ?? (fresh ? 0 : undefined)
+  const plusMe = myTiedAt !== undefined && (!fresh || myTiedAt > fresh.at) ? 1 : 0
+  if (base === undefined) return plusMe ? 1 : undefined
+  return base + plusMe
 }
 
 /** 스냅샷을 다시 세는 간격 기본값(분). 서버는 MEET_SNAPSHOT_MINUTES로 바꾼다 */

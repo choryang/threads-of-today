@@ -3,6 +3,8 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { repliesFor } from '../../shared/data/replies'
 import type { MoodId } from '../../shared/data/moods'
 import { resolveItem } from '../utils/resolve-item'
+import { togetherLine } from '../../shared/today-text'
+import type { Reply } from '../composables/useToday'
 
 /**
  * 첫 화면: 오늘 흐름 (docs/redesign/README.md, 시안 V2Mood → V2Item → V2Thread → V2Person → V2Reply).
@@ -22,6 +24,21 @@ const game = useGame()
 const invited = computed(() => route.query.from === 'share')
 const record = computed(() => game.state.todays?.[d.date])
 const sharing = ref(false)
+
+// 모두의 오늘: 실을 묶으면 마음 id 하나만 보내고, 5번 화면에 "오늘 억울했던 사람 N명이 …"
+const meets = useTodayMeets()
+const together = computed(() => {
+  if (!d.mood || !d.reply) return ''
+  const n = meets.moodCount(d.mood)
+  return n ? togetherLine(d.mood, n) : ''
+})
+function reply(r: Reply) {
+  today.giveReply(r)
+  if (d.mood) {
+    void meets.tieMood(d.mood)
+    void meets.load()
+  }
+}
 
 const busy = ref(false)
 const itemError = ref('')
@@ -103,7 +120,8 @@ const tightTop = computed(() => d.step === 'item' || d.step === 'person' || d.st
       :mood="d.mood"
       :person-id="d.pick.personId"
       :reply="d.reply"
-      @reply="today.giveReply"
+      :together="together"
+      @reply="reply"
     >
       <template #actions>
         <button class="t-btn secondary" @click="sharing = true">카드로 남기기</button>

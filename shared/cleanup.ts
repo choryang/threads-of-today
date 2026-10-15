@@ -3,12 +3,13 @@
  * 이틀 지나면 지운다: 오늘과 어제 키는 남긴다.
  *   meet:{사람}:{YYYYMMDD}          모두의 오늘 (HyperLogLog)
  *   thanks:day:{YYYY-MM-DD}:{사람}  그날 고마워한 사람 수
+ *   mood:{마음}:{YYYYMMDD}          그날 그 마음으로 실을 묶은 사람 (HyperLogLog)
  */
-export const DATED_KEY_PATTERNS = ['meet:*', 'thanks:day:*'] as const
+export const DATED_KEY_PATTERNS = ['meet:*', 'thanks:day:*', 'mood:*'] as const
 
 /** 키 이름에서 서울 날짜(YYYY-MM-DD). 날짜 키가 아니면 null */
 export function dateOfKey(key: string): string | null {
-  let m = /^meet:[^:]+:(\d{4})(\d{2})(\d{2})$/.exec(key)
+  let m = /^(?:meet|mood):[^:]+:(\d{4})(\d{2})(\d{2})$/.exec(key)
   if (m) return `${m[1]}-${m[2]}-${m[3]}`
   m = /^thanks:day:(\d{4}-\d{2}-\d{2}):[^:]+$/.exec(key)
   return m ? m[1]! : null
