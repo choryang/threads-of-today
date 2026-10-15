@@ -4,12 +4,14 @@ import { PEOPLE } from '../../shared/data/people'
 import { WORKPLACES } from '../../shared/data/village'
 import { UNLOCK } from '../../shared/friendship'
 import { dayStats, seoulDateKey, withJosa } from '../../shared/logic'
-import { arrivalShort, isArrived, isWaiting } from '../../shared/incoming'
+import { arrivalShort, cargoName, incomingChipText, isArrived, isWaiting, transportOf } from '../../shared/incoming'
+import { forwardTimeline } from '../../shared/journey'
 import { villageShareTitle } from '../../shared/share'
 import { UNLOCK_STEPS, listCondition, lockedNotice, shortCondition, stepOf, type UnlockStep, type UnlockStepId } from '../../shared/unlocks'
 import { VILLAGE_CAPACITY, countriesOf, nextResident, villageLayout, type Placed } from '../../shared/village'
 import { flowerLabel, newFlowerNotice, type Flower } from '../../shared/visit'
 import { MOTION } from '../utils/motion'
+import { TRANSPORT_ICON } from '../utils/vehicle-icon'
 
 /**
  * 내 하루 마을 (홈). 지도가 화면 전체에 깔리고, 그 위에 제목 카드·알림·오고 있는 물건·'오늘 쓴 물건 넣기'를 올린다.
@@ -31,6 +33,22 @@ const arrivingLabel = (personId: string) => {
   const inc = waiting.value.find((x) => x.personId === personId)
   return !inc ? '' : isArrived(inc, now.value) ? '도착했어요' : arrivalShort(inc.arriveAt, now.value)
 }
+
+/**
+ * 노란 버튼 위의 칩 한 줄: 축소해도 숨기지 않는다. 누르면 지금까지의 큰 카드(진행 막대·지나는 곳)를 아래에서 올라오는 시트로
+ */
+const incomingItems = computed(() =>
+  waiting.value.map((inc) => {
+    const j = game.findJourney(inc.journeyId)
+    return {
+      cargo: j ? cargoName(j) : '물건',
+      arriveAt: inc.arriveAt,
+      kind: (j ? transportOf(forwardTimeline(j.materialIds, j.id, j.name))?.kind : undefined) ?? 'ship',
+    }
+  }),
+)
+const incomingChip = computed(() => incomingChipText(incomingItems.value, now.value))
+const incomingOpen = ref(false)
 
 const layout = computed(() => villageLayout(game.state.cards, game.state.people ?? {}, waiting.value.map((x) => x.personId)))
 const countries = computed(() => countriesOf(layout.value.residents.map((r) => r.id)))
@@ -381,9 +399,14 @@ onMounted(async () => {
       <div ref="bottomEl" class="bottom">
         <p v-if="cheerLine" class="toast cheer" role="status">{{ cheerLine }}</p>
         <p v-else-if="picked || message" class="toast" role="status">{{ picked || message }}</p>
-        <div v-if="waiting.length" class="incoming-list fold-tall" :aria-hidden="compact">
-          <IncomingCard v-for="inc in waiting" :key="inc.journeyId" :incoming="inc" :now="now" />
-        </div>
+        <button v-if="incomingItems.length" class="incoming-chip" :aria-expanded="incomingOpen" @click="incomingOpen = true">
+          <span class="chip-icon" aria-hidden="true">
+            <!-- eslint-disable-next-line vue/no-v-html -- 직접 그린 SVG -->
+            <svg viewBox="0 0 40 40" width="26" height="26" v-html="TRANSPORT_ICON[incomingItems[0]!.kind]" />
+          </span>
+          <span class="chip-text">{{ incomingChip }}</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 15l6-6 6 6" /></svg>
+        </button>
         <NuxtLink to="/add" class="add">오늘 쓴 물건 넣기</NuxtLink>
       </div>
     </div>
@@ -391,6 +414,15 @@ onMounted(async () => {
     <!-- 마을(position: fixed)은 쌓임 맥락이 따로라, 아래 탭 위로 올라오게 body로 옮긴다 -->
     <Teleport to="body">
       <ResidentSheet v-if="open" :person-id="open" @close="open = null" />
+      <div v-if="incomingOpen" class="menu-backdrop" @click.self="incomingOpen = false">
+        <section class="menu incoming-sheet" role="dialog" aria-modal="true" aria-label="오고 있는 물건">
+          <button class="close" aria-label="닫기" @click="incomingOpen = false">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+          </button>
+          <h2 class="menu-title">오고 있는 물건</h2>
+          <IncomingCard v-for="inc in waiting" :key="inc.journeyId" :incoming="inc" :now="now" />
+        </section>
+      </div>
       <div v-if="menuOpen" class="menu-backdrop" @click.self="menuOpen = false">
         <section class="menu" role="dialog" aria-modal="true" aria-label="마을 메뉴">
           <button class="close" aria-label="닫기" @click="menuOpen = false">
@@ -499,18 +531,23 @@ onMounted(async () => {
   transition: width var(--motion-enter) var(--motion-ease), height var(--motion-enter) var(--motion-ease),
     border-radius var(--motion-enter) var(--motion-ease), font-size var(--motion-enter) var(--motion-ease);
 }
-.incoming-list { display: flex; flex-direction: column; gap: 10px; }
+.incoming-chip {
+  align-self: center; max-width: 100%; min-height: 44px; padding: 4px 14px 4px 6px; border: 0; border-radius: 22px; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 8px; background: rgba(15, 27, 45, 0.94); color: var(--text); font-size: 13px; font-weight: 700;
+}
+.chip-icon { width: 34px; height: 34px; border-radius: 17px; background: #1e3150; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.chip-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.incoming-sheet { gap: 10px; }
 
 /* 많이 축소했을 때 접기: 제목 카드는 '마을 주민 n / 213명' 한 줄, 오고 있는 물건은 숨김, 버튼은 높이 44px 알약 */
-.fold, .fold-tall {
+.fold {
   overflow: hidden; opacity: 1;
   transition: max-height var(--motion-enter) var(--motion-ease), opacity var(--motion-enter) var(--motion-ease),
     margin var(--motion-enter) var(--motion-ease);
 }
 .fold { max-height: 180px; }
-.fold-tall { max-height: 420px; }
 .title-card { transition: padding var(--motion-enter) var(--motion-ease); }
-.compact .fold, .compact .fold-tall { max-height: 0; min-height: 0; opacity: 0; margin: 0; pointer-events: none; }
+.compact .fold { max-height: 0; min-height: 0; opacity: 0; margin: 0; pointer-events: none; }
 .compact .title-card { padding: 8px 16px; }
 
 .compact .add { width: 200px; height: 44px; border-radius: 22px; font-size: 15px; }

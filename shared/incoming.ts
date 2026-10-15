@@ -12,7 +12,7 @@ import { MATERIALS } from './data/materials'
 import { PEOPLE } from './data/people'
 import { PLACES } from './data/places'
 import { CLOSINGS, IMPORT_OFFICE, closingKind } from './data/shops'
-import { ON_THE_WAY, TRANSPORT, type TransportKind } from './data/transport'
+import { ON_THE_WAY, TRANSPORT, VEHICLE, type TransportKind } from './data/transport'
 import { forwardTimeline, type TimelineItem } from './journey'
 import { withJosa } from './logic'
 import type { Incoming } from './progress'
@@ -154,4 +154,23 @@ export function landingPlace(timeline: TimelineItem[]): string {
   const last = waypointsOf(timeline).at(-1)
   const place = Object.values(PLACES).find((p) => placeLabel(p) === last)
   return place?.continent === 'korea' ? last! : ''
+}
+
+/**
+ * 마을 노란 버튼 위의 오고 있는 물건 칩 한 줄. 축소해도 숨기지 않는다.
+ * 하나면 '생두 자루가 오고 있어요 · 내일 아침'(도착했으면 '생두 자루가 도착했어요 · 열어 보기'), 여러 개면 '물건 2개가 오고 있어요'
+ */
+export function incomingChipText(items: Array<{ cargo: string; arriveAt: number }>, now: number): string {
+  if (!items.length) return ''
+  if (items.length === 1) {
+    const it = items[0]!
+    return it.arriveAt <= now ? `${withJosa(it.cargo, '이', '가')} 도착했어요 · 열어 보기` : `${withJosa(it.cargo, '이', '가')} 오고 있어요 · ${arrivalLabel(it.arriveAt, now)}`
+  }
+  const arrived = items.filter((it) => it.arriveAt <= now).length
+  return arrived ? `물건 ${items.length}개 중 ${arrived}개가 도착했어요` : `물건 ${items.length}개가 오고 있어요`
+}
+
+/** 여정 도착 화면 '마을로 모시기' 위: '생두 자루를 실은 배가 출발했어요 · 내일 아침 도착' */
+export function departureLine(cargo: string, kind: TransportKind, arriveAt: number, now: number): string {
+  return `${withJosa(cargo, '을', '를')} 실은 ${withJosa(VEHICLE[kind], '이', '가')} 출발했어요 · ${arrivalLabel(arriveAt, now)} 도착`
 }

@@ -5,6 +5,7 @@ import { PEOPLE } from '../../../shared/data/people'
 import { PLACES } from '../../../shared/data/places'
 import { EVENTS } from '../../../shared/data/journey-extras'
 import { buildTimeline, forwardTimeline, isReverseJourney, optionOrder, quizFor, reverseTimeline } from '../../../shared/journey'
+import { cargoName, departureLine, transportOf } from '../../../shared/incoming'
 import { dayStats, withJosa } from '../../../shared/logic'
 import { formatKm, reverseDistances, roundKm } from '../../../shared/distance'
 import { journeyMeetLine } from '../../../shared/today'
@@ -284,6 +285,15 @@ const meets = useTodayMeets()
 watch(() => journey.value?.done, (done) => { if (done && game.opens('today-count')) void meets.load() }, { immediate: true })
 const togetherLine = computed(() => !game.opens('today-count') ? '' : journeyMeetLine(metPeople.value.reduce((sum, id) => sum + (meets.countOf(id) ?? 0), 0)))
 
+// ── 이 여정으로 새로 출발한 물건: '생두 자루를 실은 배가 출발했어요 · 내일 아침 도착' ──
+const departed = computed(() => {
+  const j = journey.value
+  const inc = j ? (game.state.incoming ?? []).find((x) => x.journeyId === j.id && !x.openedAt) : undefined
+  if (!j || !inc) return ''
+  const kind = transportOf(forwardTimeline(j.materialIds, j.id, j.name))?.kind ?? 'ship'
+  return departureLine(cargoName(j), kind, inc.arriveAt, Date.now())
+})
+
 // ── 끝 장면 ──
 const productId = computed(() => PRODUCTS.find((p) => p.name === journey.value?.name)?.id ?? '')
 /** 끝 장면은 원산지 → 내 손 순서로 줄을 선다 (거꾸로 간 여정도) */
@@ -377,6 +387,9 @@ function followTeaser(p: Product) {
           <MiniCard v-for="id in quizRewards" :key="`q-${id}`" :person-id="id" :is-new="journey.newCards.includes(id)" />
         </div>
       </details>
+
+      <!-- 이 여정으로 물건이 새로 출발했으면 한 줄 (운송 구간이 없어 안 생긴 여정은 없음) -->
+      <p v-if="departed" class="departed">{{ departed }}</p>
 
       <!-- 큰 버튼은 하나: 마을로 모시기(이번에 만난 사람들이 자리로 걸어온다). 다음 여정 추천·다른 물건은 작은 글자 버튼 -->
       <div class="actions">
@@ -680,6 +693,7 @@ function followTeaser(p: Product) {
 .touched { margin: 0; font-size: 17px; line-height: 1.5; word-break: keep-all; }
 .touched strong { color: var(--accent); font-size: 22px; font-weight: 500; }
 
+.departed { margin: 0; text-align: center; font-size: 14px; font-weight: 700; color: var(--accent); word-break: keep-all; }
 .text-btn {
   align-self: center; min-height: 44px; padding: 0 12px; border: 0; background: none; color: var(--text);
   display: inline-flex; align-items: center; justify-content: center;

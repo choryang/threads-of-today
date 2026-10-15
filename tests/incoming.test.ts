@@ -3,7 +3,8 @@ import { test } from 'node:test'
 import { PEOPLE } from '../shared/data/people'
 import { ON_THE_WAY } from '../shared/data/transport'
 import {
-  MAX_INCOMING, arrivalLabel, arrivalShort, arrivalTime, createIncoming, daysFrom, itemPeople, progressOf, transportOf, waypointsOf, wayText,
+  MAX_INCOMING, arrivalLabel, arrivalShort, arrivalTime, createIncoming, daysFrom, departureLine, incomingChipText, itemPeople, progressOf, transportOf,
+  waypointsOf, wayText,
 } from '../shared/incoming'
 import { forwardTimeline } from '../shared/journey'
 import { seoulDateKey } from '../shared/logic'
@@ -90,4 +91,23 @@ test('저장: 여정 id로 합치고, 연 기록은 남기며, 연 지 30일 지
   assert.deepEqual(mergeSaves(a, a, '2026-12-01').incoming, [base])
   const s = sanitizeSave({ incoming: [base, { ...base }, { ...base, journeyId: '2026-10-15-2-x', personId: 'nobody' }, { ...base, journeyId: '2026-10-15-3-x', arriveAt: 1 }] }, '2026-10-16')
   assert.deepEqual(s.incoming, [base])
+})
+
+test('오고 있는 물건 칩: 하나면 물건·언제, 여러 개면 개수, 도착했으면 열어 보기', () => {
+  const now = Date.UTC(2026, 9, 15, 5)
+  const a = arrivalTime(now)
+  assert.equal(incomingChipText([], now), '')
+  assert.equal(incomingChipText([{ cargo: '생두 자루', arriveAt: a }], now), '생두 자루가 오고 있어요 · 내일 아침')
+  assert.equal(incomingChipText([{ cargo: '원당', arriveAt: a }], now), '원당이 오고 있어요 · 내일 아침')
+  assert.equal(incomingChipText([{ cargo: '생두 자루', arriveAt: a }, { cargo: '원당', arriveAt: a }], now), '물건 2개가 오고 있어요')
+  assert.equal(incomingChipText([{ cargo: '생두 자루', arriveAt: now - 1 }], now), '생두 자루가 도착했어요 · 열어 보기')
+  assert.equal(incomingChipText([{ cargo: '생두 자루', arriveAt: now - 1 }, { cargo: '원당', arriveAt: a }], now), '물건 2개 중 1개가 도착했어요')
+})
+
+test('여정 도착 화면의 출발 한 줄: 실은 것·탈것·도착 때', () => {
+  const now = Date.UTC(2026, 9, 15, 5)
+  const a = arrivalTime(now)
+  assert.equal(departureLine('생두 자루', 'ship', a, now), '생두 자루를 실은 배가 출발했어요 · 내일 아침 도착')
+  assert.equal(departureLine('반도체', 'air', a, now), '반도체를 실은 비행기가 출발했어요 · 내일 아침 도착')
+  assert.equal(departureLine('배추', 'truck', a, now), '배추를 실은 트럭이 출발했어요 · 내일 아침 도착')
 })
