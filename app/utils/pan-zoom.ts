@@ -21,6 +21,8 @@ export interface Size {
 export const MAX_SCALE = 1.4
 /** 이보다 작게 축소하면 주민 이름표·꽃을 숨기고 구역 이름표만 보인다. 주민을 누르면 카드 대신 다가간다 */
 export const FAR_SCALE = 0.25
+/** 이보다 작게 축소하면 지도 SVG를 숨기고 미리 그린 PNG(public/village/map-overview.png)만 보여 준다 */
+export const OVERVIEW_SCALE = 0.3
 /** 멀리서 주민을 누르면 이 배율까지 확대하며 그 자리로 간다 */
 export const FAR_TAP_SCALE = 0.6
 

@@ -10,7 +10,10 @@ import { FAR_SCALE, centerOn, clampScale, clampView, zoomAt, type Size, type Vie
  * 포인터 캡처는 쓰지 않는다(캡처하면 주민 버튼의 click이 지도 쪽으로 가서). 끄는 동안의 move·up은 window에서 받는다.
  *
  * 지금 보기(위치·배율)는 반응형 상태가 아니다: 움직일 때마다 화면 컴포넌트가 다시 그려지지 않도록,
- * 바뀐 값은 requestAnimationFrame으로 한 프레임에 한 번 paint(보기, 미끄러지는 중)에 넘겨 지도 요소에 직접 쓴다.
+ * 바뀐 값은 requestAnimationFrame으로 한 프레임에 한 번 paint(보기, 미끄러지는 중, 움직이는 중)에 넘겨 지도 요소에 직접 쓴다.
+ * 움직이는 중(moving)은 끌기·두 손가락·휠·버튼·미끄러지기 동안이고, 손을 떼거나 마지막 움직임 뒤 MOTION.mapSettleMs가 지나면 끝난다.
+ * 화면은 그동안만 will-change: transform을 붙인다: 늘 붙여 두면 브라우저가 처음 배율로 그린 큰 레이어를 계속 써서,
+ * 많이 축소했을 때 휴대폰에서 타일 한도를 넘어 섬 일부가 빈칸으로 남는다.
  * 반응형으로 바뀌는 건 far(배율 0.25 미만인지) 하나뿐이고, 경계를 넘을 때만 값이 바뀐다.
  */
 export const DRAG_SLOP = 8
@@ -21,11 +24,14 @@ export function usePanZoom(
   el: Ref<HTMLElement | null>,
   map: { w: number; h: number },
   start: (s: Size) => View,
-  paint: (v: View, gliding: boolean) => void,
+  paint: (v: View, gliding: boolean, moving: boolean) => void,
 ) {
   let view: View = { x: 0, y: 0, scale: 1 }
   /** 화면을 옮기는 연출 중이면 true (transform에 transition을 건다) */
   let gliding = false
+  /** 끌기·확대·미끄러지기 중이거나 끝난 지 MOTION.mapSettleMs가 안 됐으면 true */
+  let moving = false
+  let settleTimer: ReturnType<typeof setTimeout> | undefined
   const far = ref(false)
   let size: Size = { vw: 1, vh: 1, mw: map.w, mh: map.h }
   const points = new Map<number, { x: number; y: number }>()
@@ -36,7 +42,7 @@ export function usePanZoom(
 
   function flush() {
     frame = 0
-    paint(view, gliding)
+    paint(view, gliding, moving)
     // 같은 값을 넣으면 Vue가 아무것도 다시 그리지 않는다: 경계를 넘을 때만 바뀐다
     far.value = view.scale < FAR_SCALE
   }
@@ -44,8 +50,21 @@ export function usePanZoom(
   function schedule() {
     if (!frame) frame = requestAnimationFrame(flush)
   }
-  const set = (v: View) => {
+  /** 손을 대고 있거나 미끄러지는 중이 아니면, 마지막 움직임 뒤 잠깐 기다렸다 '움직이는 중'을 끝낸다 */
+  function settleLater() {
+    clearTimeout(settleTimer)
+    if (points.size || gliding) return
+    settleTimer = setTimeout(() => {
+      moving = false
+      schedule()
+    }, MOTION.mapSettleMs)
+  }
+  const set = (v: View, user = true) => {
     view = clampView(v, size)
+    if (user) {
+      moving = true
+      settleLater()
+    }
     schedule()
   }
 
@@ -63,7 +82,7 @@ export function usePanZoom(
       view = start(size)
       cancelAnimationFrame(frame)
       flush()
-    } else set(view)
+    } else set(view, false)
   }
 
   function startPinch() {
@@ -116,6 +135,7 @@ export function usePanZoom(
   function onUp(e: PointerEvent) {
     points.delete(e.pointerId)
     startPinch()
+    if (moving) settleLater()
     if (points.size === 0) {
       window.removeEventListener('pointermove', onMove)
       window.removeEventListener('pointerup', onUp)
@@ -139,7 +159,7 @@ export function usePanZoom(
     clearTimeout(glideTimer)
     gliding = glide && !reducedMotion()
     set(centerOn(mx, my, scale, size))
-    if (gliding) glideTimer = setTimeout(() => { gliding = false; schedule() }, MOTION.panMs)
+    if (gliding) glideTimer = setTimeout(() => { gliding = false; settleLater(); schedule() }, MOTION.panMs)
   }
 
   /** 마지막 누름에서 8px 이상 끌었는지 (주민 클릭 무시용) */
@@ -157,6 +177,7 @@ export function usePanZoom(
   })
   onBeforeUnmount(() => {
     clearTimeout(glideTimer)
+    clearTimeout(settleTimer)
     cancelAnimationFrame(frame)
     observer?.disconnect()
     el.value?.removeEventListener('pointerdown', onDown)

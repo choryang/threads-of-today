@@ -87,7 +87,7 @@ app/
   composables/useTodayMeets.ts 모두의 오늘 보내기(모아서·하루 한 번)·읽기. plugins/meet.client.ts가 useGame의 onMeet에 붙인다
   composables/usePanZoom.ts 마을 지도 끌기·두 손가락·휠 확대(라이브러리 없이), 8px 이상 끌면 클릭 무시.
                           보기(위치·배율)는 반응형이 아니다: rAF로 한 프레임에 한 번 VillageMap의 paint()가 지도 요소에 직접 쓴다.
-                          반응형은 far(0.25 경계) 하나. 지도 위에 템플릿으로 transform·배율 값을 묶지 말 것(움직일 때마다 주민 213명을 다시 그린다)
+                          반응형은 far(0.25 경계) 하나. will-change는 움직이는 동안만(멈추고 150ms 뒤 뗀다, 늘 붙이면 휴대폰에서 축소 시 타일이 빈다). 지도 위에 템플릿으로 transform·배율 값을 묶지 말 것(움직일 때마다 주민 213명을 다시 그린다)
   composables/useSync.ts  서버 동기화·복구 코드로 이어 하기 (plugins/sync.client.ts가 호출)
   components/             ResidentSheet(주민 카드) · FriendshipPanel(친해진 정도) · MeetAgain(또 만났어요)
                           NicknameEditor·DeviceTransfer(마을 메뉴의 설정) · RecordTabs(지난 기록 안 오늘/나의 실타래 전환)
@@ -112,6 +112,7 @@ scripts/build-og-cards.ts OG 이미지를 resvg로(마을 초대 공통 한 장,
 scripts/build-og.ts       OG 이미지(하루 유형 9장 1200×630)를 이 컴퓨터의 Chrome·Edge로 찍어 public/og에 (npm run build:og)
 scripts/day-type-dist.ts  하루 유형 분포(3~5개 조합 12,444가지). 한 유형이 25%를 넘으면 실패 (npm run check:day-types)
 scripts/sync-prop-icons.ts 캐릭터 소품 7개를 형태 아이콘(public/forms/prop-*.svg)으로 옮긴다. 소품을 고치면 다시 실행
+public/village/map-overview.png 지도 전체를 반 크기(1400×2100)로 미리 그린 PNG (npm run build:map-overview). 지도 SVG 아래에 깔고, 배율 0.3 미만에서는 이것만 보인다
 public/village/map.svg   마을 지도 2800×4200 (scripts/gen_map2.py로 그린 그림. 출처 메타데이터 <metadata>가 붙어 있어 resvg에 넣을 때는 뺀다)
 scripts/gen_map2.py       마을 지도 생성기(python). map.svg와 scripts/village-layout.json(구역 이름표·범위·자리·빈 땅)을 만든다. 값은 data/village.ts에 옮겨 적는다
 public/forms/             형태 아이콘 SVG와 index.json(slug → ko·group). tests/forms.test.ts가 formIcon이 모두 있는지 검사

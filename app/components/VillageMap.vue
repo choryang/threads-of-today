@@ -5,7 +5,7 @@ import { HOME_POINT, MAP_H, MAP_W, RESIDENT_H, RESIDENT_W, WORKPLACES, ZONES } f
 import type { Placed } from '../../shared/village'
 import { flowerColor, flowerLabel, type Flower } from '../../shared/visit'
 import { MOTION, reducedMotion } from '../utils/motion'
-import { FAR_SCALE, FAR_TAP_SCALE, centerOn, fitBox, hitBox, zoneLabelScale, type View } from '../utils/pan-zoom'
+import { FAR_SCALE, FAR_TAP_SCALE, OVERVIEW_SCALE, centerOn, fitBox, hitBox, zoneLabelScale, type View } from '../utils/pan-zoom'
 
 /**
  * 마을 지도 (내 마을과 친구 마을이 같이 쓴다): 지도·구역 이름표·주민·빈 집터·도착 예정·단짝 표시·일터 자리·꽃, 확대·축소·우리 집 버튼.
@@ -57,8 +57,8 @@ function writeHitRule(b: ReturnType<typeof hitBox>) {
     `${sel} .resident{width:${b.w}px;height:${b.h}px;margin-left:${b.left}px;margin-top:${b.top}px}` +
     `${sel} .resident>.body{left:${-RESIDENT_W / 2 - b.left}px;top:${-RESIDENT_H - b.top}px}`
 }
-const painted = { hit: '', far: false, label: '', glide: false }
-function paint(v: View, gliding: boolean) {
+const painted = { hit: '', far: false, label: '', glide: false, moving: false, overview: false }
+function paint(v: View, gliding: boolean, moving: boolean) {
   const el = world.value
   if (!el) return
   el.style.transform = `translate(${v.x}px, ${v.y}px) scale(${v.scale})`
@@ -81,6 +81,17 @@ function paint(v: View, gliding: boolean) {
   if (gliding !== painted.glide) {
     el.classList.toggle('gliding', gliding)
     painted.glide = gliding
+  }
+  // 움직이는 동안만 합성 레이어로 (will-change). 멈추면 떼서 지금 배율로 다시 선명하게 그린다
+  if (moving !== painted.moving) {
+    el.classList.toggle('moving', moving)
+    painted.moving = moving
+  }
+  // 많이 축소하면 큰 SVG 대신 미리 그린 PNG 한 장만 (휴대폰 타일 한도로 SVG 일부가 빈칸이 되는 것을 막는다)
+  const overview = v.scale < OVERVIEW_SCALE
+  if (overview !== painted.overview) {
+    el.classList.toggle('overview', overview)
+    painted.overview = overview
   }
 }
 const pz = usePanZoom(viewport, { w: MAP_W, h: MAP_H }, (s) => centerOn(HOME_POINT.x, HOME_POINT.y, HOME_POINT.scale, s), paint)
@@ -183,7 +194,9 @@ defineExpose({
   <div ref="viewport" class="viewport">
     <!-- transform·누르는 영역 변수·far·gliding class는 paint()가 직접 쓴다 (템플릿에 묶지 않는다) -->
     <div ref="world" class="world" :data-map="mapId" :style="{ width: `${MAP_W}px`, height: `${MAP_H}px` }">
-      <img src="/village/map.svg" :width="MAP_W" :height="MAP_H" alt="" draggable="false" class="map">
+      <!-- 지도 바닥: 미리 그린 PNG(섬 전체, 반 크기)를 같은 크기로 깔고 그 위에 SVG. SVG 조각이 빠져도 PNG가 보인다 -->
+      <img src="/village/map-overview.png" :width="MAP_W" :height="MAP_H" alt="" draggable="false" class="map map-overview">
+      <img src="/village/map.svg" :width="MAP_W" :height="MAP_H" alt="" draggable="false" class="map map-svg">
 
       <div v-for="lot in lots" :key="`lot-${lot.id}`" class="lot" :style="{ left: `${lot.x - 65}px`, top: `${lot.y - 150}px` }" aria-hidden="true">
         <span class="display">?</span>
@@ -262,9 +275,11 @@ defineExpose({
 .viewport { position: absolute; inset: 0; background: #7fc3de; touch-action: none; user-select: none; -webkit-user-select: none; cursor: grab; }
 .viewport:active { cursor: grabbing; }
 .world {
-  position: absolute; left: 0; top: 0; transform-origin: 0 0; will-change: transform;
+  position: absolute; left: 0; top: 0; transform-origin: 0 0;
 }
+.world.moving { will-change: transform; }
 .world.gliding { transition: transform var(--motion-pan) var(--motion-ease); }
+.world.overview .map-svg { display: none; }
 .map { position: absolute; left: 0; top: 0; display: block; pointer-events: none; -webkit-user-drag: none; }
 .zone-label {
   position: absolute; z-index: 10000; padding: 6px 18px; border-radius: 22px; border: 4px solid #2a2a35;

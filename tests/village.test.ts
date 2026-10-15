@@ -5,7 +5,7 @@ import { HOME_POINT, MAP_H, MAP_W, ZONES, ZONE_BY_ID } from '../shared/data/vill
 import { buildTimeline, tailMeeting } from '../shared/journey'
 import { hintProductOf } from '../shared/visit'
 import { OVERFLOW_GAP, VILLAGE_CAPACITY, emptyLots, nextResident, placeAll, villageLayout, villagers } from '../shared/village'
-import { FAR_SCALE, HIT_BELOW, fitBox, MAX_SCALE, MIN_HIT_PX, centerOn, clampScale, clampView, hitBox, minScale, zoneLabelScale, zoomAt, type Size } from '../app/utils/pan-zoom'
+import { FAR_SCALE, HIT_BELOW, OVERVIEW_SCALE, fitBox, MAX_SCALE, MIN_HIT_PX, centerOn, clampScale, clampView, hitBox, minScale, zoneLabelScale, zoomAt, type Size } from '../app/utils/pan-zoom'
 
 const stage = PEOPLE_LIST.filter((p) => p.kind !== 'link')
 
@@ -190,4 +190,9 @@ test('다음 주민 여정: 고른 사람이 반드시 나오는 여정 id 꼬�
     const n = nextResident([], date, 'u_a')!
     assert.ok(tailMeeting((tail) => `${date}-1-${tail}-r`, n.product.materialIds, n.product.name, n.personId, 'zz'), date)
   }
+})
+
+test('많이 축소하면 미리 그린 PNG만: 끝까지 축소한 배율과 멀리 보기 배율이 모두 그 아래', () => {
+  assert.ok(minScale(PHONE) < FAR_SCALE && FAR_SCALE < OVERVIEW_SCALE)
+  assert.ok(OVERVIEW_SCALE < 0.6) // 처음 열 때(우리 집 0.6배)는 SVG
 })
