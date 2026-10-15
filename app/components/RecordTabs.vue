@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** 기록 탭 안의 전환: 오늘의 결과 카드 / 나의 실타래 */
+/** 지난 기록(마을 메뉴) 안의 전환: 오늘의 결과 카드 / 나의 실타래 */
 const route = useRoute()
 const tabs = [
   { to: '/result', label: '오늘' },

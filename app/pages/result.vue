@@ -14,6 +14,8 @@ const busy = ref(false)
 const message = ref('')
 
 const done = computed(() => game.today.value.journeys.filter((j) => j.done))
+/** 분해해 본 물건 (최근에 처음 분해한 것부터). 도감에서 옮겨 왔다 */
+const itemNames = computed(() => Object.entries(game.state.items).sort((a, b) => b[1].localeCompare(a[1])).map(([name]) => name))
 const stats = computed(() => dayStats(done.value))
 /** 여정마다 내 손에서 원산지까지 거슬러 올라간 거리 (예전 순서로 간 여정도 같은 길을 뒤집어 잰다) */
 const kmOf = (j: { id: string; name: string; materialIds: string[] }) => reverseDistances(reverseTimeline(j.materialIds, j.id, j.name)).total
@@ -165,11 +167,19 @@ async function save(share: boolean) {
       </div>
       <p v-if="message" class="muted small" role="status">{{ message }}</p>
     </template>
+
+    <section v-if="itemNames.length" aria-label="분해해 본 물건">
+      <h2 class="h2">분해해 본 물건 <span class="mono muted">{{ itemNames.length }}</span></h2>
+      <div class="item-chips">
+        <span v-for="name in itemNames" :key="name" class="chip">{{ name }}</span>
+      </div>
+    </section>
   </main>
 </template>
 
 <style scoped>
 .head { display: flex; flex-direction: column; gap: 6px; }
+.item-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .title { font-size: 30px; }
 .small { margin: 0; font-size: 13px; line-height: 1.5; }
 .h2 { margin: 0 0 4px; font-size: 15px; }

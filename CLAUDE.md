@@ -87,14 +87,15 @@ app/
                           반응형은 far(0.25 경계) 하나. 지도 위에 템플릿으로 transform·배율 값을 묶지 말 것(움직일 때마다 주민 213명을 다시 그린다)
   composables/useSync.ts  서버 동기화·복구 코드로 이어 하기 (plugins/sync.client.ts가 호출)
   components/             ResidentSheet(주민 카드) · FriendshipPanel(친해진 정도) · MeetAgain(또 만났어요)
-                          NicknameEditor(도감) · DeviceTransfer(도감 "다른 기기에서 이어 하기") · RecordTabs(기록 탭 안 오늘/나의 실타래 전환)
+                          NicknameEditor·DeviceTransfer(마을 메뉴의 설정) · RecordTabs(지난 기록 안 오늘/나의 실타래 전환)
                           VillageMap(내 마을·친구 마을이 같이 쓰는 지도) · FriendResidentSheet · FlowerMark · IntroSheet(이 분 소개하기)
                           FormBadge(지금 물건의 형태) · RewindReplay(빨리 감기 엔딩) · IncomingCard(오고 있는 물건)
   pages/                  index(내 하루 마을: 지도·주민·주민 카드·오고 있는 물건, 처음 온 사람은 /test로) · test(10초 테스트)·test/result
                           d/[token](친구가 보낸 하루 → "당신의 하루는요?") · v/[token](친구 마을: 주민에게 고마워요 → 꽃)
                           p/[token](소개받은 사람: 15초 안에 끝나는 다섯 단계, 가입 없이 고마워요) · arrival/[id](밤사이 도착했어요) · add(오늘 쓴 물건 넣기: 물건 타일 + 직접 쓰기·사진, 미스터리로 가는 길)
                           journey/[id] · mystery · dex(통계) · result(기록: 오늘 여정·html-to-image 공유) · threads(기록 안 나의 실타래)
-                          하단 탭은 3개(마을·도감·기록). 미스터리는 물건 넣기 화면에서 연다
+                          하단 탭은 2개(마을·도감). 지난 기록(/result·/threads)은 마을 메뉴에서, 미스터리는 물건 넣기 화면에서 연다.
+                          도감에는 진행률·세트·카드 목록만 둔다
   utils/share-image.ts    공유 이미지 1080×1350을 캔버스로 그린다(나의 하루 유형·두 사람의 하루). 글씨는 위아래 80px 안쪽
   utils/day-test.ts       테스트 물건 18개의 아이콘(형태 아이콘, 없던 7개는 완성품 아이콘 product-*). tests/forms.test.ts가 파일·index.json을 검사
   utils/pan-zoom.ts       지도 배율(최소 = 섬 전체가 보이는 크기, 최대 1.4)·위치 제한(작으면 가운데), 한 점 기준 확대, 주민 누르는 영역 hitBox(140×210, 화면 최소 44px),

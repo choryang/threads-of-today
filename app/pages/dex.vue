@@ -27,9 +27,6 @@ const percent = computed(() => Math.round((game.ownedCount.value / total) * 100)
 const sets = computed(() => game.setProgress())
 const numberOf = (id: string) => PEOPLE_LIST.findIndex((p) => p.id === id) + 1
 const labelOf = (p: Person) => (p.name ? `${p.name} · ${p.job}` : p.job)
-const itemNames = computed(() =>
-  Object.entries(game.state.items).sort((a, b) => b[1].localeCompare(a[1])).map(([name]) => name),
-)
 /** '등급 기준'은 첫 방문에 펼쳐 두고, 접거나 펼친 상태를 기억한다 */
 const GUIDE_KEY = 'my-day-people:rarity-guide'
 const guideOpen = ref(true)
@@ -62,24 +59,7 @@ const metLabel = computed(() => `${withJosa(game.nickname.value, '이', '가')} 
       <h1 class="display title">{{ game.nickname.value }}의 사람 도감</h1>
       <p class="muted small">{{ metLabel }} <span class="mono">{{ game.ownedCount.value }}/{{ total }}</span>명</p>
       <div class="bar" aria-hidden="true"><span :style="{ width: `${percent}%` }" /></div>
-      <div class="stats panel" aria-label="내 기록">
-        <div><strong class="mono">{{ game.ownedCount.value }}<small>/{{ total }}</small></strong><span>모은 카드</span></div>
-      </div>
-      <NicknameEditor />
-      <button v-if="game.allThanked.value" class="btn ending-btn" @click="game.replayEnding()">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z" /></svg>
-        엔딩 다시 보기
-      </button>
     </header>
-
-    <DeviceTransfer />
-
-    <section v-if="game.itemCount.value" aria-label="분해한 물건">
-      <h2 class="h2">분해해 본 물건 <span class="mono muted">{{ game.itemCount.value }}</span></h2>
-      <div class="items">
-        <span v-for="name in itemNames" :key="name" class="chip">{{ name }}</span>
-      </div>
-    </section>
 
     <section aria-label="세트">
       <h2 class="h2">세트 모으기</h2>
@@ -162,16 +142,9 @@ const metLabel = computed(() => `${withJosa(game.nickname.value, '이', '가')} 
 .small { margin: 0; font-size: 13px; }
 .people-note { margin: 0; font-size: 12px; line-height: 1.5; color: var(--muted); text-align: center; word-break: keep-all; }
 .h2 { margin: 0 0 10px; font-size: 15px; }
-.ending-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; color: var(--bad); }
 .bar { height: 8px; border-radius: 4px; background: var(--line); overflow: hidden; }
 .bar span { display: block; height: 100%; background: var(--accent); }
-.stats { display: grid; grid-template-columns: repeat(3, 1fr); padding: 14px 8px; }
-.stats div { display: flex; flex-direction: column; align-items: center; gap: 2px; }
-.stats strong { font-size: 20px; color: var(--accent); font-weight: 500; }
-.stats small { font-size: 12px; color: var(--muted); }
-.stats span { font-size: 12px; color: var(--muted); }
 
-.items { display: flex; flex-wrap: wrap; gap: 6px; }
 .sets { display: flex; flex-direction: column; gap: 8px; }
 .set { display: flex; flex-direction: column; gap: 6px; }
 .set.complete { border-color: var(--r-legendary); }

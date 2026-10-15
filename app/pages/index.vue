@@ -261,12 +261,18 @@ onMounted(async () => {
           <h2 class="menu-title">마을 메뉴</h2>
           <button class="item" @click="invite(); menuOpen = false">내 마을 초대하기</button>
           <NuxtLink to="/test" class="item">나의 하루 유형 테스트</NuxtLink>
+          <!-- 지난 기록: 오늘의 기록·나의 실타래·분해해 본 물건 (하단 탭에서 옮겨 왔다) -->
+          <NuxtLink to="/result" class="item">지난 기록</NuxtLink>
+          <button v-if="game.allThanked.value" class="item" @click="menuOpen = false; game.replayEnding()">엔딩 다시 보기</button>
 
           <h3 class="menu-sub">다녀온 마을</h3>
           <NuxtLink v-for="v in visited" :key="v.token" :to="`/v/${v.token}`" class="item">{{ v.nickname }}님의 마을</NuxtLink>
           <p v-if="!visited.length" class="hint">친구가 보낸 초대 링크를 열면 여기에 남아요</p>
 
           <h3 class="menu-sub">설정</h3>
+          <!-- 닉네임·다른 기기에서 이어 하기 (도감에서 옮겨 왔다) -->
+          <NicknameEditor />
+          <DeviceTransfer />
           <label class="item toggle">
             <span>마을 방문 받기</span>
             <input type="checkbox" :checked="acceptVisits" :disabled="!villageLink.link.value" @change="villageLink.setOpen(($event.target as HTMLInputElement).checked)">
