@@ -71,6 +71,8 @@ export interface TodayRecord {
   reply?: number | 'own'
   /** 그 사람을 고른 방식 (4번 제목이 달라진다). 없으면(예전 기록) 'mood', 카드 문구로 만났으면 'none' */
   how?: 'mood' | 'cell' | 'next' | 'none'
+  /** 이야기 판 (shared/key-story.ts STORY_REV). 없으면 1판: 편 번호를 옮겨 읽는다 */
+  rev?: number
 }
 
 export interface DayLog {
@@ -381,7 +383,8 @@ function sanitizeToday(v: unknown): TodayRecord | null {
   if (episode === undefined) return null
   const reply = v.reply === 'own' ? 'own' : Number.isInteger(v.reply) && v.reply >= 0 && v.reply < 10 ? (v.reply as number) : undefined
   const how = v.how === 'mood' || v.how === 'cell' || v.how === 'next' || v.how === 'none' ? v.how : undefined
-  return { mood: v.mood, item, personId: v.personId, episode, ...(reply !== undefined ? { reply } : {}), ...(how ? { how } : {}) }
+  const rev = Number.isInteger(v.rev) && v.rev >= 2 && v.rev < 100 ? (v.rev as number) : undefined
+  return { mood: v.mood, item, personId: v.personId, episode, ...(reply !== undefined ? { reply } : {}), ...(how ? { how } : {}), ...(rev ? { rev } : {}) }
 }
 
 function keyEpisodesOf(v: Record<string, unknown>): Record<string, number> {

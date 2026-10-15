@@ -9,9 +9,9 @@ import { historyOf } from '../shared/today-log'
 
 const eps = KEY_STORIES['vn-coffee-farmer']!.episodes!.map((e) => e.text)
 const todays: Record<string, TodayRecord> = {
-  '2026-10-12': { mood: 'plain', item: '아이스 아메리카노', personId: 'vn-coffee-farmer', episode: 0, reply: 0 },
-  '2026-10-14': { mood: 'wronged', item: '아이스 아메리카노', personId: 'vn-coffee-farmer', episode: 1, reply: 1 },
-  '2026-10-13': { mood: 'tired', item: '라면', personId: 'courier', episode: 0 },
+  '2026-10-12': { mood: 'plain', item: '아이스 아메리카노', personId: 'vn-coffee-farmer', episode: 0, reply: 0, rev: 2 },
+  '2026-10-14': { mood: 'wronged', item: '아이스 아메리카노', personId: 'vn-coffee-farmer', episode: 1, reply: 1, rev: 2 },
+  '2026-10-13': { mood: 'tired', item: '라면', personId: 'courier', episode: 0, rev: 2 },
 }
 
 test('들여다보기는 새 편을 열지 않는다: 본 편만 순서대로, 기록도 그대로', () => {

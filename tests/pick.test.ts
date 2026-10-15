@@ -23,11 +23,12 @@ test('경로: 첫 재료의 출발지부터, 끝에 가게 사람', () => {
 })
 
 test('커피 + 억울: 알마즈의 다음 편이 억울한 편이면 알마즈', () => {
-  // 알마즈 1·2편을 봤으면 다음 편은 3편(억울)
-  assert.ok(tagsOf('coffee-picker', 2).includes('wronged'))
-  const pick = pickPerson({ ...AMERICANO, journeyId: ID, mood: 'wronged', history: seen('coffee-picker', 0, 1) })!
+  // 알마즈의 첫 억울한 편 앞까지 봤으면 다음 편이 그 편
+  const w = KEY_STORIES['coffee-picker']!.episodes!.findIndex((e) => e.moods.includes('wronged'))
+  assert.ok(w > 0 && tagsOf('coffee-picker', w).includes('wronged'))
+  const pick = pickPerson({ ...AMERICANO, journeyId: ID, mood: 'wronged', history: seen('coffee-picker', ...Array.from({ length: w }, (_, i) => i)) })!
   assert.equal(pick.personId, 'coffee-picker')
-  assert.equal(pick.episode, 2)
+  assert.equal(pick.episode, w)
   assert.equal(pick.how, 'mood')
   assert.ok(pick.hands.length > pick.route.length)
 })

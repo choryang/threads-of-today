@@ -52,7 +52,7 @@ const title = computed(() => personTitle(name.value, props.mood, props.episode =
     <h1 class="title" :class="{ plain: episode === null }">{{ title[0] }}<br>{{ title[1] }}</h1>
     <p v-if="memory" class="memory">{{ memory }}</p>
     <p class="t-body story">{{ story }}</p>
-    <p class="fiction">이야기 속 사람들은 실제 일을 바탕으로 지어낸 사람이에요.</p>
+    <p class="fiction">실제 일과 사건을 바탕으로 지어낸 이야기예요.</p>
 
     <div class="who">
       <div class="who-name">
@@ -77,7 +77,7 @@ const title = computed(() => personTitle(name.value, props.mood, props.episode =
 .title { margin: 6px 0 0; font-size: 24px; font-weight: 700; line-height: 1.4; letter-spacing: -0.01em; word-break: keep-all; }
 .title.plain { margin-top: 24px; }
 .memory { margin: 14px 0 0; font-size: 14px; line-height: 1.6; color: var(--mood); word-break: keep-all; }
-.story { margin-top: 16px; }
+.story { margin-top: 16px; white-space: pre-line; }
 .fiction { margin: 10px 0 24px; font-size: 12px; color: var(--t-faint); word-break: keep-all; }
 .who {
   margin-top: auto; padding: 14px 0; border-top: 1px solid var(--t-line);

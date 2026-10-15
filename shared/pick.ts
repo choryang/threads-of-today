@@ -17,8 +17,10 @@ import { storyEpisodeList } from './key-story'
 
 export interface Met {
   personId: string
-  /** 본 편 번호(0부터). 카드 문구로 만났으면 null */
+  /** 본 편 번호(0부터, 지금 판). 카드 문구로 만났으면 null */
   episode: number | null
+  /** 이 만남으로 본 것으로 치는 화들 (예전 판 기록을 옮기면 앞 화까지). 없으면 [episode] */
+  covers?: number[]
 }
 
 export interface PickInput {
@@ -67,7 +69,9 @@ export function pickPerson(input: PickInput): Pick | null {
   const met = new Map<string, number>()
   for (const h of history) {
     met.set(h.personId, (met.get(h.personId) ?? 0) + 1)
-    if (h.episode !== null) seen.set(h.personId, (seen.get(h.personId) ?? new Set()).add(h.episode))
+    const s = seen.get(h.personId) ?? new Set<number>()
+    for (const e of h.covers ?? (h.episode === null ? [] : [h.episode])) s.add(e)
+    seen.set(h.personId, s)
   }
   /** 사람마다 다음 편 하나 (아직 안 본 편 중 가장 앞 편). 다 본 사람은 후보가 아니다 */
   const candidates = route.flatMap((personId, order) => {

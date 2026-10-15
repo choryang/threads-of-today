@@ -5,15 +5,15 @@ import { historyOf, lastMeeting, memoryFor, recordHow, replyText } from '../shar
 import { emptySave, sanitizeSave } from '../shared/progress'
 
 const todays: Record<string, TodayRecord> = {
-  '2026-10-13': { mood: 'wronged', item: '아이스 아메리카노', personId: 'coffee-picker', episode: 2, reply: 0 },
+  '2026-10-13': { mood: 'wronged', item: '아이스 아메리카노', personId: 'coffee-picker', episode: 2, reply: 0, rev: 2 },
   '2026-10-11': { mood: 'tired', item: '라면', personId: 'rice-farmer', episode: null },
-  '2026-10-14': { mood: 'glad', item: '아이스 아메리카노', personId: 'coffee-picker', episode: 4, reply: 'own' },
+  '2026-10-14': { mood: 'glad', item: '아이스 아메리카노', personId: 'coffee-picker', episode: 4, reply: 'own', rev: 2 },
 }
 
 test('지난 만남은 날짜순, 오늘은 빼고', () => {
   assert.deepEqual(historyOf(todays, '2026-10-14'), [
-    { personId: 'rice-farmer', episode: null },
-    { personId: 'coffee-picker', episode: 2 },
+    { personId: 'rice-farmer', episode: null, covers: [] },
+    { personId: 'coffee-picker', episode: 2, covers: [2] },
   ])
   assert.deepEqual(historyOf(undefined), [])
 })

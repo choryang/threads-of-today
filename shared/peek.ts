@@ -1,4 +1,4 @@
-import { storyEpisodes } from './key-story'
+import { coveredEpisodes, storyEpisodes } from './key-story'
 import type { MoodId } from './data/moods'
 import type { TodayRecord } from './progress'
 
@@ -17,7 +17,7 @@ export function peekOf(todays: Record<string, TodayRecord> | undefined, personId
   const mine = Object.entries(todays ?? {}).filter(([, r]) => r.personId === personId)
   const latest = [...mine].sort(([a], [b]) => b.localeCompare(a))[0]
   const texts = storyEpisodes(personId)
-  const seen = [...new Set(mine.flatMap(([, r]) => (r.episode === null ? [] : [r.episode])))]
+  const seen = [...new Set(mine.flatMap(([, r]) => coveredEpisodes(personId, r.episode, r.rev)))]
     .sort((a, b) => a - b)
     .flatMap((i) => (texts[i] ? [texts[i]!] : []))
   return { ...(latest ? { last: { date: latest[0], mood: latest[1].mood } } : {}), seen }

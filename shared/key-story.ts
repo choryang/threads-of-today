@@ -40,3 +40,38 @@ export function keyJoy(personId: string): string | undefined {
 export function hasKeyStory(personId: string): boolean {
   return storyEpisodes(personId).length > 0
 }
+
+/**
+ * 이야기 판. 5편이던 일곱 사람을 10화 연재로 늘린 판이 2 (docs/stories). 새 하루 기록에는 TodayRecord.rev = STORY_REV를 남긴다.
+ * rev가 없는 기록은 1판: 그 사람이 아래 표에 있으면 예전 편 번호를 지금 화 번호로 옮겨 읽는다.
+ */
+export const STORY_REV = 2
+
+/**
+ * 1판 편 번호(0부터) → 2판에서 그 편의 내용이 끝나는 화(0부터). 그 화까지 본 것으로 친다.
+ * 마지막 편은 내용이 여러 화(결말)에 걸쳐 있어 그 첫 화로 옮긴다: 늘어난 결말을 이어서 본다.
+ * 근거는 docs/stories/<사람>-serial.md의 줄거리 표('지금 n편').
+ */
+const REV1_TO_REV2: Record<string, number[]> = {
+  'coffee-picker': [0, 1, 3, 7, 9],
+  'co-coffee-farmer': [0, 1, 5, 6, 8],
+  'vn-coffee-farmer': [0, 2, 3, 5, 8],
+  'br-coffee-farmer': [0, 1, 2, 4, 8],
+  'sea-crew': [0, 1, 3, 5, 6],
+  'busan-crane': [0, 1, 3, 5, 9],
+  barista: [0, 2, 4, 5, 6],
+}
+
+/** 하루 기록의 편 번호를 지금 판의 화 번호로 (보여 줄 글). 카드 문구(null)는 그대로 */
+export function currentEpisode(personId: string, episode: number | null, rev?: number): number | null {
+  if (episode === null || (rev ?? 1) >= STORY_REV) return episode
+  return REV1_TO_REV2[personId]?.[episode] ?? episode
+}
+
+/** 하루 기록 하나로 본 것으로 치는 화들 (지금 판). 1판에서 옮긴 기록은 옮긴 화까지 앞 화를 모두 본 것으로 친다 */
+export function coveredEpisodes(personId: string, episode: number | null, rev?: number): number[] {
+  if (episode === null) return []
+  const now = currentEpisode(personId, episode, rev)!
+  if ((rev ?? 1) >= STORY_REV || !REV1_TO_REV2[personId]) return [now]
+  return Array.from({ length: now + 1 }, (_, i) => i)
+}

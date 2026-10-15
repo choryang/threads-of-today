@@ -83,6 +83,6 @@ const peek = computed(() => peekOf(game.state.todays, props.personId))
 .dot { width: 10px; height: 10px; border-radius: 5px; flex-shrink: 0; }
 .stories { border-top: 1px solid #e8eaee; padding-top: 4px; }
 .stories summary { min-height: 44px; display: flex; align-items: center; font-size: 15px; font-weight: 700; cursor: pointer; }
-.stories p { margin: 0 0 12px; font-size: 15px; line-height: 1.8; color: #2a2d33; word-break: keep-all; }
+.stories p { margin: 0 0 12px; font-size: 15px; line-height: 1.8; color: #2a2d33; word-break: keep-all; white-space: pre-line; }
 .later { margin: 6px 0 0; font-size: 13px; color: #6b7079; word-break: keep-all; }
 </style>

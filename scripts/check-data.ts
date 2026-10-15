@@ -89,11 +89,17 @@ for (const scene of Object.values(SCENES)) {
 // 가게·사무실 사람도 같다: 그 사람이 건네는 물건 모두에 들어 있지 않은 재료 이름이면 실패
 // (예: 바리스타는 녹차라떼·에이드도 건네니 '커피'는 커피가 없는 여정에서도 나온다).
 // seasons(글 쓰는 사람용 메모)가 있으면 한 시즌 5편: seasons.length × 5 = episodes.length
+// 연재(seasons가 있는 사람, docs/stories)는 한 화 600자 이내. 긴 소설 글에는 종이·상자·의자 같은 흔한 낱말이 자연스럽게 나와서
+// 재료 이름 검사는 별칭 없이 재료의 대표 이름(커피·플라스틱 등)만 본다. 종이·유리는 장면 속 소품(쪽지·영수증·유리문)이라
+// 물건의 재료로 읽히지 않아 연재에서는 보지 않는다
 const STORY_MAX = 200
+const SERIAL_MAX = 600
 const EPISODES_PER_SEASON = 5
-const materialWords = (id: string) => {
+const PROSE_EVERYDAY = new Set(['pulp', 'glass'])
+const materialWords = (id: string, serial = false) => {
   const m = MATERIAL_LIST.find((x) => x.id === id)
-  return m ? [...new Set([m.name, ...m.aliases])].filter((w) => w.length >= 2) : []
+  if (!m || (serial && PROSE_EVERYDAY.has(id))) return []
+  return [...new Set([m.name, ...(serial ? [] : m.aliases)])].filter((w) => w.length >= 2)
 }
 const routeMaterials = (pid: string) =>
   MATERIAL_LIST.filter((m) => m.stages.includes(pid) || m.origins?.some((o) => o.head.includes(pid))).map((m) => m.id)
@@ -129,18 +135,21 @@ for (const [pid, story] of Object.entries(KEY_STORIES)) {
   if (story.seasons && story.seasons.length * EPISODES_PER_SEASON !== (story.episodes?.length ?? 0)) {
     errors.push(`이야기 ${pid}: 시즌 ${story.seasons.length}개 × ${EPISODES_PER_SEASON}편 = ${story.seasons.length * EPISODES_PER_SEASON}편이어야 하는데 ${story.episodes?.length ?? 0}편`)
   }
+  const serial = !!story.seasons
+  const max = serial ? SERIAL_MAX : STORY_MAX
   texts.forEach((t, i) => {
-    if (t.length > STORY_MAX) errors.push(`이야기 ${pid} ${i + 1}편: ${t.length}자 (200자 이내)`)
+    const n = t.replace(/\n/g, '').length
+    if (n > max) errors.push(`이야기 ${pid} ${i + 1}편: ${n}자 (${max}자 이내)`)
   })
   for (const mid of forbiddenMaterials(pid)) {
-    for (const w of materialWords(mid)) {
+    for (const w of materialWords(mid, serial)) {
       texts.forEach((t, i) => {
         if (t.includes(w)) errors.push(`이야기 ${pid} ${i + 1}편: 여러 재료에 나오는 사람인데 재료 이름 '${w}'(${mid})가 있음`)
       })
     }
   }
   for (const mid of partialMaterials(pid)) {
-    for (const w of materialWords(mid)) {
+    for (const w of materialWords(mid, serial)) {
       texts.forEach((t, i) => {
         if (t.includes(w)) errors.push(`이야기 ${pid} ${i + 1}편: 건네는 물건 중 ${mid}가 없는 것도 있는데 재료 이름 '${w}'가 있음`)
       })

@@ -29,7 +29,9 @@ app/composables/useThreadShare.ts 오늘의 실 공유: 링크(/t) + 앱이 그�
 app/composables/usePlaceNow.ts 그곳 지금 시각 (개발 중 ?clock=05:30·?date=YYYY-MM-DD)
 app/utils/resolve-item.ts 물건 이름 → 재료 (로컬 매칭 → 서버)
 shared/data/moods.ts      마음 8개(보이는 말·칸·색·제목 꼴·기억 문장 꼴·V2Mood 점 자리)
-shared/data/stories.ts    이야기: 편마다 { moods, text } (사용자가 쓴 문구, 고치지 않는다). 태그 검토표 docs/redesign/mood-tags.md (npm run mood-tags)
+shared/data/stories.ts    이야기: 편마다 { moods, text } (사용자가 고른 문구, 묻지 않고 고치지 않는다). 열여섯 명은 10화 연재(하다체, 원고·사실 메모 docs/stories,
+                          쓰는 규칙 docs/key-people.md "연재"). 예전 판 기록의 편 번호는 key-story.ts currentEpisode·coveredEpisodes(TodayRecord.rev).
+                          태그 검토표 docs/redesign/mood-tags.md (npm run mood-tags)
 shared/data/replies.ts    5번 화면 한마디 보기(좋은 마음이면 다른 보기). 서버에는 번호만
 shared/pick.ts            한 사람 고르기: 첫 재료 경로(+가게 사람)에서 안 본 편 중 오늘의 마음 태그 → 같은 칸 → 아무나의 다음 편 → 없으면 시작한 손을 카드 문구로
 shared/today-text.ts      흐름 화면 문구(날짜, 머리말·제목, 3번 문장, 기억 한 줄, 모두의 오늘)

@@ -1,4 +1,5 @@
 import { repliesFor } from './data/replies'
+import { coveredEpisodes, currentEpisode } from './key-story'
 import type { Met, PickHow } from './pick'
 import type { TodayRecord } from './progress'
 import { memoryLine } from './today-text'
@@ -17,7 +18,12 @@ export function historyOf(todays: Record<string, TodayRecord> | undefined, excep
   return Object.entries(todays ?? {})
     .filter(([date]) => date !== exceptDate)
     .sort(([a], [b]) => a.localeCompare(b))
-    .map(([, r]) => ({ personId: r.personId, episode: r.episode }))
+    .map(([, r]) => ({ personId: r.personId, episode: currentEpisode(r.personId, r.episode, r.rev), covers: coveredEpisodes(r.personId, r.episode, r.rev) }))
+}
+
+/** 그날 본 편 (지금 판의 화 번호). 예전 판 기록은 옮겨 읽는다 */
+export function recordEpisode(r: TodayRecord): number | null {
+  return currentEpisode(r.personId, r.episode, r.rev)
 }
 
 /** 그 사람을 그날보다 전에 마지막으로 만난 기록 */

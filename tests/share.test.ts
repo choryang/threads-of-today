@@ -107,7 +107,8 @@ test('오늘의 실 공유: 날짜·마음·사람·편·물건만, 한 줄·직
 })
 
 test('오늘의 실 문구: 인용은 그 편의 첫 문장, 이름은 장소와 함께, 으로/로', () => {
-  assert.equal(threadQuote({ personId: 'coffee-picker', episode: 2 }), '알마즈는 끝까지 익은 것만 골랐어요.')
+  // 연재 한 화는 여러 문단: 인용은 첫 문단의 첫 문장만
+  assert.equal(threadQuote({ personId: 'coffee-picker', episode: 2 }), '다음 날 아침 알마즈는 나무 앞에 서서 한참 가지를 보았다.')
   assert.equal(threadWho({ personId: 'coffee-picker' }), '에티오피아 시다마의 알마즈')
   assert.equal(withEuro('라면'), '라면으로')
   assert.equal(withEuro('아이스 아메리카노'), '아이스 아메리카노로')
