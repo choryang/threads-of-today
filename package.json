@@ -18,7 +18,8 @@
     "cache:export": "tsx scripts/export-cache.ts",
     "stats": "tsx scripts/user-stats.ts",
     "scenes": "tsx scripts/build-scenes.ts",
-    "holidays": "tsx scripts/build-holidays.ts"
+    "holidays": "tsx scripts/build-holidays.ts",
+    "key-candidates": "tsx scripts/key-candidates.ts"
   },
   "dependencies": {
     "@upstash/redis": "^1.39.0",

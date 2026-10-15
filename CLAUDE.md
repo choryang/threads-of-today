@@ -22,6 +22,7 @@ shared/                 앱과 서버가 상대 경로로 함께 import (Nuxt �
   data/journey-extras.ts 여정 이벤트(EVENTS, '이야기')·숨은 만남 규칙(HIDDEN_RULES)
   data/shops.ts         여정 마지막 장면의 가게·사무실 사람. closingKind(물건 이름, 재료)로 종류를 정한다
   data/thanks.ts        고마워요 답·세트 감사 장면·엔딩 문구
+  data/stories.ts       핵심 인물 이야기(story 또는 episodes 여러 편, joy 작은 기쁨). 사용자가 쓴 문구라 고치지 않는다. 규칙은 docs/key-people.md
   data/doing.ts         여정 화면 '지금은 아마 …': 사람마다 일·저녁(일 끝나고 4시간)·잠 문구, 일하는 시간(hours, 기본 7~18시),
                         평일에만 일하는 사람(days: 'weekdays'). 없으면 일반 문구(check:data)
   data/calendar.ts      나라 코드·주말 요일·공휴일 찾기. 공휴일은 holidays.json(npm run holidays가 date-holidays로 3년치 생성,
@@ -45,6 +46,9 @@ shared/                 앱과 서버가 상대 경로로 함께 import (Nuxt �
   journey.ts            buildTimeline(materialIds, journeyId): 여정 id 시드로 출발지·이야기·숨은 만남·퀴즈 변형. '-꼬리' 없는 예전 id는 기본 경로
                         첫 여정('-first')은 사람 카드만(퀴즈·경유지 맞히기·이야기·같은 길·숨은 만남 없음), 두 번째 여정('-second')에 숨은 만남·퀴즈 선물 보장
                         id에 '-r'이 붙은 새 여정은 reverseTimeline(내 손 → 원산지). forwardTimeline을 재배치만 해서 판정은 정방향과 같다
+                        keyPeople: 핵심 인물 셋(시작한 손·건너온 손·건네준 손, docs/key-people.md). '-k'가 붙은 여정은 journeyScreens(시작 화면 →
+                        핵심 인물, 사이 사람은 묶음 칸, 퀴즈·숨은 만남은 묶음 칸 뒤, 이야기 칩 없음)를 한 칸씩 간다(journeySteps·screenPeople)
+  key-story.ts          핵심 인물 화면의 이야기: 핵심 자리에서 만난 횟수(Save.keyMeets)대로 다음 편, 없으면 카드 문구
   distance.ts           거리 계산기: 장소 좌표로 대권 거리 누적(바다는 건너뜀), 100km 단위 반올림
   incoming.ts           오고 있는 물건: 운송 구간(data/transport.ts)이 있고 못 만난 평범한 사람이 남으면 생김(최대 3), 다음 날 6시(서울) 도착,
                         진행 비율, 여정 데이터의 경유지 문구. 데려올 사람은 stage 사람만(희소도를 건드리지 않게)
@@ -98,6 +102,7 @@ app/
   components/             ResidentSheet(주민 카드) · FriendshipPanel(친해진 정도) · MeetAgain(또 만났어요)
                           NicknameEditor·DeviceTransfer(마을 메뉴의 설정) · RecordTabs(지난 기록 안 오늘/나의 실타래 전환)
                           VillageMap(내 마을·친구 마을이 같이 쓰는 지도) · FriendResidentSheet · FlowerMark · IntroSheet(이 분 소개하기)
+                          KeyIntro(핵심 인물 여정 시작: 세 사람의 그곳 시각 띠) · KeyPerson(핵심 인물 화면) · KeyGroup(그리고 이 사람들도요)
                           PlaceSky(여정 사람 카드 위 하늘·시계·장면 그림) · FormBadge(지금 물건의 형태) · RewindReplay(빨리 감기 엔딩) · IncomingCard(오고 있는 물건)
   pages/                  index(내 하루 마을: 지도·주민·주민 카드·오고 있는 물건, 처음 온 사람은 /test로) · test(10초 테스트)·test/result
                           d/[token](친구가 보낸 하루 → "당신의 하루는요?") · v/[token](친구 마을: 주민에게 고마워요 → 꽃)
@@ -114,6 +119,7 @@ app/
   utils/character.ts      모자(hat)·소품(prop) 파츠를 조합한 SVG 콩 캐릭터
   utils/product-icon.ts   메인 물건 타일 아이콘. 대표 물건을 추가하면 여기도 그린다(없으면 상자 모양)
 scripts/check-data.ts     데이터 검사. 모든 변경 후 반드시 통과시킬 것
+scripts/key-candidates.ts 핵심 자리에 올 수 있는 사람 목록·이야기 유무·자리에 서는 비율 → docs/key-candidates.md (npm run key-candidates)
 scripts/build-og-cards.ts OG 이미지를 resvg로(마을 초대 공통 한 장, 사람 카드 소개 사람마다 한 장). 글꼴은 scripts/fonts의 Pretendard OTF(OFL) (npm run build:og-cards)
 scripts/build-scenes.ts   장면 그림을 webp, 가로 1200px 이하로 (npm run scenes, sharp)
 scripts/build-og.ts       OG 이미지(하루 유형 9장 1200×630)를 이 컴퓨터의 Chrome·Edge로 찍어 public/og에 (npm run build:og)
