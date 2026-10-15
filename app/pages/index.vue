@@ -92,6 +92,25 @@ async function loadVillageSocial() {
   if (notice.value) villageLink.markSeen(Math.max(...notice.value.flowers.map((f) => f.at)))
 }
 
+// ── 제목 카드 접기: 지도를 더 넓게 보도록 한 줄로 접는다. 이 기기에서만 기억한다(편의 설정이라 진행 상황에 넣지 않는다) ──
+const FOLD_KEY = 'my-day-people:village-card-folded'
+const folded = ref(false)
+onMounted(() => {
+  try {
+    folded.value = window.localStorage.getItem(FOLD_KEY) === '1'
+  } catch {
+    // 저장소를 못 쓰면 펼친 채로
+  }
+})
+function toggleFold() {
+  folded.value = !folded.value
+  try {
+    window.localStorage.setItem(FOLD_KEY, folded.value ? '1' : '0')
+  } catch {
+    // 이번 방문 동안만
+  }
+}
+
 // ── 초대·메뉴 ──
 const menuOpen = ref(false)
 const message = ref('')
@@ -168,18 +187,31 @@ onMounted(async () => {
 
     <div class="overlay">
       <div class="top">
-        <header class="title-card">
+        <header class="title-card" :class="{ folded }">
           <div class="title-row">
             <h1 class="display title">내 하루 마을</h1>
-            <button class="menu-btn" aria-label="마을 메뉴" :aria-expanded="menuOpen" @click="menuOpen = true">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
-            </button>
+            <div class="title-btns">
+              <button
+                class="icon-btn"
+                :aria-label="folded ? '마을 카드 펼치기' : '마을 카드 접기'"
+                :aria-expanded="!folded"
+                aria-controls="village-card-body"
+                @click="toggleFold"
+              >
+                <svg class="chevron" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6" /></svg>
+              </button>
+              <button class="icon-btn" aria-label="마을 메뉴" :aria-expanded="menuOpen" @click="menuOpen = true">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
+              </button>
+            </div>
           </div>
-          <p v-if="layout.residents.length" class="sub">
-            주민 {{ layout.residents.length }}명 · {{ countries.length }}개 나라에서 왔어요<template v-if="bestFriends.length"> · 단짝 {{ bestFriends.length }}명</template>
-          </p>
-          <p v-else class="sub">오늘 쓴 물건을 넣으면 그 물건을 거쳐 온 사람들이 마을에 와요</p>
-          <button v-if="layout.residents.length" class="invite" @click="invite">내 마을 초대하기</button>
+          <div v-show="!folded" id="village-card-body" class="card-body">
+            <p v-if="layout.residents.length" class="sub">
+              주민 {{ layout.residents.length }}명 · {{ countries.length }}개 나라에서 왔어요<template v-if="bestFriends.length"> · 단짝 {{ bestFriends.length }}명</template>
+            </p>
+            <p v-else class="sub">오늘 쓴 물건을 넣으면 그 물건을 거쳐 온 사람들이 마을에 와요</p>
+            <button v-if="layout.residents.length" class="invite" @click="invite">내 마을 초대하기</button>
+          </div>
         </header>
         <button v-if="notice" class="notice" :aria-expanded="noticeOpen" @click="noticeOpen = !noticeOpen">
           <FlowerMark color="#F9B9C9" :size="28" />
@@ -241,7 +273,14 @@ onMounted(async () => {
 .title-card { display: flex; flex-direction: column; gap: 3px; padding: 12px 14px 12px 18px; border-radius: 20px; background: rgba(15, 27, 45, 0.9); }
 .title { margin: 0; font-size: 24px; line-height: 1.15; }
 .title-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.menu-btn { width: 44px; height: 44px; margin: -6px -4px -6px 0; border: 0; border-radius: 14px; background: none; color: var(--text); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.title-btns { display: flex; margin: -6px -4px -6px 0; }
+.icon-btn { width: 44px; height: 44px; border: 0; border-radius: 14px; background: none; color: var(--text); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.chevron { transition: transform var(--motion-enter) var(--motion-ease); }
+.card-body { display: flex; flex-direction: column; gap: 3px; animation: rise var(--motion-enter) var(--motion-ease); }
+/* 접으면 제목 한 줄만 왼쪽에 작게 (지도를 가리지 않게) */
+.title-card.folded { align-self: flex-start; padding: 8px 10px 8px 16px; border-radius: 18px; }
+.title-card.folded .title { font-size: 18px; }
+.title-card.folded .chevron { transform: rotate(180deg); }
 .sub { margin: 0; font-size: 13px; color: #c9cfd9; word-break: keep-all; }
 .invite {
   align-self: flex-start; min-height: 44px; margin-top: 6px; padding: 0 16px; border-radius: 14px; border: 2px solid var(--accent);
