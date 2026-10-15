@@ -138,3 +138,27 @@ test('이야기: 본 편 수대로 다음 편, 다 보면 없음, 편이 더해�
   assert.deepEqual(seenEpisodes('sea-crew', 2), eps.slice(0, 2))
   assert.deepEqual(seenEpisodes('sea-crew', 99), eps)
 })
+
+test('핵심 인물 여정은 퀴즈가 하나: 첫 재료의 퀴즈(없으면 다음 재료). 예전 여정은 재료마다 그대로', () => {
+  const samgak = ['rice', 'laver', 'tuna', 'plastic']
+  let checked = 0
+  for (let i = 0; i < 40; i++) {
+    const id = `2026-10-15-1-q${i.toString(36)}-r-k`
+    const quizzes = journeyScreens(samgak, id, '참치마요 삼각김밥').filter((t) => t.type === 'quiz')
+    assert.equal(quizzes.length, 1)
+    assert.equal((quizzes[0] as { materialId: string }).materialId, 'rice')
+    checked++
+  }
+  assert.ok(checked > 0)
+  // 첫 재료에 퀴즈가 없으면 다음 재료: 플라스틱이 먼저 와도 퀴즈 있는 재료로
+  const firstWithQuiz = (ids: string[]) => ids.find((m) => MATERIALS[m]?.quiz)
+  const ids = ['plastic', 'coffee']
+  const id = '2026-10-15-1-qq-r-k'
+  const only = journeyScreens(ids, id, '아이스 아메리카노').filter((t) => t.type === 'quiz')
+  assert.equal(only.length, 1)
+  assert.equal((only[0] as { materialId: string }).materialId, firstWithQuiz(ids))
+  // 예전 여정('-k' 없음)은 재료마다
+  assert.ok(buildTimeline(samgak, '2026-10-15-1-q0-r', '참치마요 삼각김밥').filter((t) => t.type === 'quiz').length > 1)
+  // 첫 여정은 퀴즈가 없다
+  assert.equal(journeyScreens(samgak, '2026-10-15-1-q0-r-k-first', '참치마요 삼각김밥').filter((t) => t.type === 'quiz').length, 0)
+})

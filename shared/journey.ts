@@ -368,7 +368,7 @@ export type ScreenItem =
 /**
  * 핵심 인물 여정의 화면 목록 (docs/key-people.md). 타임라인 순서(정방향·거꾸로)를 따라가며
  * 핵심 인물 칸 앞에 그 사이 사람들을 묶음 칸 하나로, 그 뒤에 퀴즈·숨은 만남을 둔다. 마지막 핵심 인물 뒤에 남은 사람·퀴즈도 같은 방식.
- * 여정 이벤트는 넣지 않는다. 카드는 칸마다 그 칸의 사람을 받는다(screenPeople): 타임라인의 모든 사람이 어느 칸엔가 들어간다
+ * 퀴즈는 한 여정에 하나(keyQuizMaterial). 여정 이벤트는 넣지 않는다. 카드는 칸마다 그 칸의 사람을 받는다(screenPeople): 타임라인의 모든 사람이 어느 칸엔가 들어간다
  */
 export function journeyScreens(materialIds: string[], journeyId?: string, itemName?: string): ScreenItem[] {
   const timeline = buildTimeline(materialIds, journeyId, itemName)
@@ -387,6 +387,7 @@ export function journeyScreens(materialIds: string[], journeyId?: string, itemNa
     if (at !== undefined) keyAt.set(at, k)
   }
   const keyIds = new Set(keys.map((k) => k.personId))
+  const quizMaterial = keyQuizMaterial(materialIds, timeline)
 
   const out: ScreenItem[] = [{ type: 'intro' }]
   const shown = new Set<string>()
@@ -414,11 +415,21 @@ export function journeyScreens(materialIds: string[], journeyId?: string, itemNa
     }
     if (t.type === 'stage') people.push(t.personId)
     else if (t.type === 'pass') people.push(...t.personIds)
-    else if (t.type === 'hidden' || t.type === 'quiz') extras.push(t)
+    else if (t.type === 'hidden') extras.push(t)
+    // 퀴즈는 한 여정에 하나: 첫 재료의 퀴즈(없으면 다음 재료)
+    else if (t.type === 'quiz' && t.materialId === quizMaterial) extras.push(t)
     // 여정 이벤트(이야기 칩)는 핵심 인물 이야기로 대신한다
   })
   flush()
   return out
+}
+
+/**
+ * 핵심 인물 여정에서 퀴즈를 낼 재료: 재료 순서대로 처음으로 퀴즈 칸이 있는 재료 (첫 여정처럼 퀴즈가 없으면 undefined).
+ * 두 번째 여정 선물(틀려도 보상 카드)은 이 퀴즈 하나에 걸린다(처음 답한 퀴즈에 주므로)
+ */
+export function keyQuizMaterial(materialIds: string[], timeline: TimelineItem[]): string | undefined {
+  return materialIds.find((mid) => timeline.some((t) => t.type === 'quiz' && t.materialId === mid))
 }
 
 /** 그 칸에서 만나는(카드를 받는) 사람 */
