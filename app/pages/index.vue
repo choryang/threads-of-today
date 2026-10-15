@@ -159,6 +159,7 @@ const tightTop = computed(() => d.step === 'item' || d.step === 'person' || d.st
       :person-id="d.pick.personId"
       :episode="d.pick.episode"
       :memory="d.memory"
+      no-doing
     >
       <div class="done">
         <p v-if="d.note" class="done-note"><span class="t-dot" aria-hidden="true" />{{ d.note }}</p>

@@ -20,6 +20,8 @@ const props = defineProps<{
   episode: number | null
   memory?: string
   action?: string
+  /** 이름 줄 옆 '지금은 아마'를 빼기 (오늘 결과 화면은 아래에 실시간 한 줄이 따로 있다) */
+  noDoing?: boolean
 }>()
 const emit = defineEmits<{ next: [] }>()
 
@@ -54,7 +56,7 @@ const title = computed(() => (props.episode === null ? plainTitle(props.itemName
         <span class="name">{{ name }}</span>
         <span class="job">{{ person.name ? person.job : '' }}</span>
       </div>
-      <span class="doing">{{ doing }}</span>
+      <span v-if="!noDoing" class="doing">{{ doing }}</span>
     </div>
     <button v-if="action" class="t-btn" @click="emit('next')">{{ action }}</button>
     <slot />
