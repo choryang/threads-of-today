@@ -269,6 +269,16 @@ tests/            node:test 단위 테스트
   - [ ] 고마워요를 누르면 캐릭터가 손을 흔드는지, "{이름}에게 고마움을 전했어요"가 보이는지
   - [ ] 연결 카드를 얻을 때 "{이름}을(를) 또 만났어요!"가 보이는지
   - [ ] 공유 이미지(html-to-image)에서 캐릭터 피부색이 화면과 같게 나오는지
+- 배포 전 체크리스트:
+  - [ ] **Upstash 종량제(Pay as you go) 전환과 월 예산 상한.** 무료 요금제 한도를 넘으면 명령이 거절되어 동기화·고마워요·모두의 오늘이 멈춘다.
+        사용자 1,000명/일이면 하루 약 13만 명령(월 약 400만)으로 예상한다. Upstash 콘솔 → 데이터베이스 → Usage/Plan에서 종량제로 바꾸고,
+        Budget(월 예산 상한)을 정해 둔다. 상한에 닿으면 무료 한도처럼 요청이 막히니 Usage를 처음 몇 주는 직접 본다
+  - [ ] **`CRON_SECRET` 환경 변수.** Production에 16자 이상 무작위 문자열로 넣고 다시 배포한다. 없으면 `/api/cron/cleanup`이 늘 401을 돌려줘
+        이틀 지난 `meet:*`·`thanks:day:*` 키가 쌓인다(이 키들은 EXPIRE 없이 청소에 맡긴다).
+        배포 뒤 Vercel → Settings → Cron Jobs에 `/api/cron/cleanup`(`0 19 * * *`, 서울 새벽 4시)이 보이는지, Run으로 한 번 돌려 함수 로그에 `[cron] cleanup`이 남는지 본다.
+        헤더 없이 `curl https://<도메인>/api/cron/cleanup`을 부르면 401이어야 한다
+  - [ ] **Vercel 함수 지역 `icn1`(서울).** Settings → Functions → Function Region을 Seoul(icn1)로 바꾼다. 기본값(미국 동부)이면 한국 사용자 요청과
+        Upstash 왕복이 모두 태평양을 건넌다. Upstash 데이터베이스 지역도 서울에 가까운 곳인지 함께 확인한다
 
 ## Upstash 연결 후 확인할 것
 
