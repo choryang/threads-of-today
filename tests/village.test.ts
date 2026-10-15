@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { PEOPLE_LIST } from '../shared/data/people'
-import { ZONES, ZONE_BY_ID } from '../shared/data/village'
+import { HOME_POINT, MAP_H, MAP_W, ZONES, ZONE_BY_ID } from '../shared/data/village'
 import { OVERFLOW_GAP, emptyLots, placeAll, villageLayout, villagers } from '../shared/village'
-import { MAX_SCALE, centerOn, clampScale, clampView, minScale, zoomAt, type Size } from '../app/utils/pan-zoom'
+import { FAR_SCALE, HIT_BELOW, MAX_SCALE, MIN_HIT_PX, centerOn, clampScale, clampView, hitBox, minScale, zoneLabelScale, zoomAt, type Size } from '../app/utils/pan-zoom'
 
 const stage = PEOPLE_LIST.filter((p) => p.kind !== 'link')
 
@@ -46,21 +46,41 @@ test('마을: 연결 카드는 주민이 아니고, 빈 집터는 못 만난 사
   assert.deepEqual(later.residents.map((r) => r.id), ['sea-crew', 'barista'])
 })
 
-const PHONE: Size = { vw: 390, vh: 844, mw: 1400, mh: 2000 }
+const PHONE: Size = { vw: 390, vh: 844, mw: MAP_W, mh: MAP_H }
 
-test('팬·줌: 최소 배율은 지도가 화면을 꽉 채우는 크기, 최대 1.4', () => {
-  assert.equal(minScale(PHONE), 844 / 2000)
-  assert.equal(clampScale(0.1, PHONE), 844 / 2000)
+test('팬·줌: 최소 배율은 섬 전체가 화면에 다 들어오는 크기, 최대 1.4', () => {
+  assert.equal(MAP_W, 2800)
+  assert.equal(MAP_H, 4200)
+  assert.equal(minScale(PHONE), 390 / 2800)
+  assert.equal(clampScale(0.01, PHONE), 390 / 2800)
   assert.equal(clampScale(3, PHONE), MAX_SCALE)
   assert.equal(clampScale(0.6, PHONE), 0.6)
-  // 화면이 아주 크면 최소 배율이 1.4보다 커도 꽉 채운다
-  assert.equal(clampScale(1, { vw: 3000, vh: 1000, mw: 1400, mh: 2000 }), 3000 / 1400)
+  // 가로가 긴 화면은 세로가 기준
+  assert.equal(minScale({ vw: 1600, vh: 900, mw: MAP_W, mh: MAP_H }), 900 / 4200)
+  // 섬 전체가 화면 안에 들어온다
+  const all = clampView({ x: 0, y: 0, scale: minScale(PHONE) }, PHONE)
+  assert.ok(MAP_W * all.scale <= 390 + 1e-9 && MAP_H * all.scale <= 844 + 1e-9)
 })
 
-test('팬·줌: 지도 밖 빈 화면이 보이지 않게 위치를 제한한다', () => {
+test('팬·줌: 지도가 화면보다 작으면 가운데, 크면 지도 밖 빈 화면이 보이지 않게', () => {
+  // 끝까지 축소: 가로는 꽉 차고(0), 세로는 남는 높이의 절반만큼 내려 가운데
+  const s = minScale(PHONE)
+  const far = clampView({ x: -500, y: 300, scale: s }, PHONE)
+  assert.ok(Math.abs(far.x) < 1e-9)
+  assert.ok(Math.abs(far.y - (844 - MAP_H * s) / 2) < 1e-9)
+  // 가로·세로 모두 작으면 양쪽 모두 가운데
+  const tablet: Size = { vw: 1600, vh: 900, mw: MAP_W, mh: MAP_H }
+  const t = clampView({ x: 0, y: -100, scale: 0.2 }, tablet)
+  assert.ok(Math.abs(t.x - (1600 - MAP_W * t.scale) / 2) < 1e-9)
+  assert.ok(Math.abs(t.y - (900 - MAP_H * t.scale) / 2) < 1e-9)
+  // 지도가 크면 예전처럼 가장자리에 맞춘다
   assert.deepEqual(clampView({ x: 100, y: 50, scale: 0.6 }, PHONE), { x: 0, y: 0, scale: 0.6 })
-  const far = clampView({ x: -5000, y: -5000, scale: 0.6 }, PHONE)
-  assert.deepEqual(far, { x: 390 - 1400 * 0.6, y: 844 - 2000 * 0.6, scale: 0.6 })
+  assert.deepEqual(clampView({ x: -5000, y: -5000, scale: 0.6 }, PHONE), { x: 390 - MAP_W * 0.6, y: 844 - MAP_H * 0.6, scale: 0.6 })
+  // 가로만 작은 화면(가로로 긴 화면에서 세로는 꽉 찬 배율): 가로는 가운데, 세로는 가장자리에 맞춘다
+  const wide: Size = { vw: 1600, vh: 900, mw: MAP_W, mh: MAP_H }
+  const w = clampView({ x: 0, y: 99, scale: 0.3 }, wide)
+  assert.ok(Math.abs(w.x - (1600 - MAP_W * 0.3) / 2) < 1e-9)
+  assert.equal(w.y, 0)
 })
 
 test('팬·줌: 특정 점 기준 확대는 그 점 아래 지도 위치를 그대로 둔다', () => {
@@ -72,8 +92,42 @@ test('팬·줌: 특정 점 기준 확대는 그 점 아래 지도 위치를 그�
   assert.equal(z.scale, 0.9)
   assert.ok(Math.abs((px - z.x) / z.scale - before.x) < 1e-9)
   assert.ok(Math.abs((py - z.y) / z.scale - before.y) < 1e-9)
-  const c = centerOn(560, 1000, 0.6, PHONE)
-  assert.ok(Math.abs(c.x + 560 * 0.6 - 195) < 1e-9 && Math.abs(c.y + 1000 * 0.6 - 422) < 1e-9)
-  // 가장자리 가까운 점은 가운데까지 못 오고 지도 끝에 맞춘다 (우리 집은 지도 아래쪽)
-  assert.equal(centerOn(560, 1380, 0.6, PHONE).y, 844 - 2000 * 0.6)
+  const c = centerOn(1400, 2100, 0.6, PHONE)
+  assert.ok(Math.abs(c.x + 1400 * 0.6 - 195) < 1e-9 && Math.abs(c.y + 2100 * 0.6 - 422) < 1e-9)
+  // 우리 집은 지도 아래쪽이라 가운데까지 못 오고 지도 끝에 맞춘다
+  assert.equal(centerOn(HOME_POINT.x, HOME_POINT.y, HOME_POINT.scale, PHONE).y, 844 - MAP_H * 0.6)
+})
+
+test('누르는 영역: 지도 좌표 140×210(발끝 아래 20까지), 화면에서 44px보다 작아지면 44×44px', () => {
+  const near = hitBox(1)
+  assert.deepEqual(near, { w: 140, h: 210, left: -70, top: -190 })
+  assert.equal(near.top + near.h, HIT_BELOW) // 발끝 아래 20까지
+  // 배율 0.25: 가로 140 × 0.25 = 35px < 44 → 가로만 176(=44px), 세로 210 × 0.25 = 52.5px라 그대로
+  const quarter = hitBox(0.25)
+  assert.equal(quarter.w, 176)
+  assert.equal(quarter.h, 210)
+  assert.equal(quarter.left, -88)
+  // 끝까지 축소(0.139): 둘 다 화면 44px, 기본 상자의 가운데(발끝 위 85)는 그대로
+  for (const scale of [minScale(PHONE), 0.2, 0.25, 0.4, 1, MAX_SCALE]) {
+    const b = hitBox(scale)
+    assert.ok(b.w * scale >= MIN_HIT_PX - 1e-9 && b.h * scale >= MIN_HIT_PX - 1e-9, `scale ${scale}`)
+    assert.ok(b.w >= 140 && b.h >= 210)
+    assert.ok(Math.abs(b.top + b.h / 2 - (HIT_BELOW - 105)) < 1e-9)
+    assert.ok(Math.abs(b.left + b.w / 2) < 1e-9)
+  }
+  assert.ok(Math.abs(hitBox(minScale(PHONE)).w * minScale(PHONE) - 44) < 1e-9)
+  // 멀리서는 구역 이름표만 읽히게 키운다
+  assert.equal(zoneLabelScale(1), 1)
+  assert.ok(30 * minScale(PHONE) * zoneLabelScale(minScale(PHONE)) >= 13 - 1e-9)
+  assert.ok(FAR_SCALE > minScale(PHONE))
+})
+
+test('친구 마을: 링크의 주민 순서로 placeAll하면 주인 마을과 같은 자리에 선다 (도착 예정·빈 집터가 있어도)', () => {
+  const cards = Object.fromEntries(stage.slice(0, 60).map((p, i) => [p.id, `2026-10-${String(1 + (i % 28)).padStart(2, '0')}`]))
+  const owner = villageLayout(cards, {}, [stage[100]!.id, stage[101]!.id])
+  const link = owner.residents.map((r) => r.id) // useVillageLink.payload()가 담는 순서
+  assert.deepEqual(placeAll(link), owner.residents)
+  // 새 지도에서는 구역 자리가 넉넉해서 모두 자리(slot) 위에 선다
+  const all = placeAll(stage.map((p) => p.id))
+  for (const p of all) assert.ok(ZONE_BY_ID[p.zone].slots.some(([x, y]) => x === p.x && y === p.y), p.id)
 })

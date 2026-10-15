@@ -15,9 +15,10 @@
  *    연 지 30일이 지난 것은 버린다.
  *  - 내 마을 초대 링크(village): 더 나중에 바꾼 쪽. 꽃을 본 시각(seenAt)은 큰 쪽.
  *  - 다녀온 마을(visitedVillages): 토큰으로 합집합, 최근 30곳. 상대에게 알리지 않는다.
+ *  - 단짝 연출을 본 주민(bestSeen): 합집합. 한 기기에서 본 연출은 다른 기기에서 다시 띄우지 않는다.
  */
 import { MATERIALS, SETS } from './data/materials'
-import { PEOPLE } from './data/people'
+import { PEOPLE, PEOPLE_LIST } from './data/people'
 import { LOG_CAP, legacyMeeting, mergePersonLog } from './friendship'
 import { isManageKey, isToken } from './share'
 import { normalizeNickname } from './nickname'
@@ -134,6 +135,8 @@ export interface Save {
   incoming: Incoming[]
   village?: VillageLink
   visitedVillages: VisitedVillage[]
+  /** 친해진 정도 100%(단짝) 연출을 이미 본 주민 id */
+  bestSeen: string[]
   nickname?: Nickname
 }
 
@@ -142,7 +145,7 @@ const LIMITS = { items: 2000, journeysPerDay: 12, name: 40, voice: 80, guesses: 
 const DATE = /^\d{4}-\d{2}-\d{2}$/
 
 export function emptySave(): Save {
-  return { v: 1, cards: {}, days: {}, streak: { last: '', count: 0 }, mystery: {}, items: {}, thanks: {}, seenScenes: [], threads: {}, people: {}, incoming: [], visitedVillages: [] }
+  return { v: 1, cards: {}, days: {}, streak: { last: '', count: 0 }, mystery: {}, items: {}, thanks: {}, seenScenes: [], threads: {}, people: {}, incoming: [], visitedVillages: [], bestSeen: [] }
 }
 
 /** todayKey를 포함해 최근 days일의 날짜 키인지 */
@@ -273,6 +276,7 @@ export function mergeSaves(a: Save, b: Save, todayKey: string): Save {
     people: mergePeople(a.people ?? {}, b.people ?? {}, cards),
     incoming: mergeIncoming(a.incoming ?? [], b.incoming ?? [], todayKey),
     visitedVillages: mergeVisited(a.visitedVillages ?? [], b.visitedVillages ?? []),
+    bestSeen: union(a.bestSeen ?? [], b.bestSeen ?? []),
     ...(mergeVillage(a.village, b.village) ? { village: mergeVillage(a.village, b.village) } : {}),
     days: pickRecent(days, todayKey),
     mystery: pickRecent(mystery, todayKey),
@@ -283,6 +287,7 @@ export function mergeSaves(a: Save, b: Save, todayKey: string): Save {
 
 // ── 서버로 들어온 값 검사 ──
 const str = (v: unknown, max: number) => (typeof v === 'string' ? v.slice(0, max) : '')
+const PEOPLE_COUNT = PEOPLE_LIST.length
 const strList = (v: unknown, max: number, len = 40) =>
   Array.isArray(v) ? [...new Set(v.filter((x): x is string => typeof x === 'string').map((x) => x.slice(0, len)))].slice(0, max) : []
 const isObj = (v: unknown): v is Record<string, any> => !!v && typeof v === 'object' && !Array.isArray(v)
@@ -361,6 +366,7 @@ export function sanitizeSave(raw: unknown, todayKey: string): Save {
       if (nickname && !s.visitedVillages.some((x) => x.token === v.token)) s.visitedVillages.push({ token: v.token, nickname, at: v.at })
     }
   }
+  s.bestSeen = strList(raw.bestSeen, PEOPLE_COUNT).filter((id) => PEOPLE[id] && PEOPLE[id]!.kind !== 'link')
   s.seenScenes = strList(raw.seenScenes, SETS.length + 1).filter((id) => id === 'ending' || SETS.some((set) => set.id === id))
   if (isObj(raw.items)) {
     for (const [name, d] of Object.entries(raw.items).slice(0, LIMITS.items)) {

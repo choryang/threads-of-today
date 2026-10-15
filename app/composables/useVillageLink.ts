@@ -1,11 +1,12 @@
 import { computed } from 'vue'
 import type { VillagePayload } from '../../shared/share'
+import { UNLOCK } from '../../shared/friendship'
 import { villageLayout } from '../../shared/village'
 import type { Flower } from '../../shared/visit'
 
 /**
  * 내 마을 초대 링크 (shared/share.ts의 village 종류). 링크·관리 키·방문 받기는 Save.village에 두어 내 기기들끼리 동기화한다.
- * 링크에 담는 건 닉네임, 주민 id(내 마을에서 자리를 잡는 순서 그대로), 방문 받기뿐이다.
+ * 링크에 담는 건 닉네임, 주민 id(내 마을에서 자리를 잡는 순서 그대로), 단짝(100%) 주민 id, 방문 받기뿐이다(퍼센트는 담지 않는다).
  * 마을을 열 때 주민이 바뀌었으면 내용만 고친다(링크는 그대로, 기간은 다시 7일). 기간이 지나 사라졌으면 같은 관리 키로 새로 만든다.
  */
 const SENT_KEY = 'my-day-people:village-sent'
@@ -18,7 +19,8 @@ export function useVillageLink() {
 
   function payload(): VillagePayload {
     const residents = villageLayout(game.state.cards, game.state.people ?? {}).residents.map((r) => r.id)
-    return { nickname: game.nickname.value, residents, open: link.value?.open ?? true }
+    const bestFriends = residents.filter((id) => game.friendship(id).percent >= UNLOCK.workplace)
+    return { nickname: game.nickname.value, residents, open: link.value?.open ?? true, bestFriends }
   }
   const urlOf = (token: string) => `${location.origin}/v/${token}`
 

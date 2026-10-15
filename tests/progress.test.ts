@@ -175,3 +175,15 @@ test('내 마을 링크·다녀온 마을: 링크는 나중에 바꾼 쪽, 본 �
   assert.equal(s.village, undefined)
   assert.deepEqual(s.visitedVillages, [{ token: 'xyzABCDEFG', nickname: '옥희', at: 2 }])
 })
+
+test('단짝 연출을 본 주민(bestSeen): 합집합, 모르는 사람·연결 카드는 버린다', () => {
+  const a: Save = { ...emptySave(), bestSeen: ['barista'] }
+  const b: Save = { ...emptySave(), bestSeen: ['sea-crew', 'barista'] }
+  assert.deepEqual(mergeSaves(a, b, TODAY).bestSeen.sort(), ['barista', 'sea-crew'])
+  // 예전 기록에는 없다
+  const old = { ...emptySave() } as Partial<Save>
+  delete old.bestSeen
+  assert.deepEqual(mergeSaves(old as Save, b, TODAY).bestSeen.sort(), ['barista', 'sea-crew'])
+  assert.deepEqual(sanitizeSave({ bestSeen: ['barista', 'nobody', 'link-sea-crew', 3, 'barista'] }, TODAY).bestSeen, ['barista'])
+  assert.deepEqual(sanitizeSave({}, TODAY).bestSeen, [])
+})

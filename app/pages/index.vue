@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { PEOPLE } from '../../shared/data/people'
 import { WORKPLACES } from '../../shared/data/village'
 import { UNLOCK } from '../../shared/friendship'
+import { withJosa } from '../../shared/logic'
 import { arrivalShort, isArrived, isWaiting } from '../../shared/incoming'
 import { villageShareTitle } from '../../shared/share'
-import { countriesOf, villageLayout } from '../../shared/village'
+import { countriesOf, villageLayout, type Placed } from '../../shared/village'
 import { flowerLabel, newFlowerNotice, type Flower } from '../../shared/visit'
 import { MOTION } from '../utils/motion'
 
@@ -17,7 +18,7 @@ const game = useGame()
 const route = useRoute()
 const router = useRouter()
 const villageLink = useVillageLink()
-const map = ref<{ focus: (p: { x: number; y: number }) => void } | null>(null)
+const map = ref<{ focus: (p: Placed) => void; celebrate: (p: Placed) => Promise<void> } | null>(null)
 
 // ── 오고 있는 물건: 1분마다 진행 막대를 새로 그린다 ──
 const now = ref(Date.now())
@@ -33,12 +34,36 @@ const arrivingLabel = (personId: string) => {
 const layout = computed(() => villageLayout(game.state.cards, game.state.people ?? {}, waiting.value.map((x) => x.personId)))
 const countries = computed(() => countriesOf(layout.value.residents.map((r) => r.id)))
 const percentOf = (id: string) => game.friendship(id).percent
-/** 친해진 정도 100%인 주민의 일터 자리 (그림이 아직 없어 이름만 적은 점선 자리) */
-const workplaces = computed(() =>
-  layout.value.residents.filter((r) => percentOf(r.id) >= UNLOCK.workplace).map((r) => ({ ...r, name: WORKPLACES[PEOPLE[r.id]!.workplace] })),
-)
+/** 친해진 정도 100%(단짝)인 주민. 지도에서 발밑 빛·하트·일터 자리로 보인다. 제목 카드에는 내 숫자만 */
+const bestFriends = computed(() => layout.value.residents.filter((r) => percentOf(r.id) >= UNLOCK.workplace).map((r) => r.id))
 
 const open = ref<string | null>(null)
+
+// ── 단짝이 된 순간 (한 번만): 그 주민 쪽으로 옮기고 하트가 커졌다 작아지며 한 줄을 띄운다. 본 연출은 Save.bestSeen에 적는다 ──
+const cheerLine = ref('')
+let cheering = false
+let cheerTimer: ReturnType<typeof setTimeout> | undefined
+onBeforeUnmount(() => clearTimeout(cheerTimer))
+const bestLine = (id: string) => `단짝이 됐어요 · 이제 마을에 ${withJosa(WORKPLACES[PEOPLE[id]!.workplace], '이', '가')} 생겼어요`
+async function celebrateNext() {
+  if (cheering || open.value || !map.value) return
+  const seen = new Set(game.state.bestSeen ?? [])
+  const id = bestFriends.value.find((x) => !seen.has(x))
+  const spot = id ? layout.value.residents.find((r) => r.id === id) : undefined
+  if (!id || !spot) return
+  cheering = true
+  game.state.bestSeen = [...(game.state.bestSeen ?? []), id]
+  cheerLine.value = bestLine(id)
+  await map.value.celebrate(spot)
+  clearTimeout(cheerTimer)
+  cheerTimer = setTimeout(() => {
+    cheerLine.value = ''
+    cheering = false
+    void celebrateNext()
+  }, Math.max(0, MOTION.bestFriendMs - MOTION.panMs - MOTION.heartMs))
+}
+// 주민 카드에서 고마워요로 100%가 되면 카드를 닫았을 때 연출한다
+watch([bestFriends, open], () => { void celebrateNext() })
 
 // ── 꽃: 친구들이 내 마을 주민에게 남긴 고마워요 ──
 const flowers = ref<Flower[]>([])
@@ -114,7 +139,11 @@ onMounted(async () => {
     return
   }
   void loadVillageSocial()
-  if (!focus) return
+  if (!focus) {
+    await nextTick()
+    void celebrateNext()
+    return
+  }
   await nextTick()
   const spot = layout.value.residents.find((r) => r.id === focus)
   if (spot) requestAnimationFrame(() => map.value?.focus(spot))
@@ -131,7 +160,7 @@ onMounted(async () => {
       :arriving="layout.arriving"
       :arriving-label="arrivingLabel"
       :percent-of="percentOf"
-      :workplaces="workplaces"
+      :best-friends="bestFriends"
       :flowers="flowers"
       @resident="open = $event"
       @flower="showFlower"
@@ -146,7 +175,9 @@ onMounted(async () => {
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
             </button>
           </div>
-          <p v-if="layout.residents.length" class="sub">주민 {{ layout.residents.length }}명 · {{ countries.length }}개 나라에서 왔어요</p>
+          <p v-if="layout.residents.length" class="sub">
+            주민 {{ layout.residents.length }}명 · {{ countries.length }}개 나라에서 왔어요<template v-if="bestFriends.length"> · 단짝 {{ bestFriends.length }}명</template>
+          </p>
           <p v-else class="sub">오늘 쓴 물건을 넣으면 그 물건을 거쳐 온 사람들이 마을에 와요</p>
           <button v-if="layout.residents.length" class="invite" @click="invite">내 마을 초대하기</button>
         </header>
@@ -161,7 +192,8 @@ onMounted(async () => {
       </div>
 
       <div class="bottom">
-        <p v-if="picked || message" class="toast" role="status">{{ picked || message }}</p>
+        <p v-if="cheerLine" class="toast cheer" role="status">{{ cheerLine }}</p>
+        <p v-else-if="picked || message" class="toast" role="status">{{ picked || message }}</p>
         <IncomingCard v-for="inc in waiting" :key="inc.journeyId" :incoming="inc" :now="now" />
         <NuxtLink to="/add" class="add">오늘 쓴 물건 넣기</NuxtLink>
       </div>
@@ -228,6 +260,7 @@ onMounted(async () => {
   display: flex; flex-direction: column; gap: 10px; pointer-events: none;
 }
 .toast { margin: 0; padding: 10px 14px; border-radius: 14px; background: #f3f1ea; color: #1a1a22; font-size: 13px; font-weight: 700; word-break: keep-all; }
+.toast.cheer { padding: 12px 16px; border: 3px solid #2a2a35; background: #f2c14e; font-size: 15px; text-align: center; animation: rise var(--motion-enter) var(--motion-ease); }
 .add {
   height: 56px; border-radius: 18px; display: flex; align-items: center; justify-content: center;
   background: var(--accent); color: var(--accent-ink); font-size: 17px; font-weight: 700; text-decoration: none;

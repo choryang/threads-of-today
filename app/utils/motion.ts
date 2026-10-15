@@ -35,6 +35,10 @@ export const MOTION = {
   panMs: 800,
   /** 친구 마을 주민에게 고마워요를 남겼을 때 꽃이 피는 시간 */
   bloomMs: 700,
+  /** 단짝(친해진 정도 100%)이 된 순간: 머리 위 하트가 커졌다 작아지는 시간 */
+  heartMs: 1200,
+  /** 단짝 연출 문구("단짝이 됐어요 · …")가 떠 있는 시간 */
+  bestFriendMs: 3500,
 } as const
 
 /** 자동으로 넘어가는 화면이 머무는 시간. 글자 수에 비례하고 최소·최대 사이로 자른다 */
@@ -62,5 +66,6 @@ export function motionCssVars(): Record<string, string> {
     '--motion-friend': `${MOTION.friendUpMs}ms`,
     '--motion-pan': `${MOTION.panMs}ms`,
     '--motion-bloom': `${MOTION.bloomMs}ms`,
+    '--motion-heart': `${MOTION.heartMs}ms`,
   }
 }

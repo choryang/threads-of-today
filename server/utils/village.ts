@@ -19,7 +19,7 @@ async function readAll(owner: string): Promise<Flower[]> {
   return typeof v === 'string' ? (JSON.parse(v) as Flower[]) : v
 }
 
-/** 공개용 마을: 닉네임, 주민 id(주인 마을의 자리 순서), 최근 꽃만 */
+/** 공개용 마을: 닉네임, 주민 id(주인 마을의 자리 순서), 단짝(100%) 주민 id, 최근 꽃만 */
 export async function publicVillage(token: string): Promise<({ open: true } & VillagePayload & { flowers: Flower[] }) | { open: false; nickname: string } | null> {
   const found = await shares.lookup(token)
   if (!found || found.kind !== 'village') return null
@@ -27,7 +27,7 @@ export async function publicVillage(token: string): Promise<({ open: true } & Vi
   if (!p.open) return { open: false, nickname: p.nickname }
   const owner = await shares.ownerOf(token)
   const flowers = owner ? (await readAll(owner)).slice(-FLOWER_PUBLIC) : []
-  return { open: true, nickname: p.nickname, residents: p.residents, flowers }
+  return { open: true, nickname: p.nickname, residents: p.residents, bestFriends: p.bestFriends ?? [], flowers }
 }
 
 /** 주인이 자기 마을 꽃을 읽는다 (방문 받기를 꺼도 읽을 수 있게 관리 키로) */

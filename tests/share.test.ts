@@ -71,12 +71,13 @@ test('마을 초대: 닉네임·주민·방문 받기만, 내용을 고쳐도 �
   const shares = createShares(store, () => now)
   const made = (await shares.issue('village', { nickname: '세운', residents: ['barista', 'link-sea-crew', 'nobody', 'barista'], open: true, secret: 'x' }))!
   assert.equal(made.path, `/v/${made.token}`)
-  assert.deepEqual((await shares.lookup(made.token))!.payload, { nickname: '세운', residents: ['barista'], open: true })
+  assert.deepEqual((await shares.lookup(made.token))!.payload, { nickname: '세운', residents: ['barista'], open: true, bestFriends: [] })
   now = 1000
-  const updated = (await shares.update(made.manage, { nickname: '세운', residents: ['barista', 'sea-crew'], open: false }))!
+  // 단짝은 주민 중에서만, id만 (퍼센트 같은 다른 값은 버린다)
+  const updated = (await shares.update(made.manage, { nickname: '세운', residents: ['barista', 'sea-crew'], open: false, bestFriends: ['sea-crew', 'cupper', 'sea-crew', 7], percent: { 'sea-crew': 100 } }))!
   assert.equal(updated.token, made.token)
   assert.equal(updated.expiresAt, 1000 + SHARE_KINDS.village.ttl * 1000)
-  assert.deepEqual((await shares.lookup(made.token))!.payload, { nickname: '세운', residents: ['barista', 'sea-crew'], open: false })
+  assert.deepEqual((await shares.lookup(made.token))!.payload, { nickname: '세운', residents: ['barista', 'sea-crew'], open: false, bestFriends: ['sea-crew'] })
   assert.ok(await shares.ownerOf(made.token))
   assert.equal(await shares.update('y'.repeat(32), { nickname: '세운', residents: [], open: true }), null)
   const again = (await shares.issue('village', { nickname: '세운', residents: [], open: true }, made.manage))!

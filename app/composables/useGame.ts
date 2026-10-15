@@ -83,6 +83,7 @@ export function replaceSave(next: Save) {
   s.people = next.people ?? {}
   s.incoming = next.incoming ?? []
   s.visitedVillages = next.visitedVillages ?? []
+  s.bestSeen = next.bestSeen ?? []
   if (next.village) s.village = next.village
   if (next.nickname) s.nickname = next.nickname
 }

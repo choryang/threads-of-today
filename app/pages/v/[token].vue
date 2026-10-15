@@ -5,7 +5,7 @@ import type { Flower } from '../../../shared/visit'
 
 /**
  * 친구 마을 (/v/{token}). 서버 라우트(server/routes/v/[token].get.ts)가 OG meta를 넣은 HTML로 이 화면을 띄운다.
- * 공개용 마을 API에서 닉네임·주민 id·최근 꽃만 받는다. 주민 자리는 주인 마을과 같은 규칙(같은 순서로 placeAll)이라 같은 곳에 선다.
+ * 공개용 마을 API에서 닉네임·주민 id·단짝(100%) 주민 id·최근 꽃만 받는다(퍼센트는 받지 않는다). 주민 자리는 주인 마을과 같은 규칙(같은 순서로 placeAll)이라 같은 곳에 선다.
  * 링크를 열면 '다녀온 마을'에 적는다(상대에게 알리지 않는다).
  */
 const route = useRoute()
@@ -16,6 +16,7 @@ const token = computed(() => String(route.params.token))
 const state = ref<'loading' | 'open' | 'closed' | 'gone'>('loading')
 const nickname = ref('')
 const residents = ref<string[]>([])
+const bestFriends = ref<string[]>([])
 const flowers = ref<Flower[]>([])
 const bloomAt = ref(0)
 const open = ref<string | null>(null)
@@ -28,10 +29,11 @@ onMounted(async () => {
     return
   }
   try {
-    const res = await $fetch<{ ok: boolean; reason?: string; nickname?: string; residents?: string[]; flowers?: Flower[] }>(`/api/village/${encodeURIComponent(token.value)}`)
+    const res = await $fetch<{ ok: boolean; reason?: string; nickname?: string; residents?: string[]; bestFriends?: string[]; flowers?: Flower[] }>(`/api/village/${encodeURIComponent(token.value)}`)
     nickname.value = res.nickname ?? ''
     if (res.ok) {
       residents.value = res.residents ?? []
+      bestFriends.value = res.bestFriends ?? []
       flowers.value = res.flowers ?? []
       state.value = 'open'
       game.visitVillage(token.value, nickname.value)
@@ -51,7 +53,7 @@ function bloom(f: Flower) {
 
 <template>
   <main class="village">
-    <VillageMap v-if="state === 'open'" :residents="placed" :flowers="flowers" :bloom-at="bloomAt" @resident="open = $event" />
+    <VillageMap v-if="state === 'open'" :residents="placed" :best-friends="bestFriends" :flowers="flowers" :bloom-at="bloomAt" @resident="open = $event" />
 
     <div class="overlay">
       <header class="title-card">

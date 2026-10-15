@@ -30,7 +30,7 @@ shared/                 앱과 서버가 상대 경로로 함께 import (Nuxt �
   data/dictionary.json  미리 만든 물건 사전 (scripts/build-dictionary.ts가 생성). 서버에서만 import
   data/dictionary-client.json 앱용 사전(한마디 하나만, scripts/build-client-dictionary.ts). 화면에서 바로 매칭할 때 쓴다
   safety.ts             looksFactual: AI 문구에 숫자·나라 이름이 섞였는지 검사
-  progress.ts           Save 타입, mergeSaves(카드·물건 합집합, 날짜 기록 30일, 사람별 기록 합집합·OR, 오고 있는 물건은 여정 id로·연 기록 유지), sanitizeSave(서버 입력 검사)
+  progress.ts           Save 타입, mergeSaves(카드·물건 합집합, 날짜 기록 30일, 사람별 기록 합집합·OR, 오고 있는 물건은 여정 id로·연 기록 유지, 단짝 연출 본 주민 bestSeen 합집합), sanitizeSave(서버 입력 검사)
   friendship.ts         친해진 정도: 사람별 기록(metItems·gratitudeDays·quizCorrect)에서 퍼센트 계산(저장하지 않음), 열리는 단계,
                         출처 있는 사실(workFact)·퀴즈(한 재료에만 나오는 사람의 일의 크기 퀴즈), 예전 기록 마이그레이션
   nickname.ts           기본 닉네임 조합·normalizeNickname(1~12자)
@@ -95,7 +95,8 @@ app/
                           하단 탭은 3개(마을·도감·기록). 미스터리는 물건 넣기 화면에서 연다
   utils/share-image.ts    공유 이미지 1080×1350을 캔버스로 그린다(나의 하루 유형·두 사람의 하루). 글씨는 위아래 80px 안쪽
   utils/day-test.ts       테스트 물건 18개의 아이콘(형태 아이콘, 없던 7개는 완성품 아이콘 product-*). tests/forms.test.ts가 파일·index.json을 검사
-  utils/pan-zoom.ts       지도 배율·위치 제한, 한 점 기준 확대 (usePanZoom.ts가 쓰는 순수 함수)
+  utils/pan-zoom.ts       지도 배율(최소 = 섬 전체가 보이는 크기, 최대 1.4)·위치 제한(작으면 가운데), 한 점 기준 확대, 주민 누르는 영역 hitBox(140×210, 화면 최소 44px),
+                          멀리 보기 FAR_SCALE 0.25 (usePanZoom.ts·VillageMap이 쓰는 순수 함수)
   utils/motion.ts         모든 시간 값(전환 0.3초·토스트·고마워요 손 흔들기·자동 넘김 3~6초). CSS는 plugins/motion.client.ts가 넣는 --motion-* 변수
   utils/local-match.ts    대표 물건 + 앱용 사전으로 서버 없이 즉시 분해
   utils/character.ts      모자(hat)·소품(prop) 파츠를 조합한 SVG 콩 캐릭터
@@ -105,7 +106,8 @@ scripts/build-og-cards.ts OG 이미지를 resvg로(마을 초대 공통 한 장,
 scripts/build-og.ts       OG 이미지(하루 유형 9장 1200×630)를 이 컴퓨터의 Chrome·Edge로 찍어 public/og에 (npm run build:og)
 scripts/day-type-dist.ts  하루 유형 분포(3~5개 조합 12,444가지). 한 유형이 25%를 넘으면 실패 (npm run check:day-types)
 scripts/sync-prop-icons.ts 캐릭터 소품 7개를 형태 아이콘(public/forms/prop-*.svg)으로 옮긴다. 소품을 고치면 다시 실행
-public/village/map.svg   마을 지도 1400×2000 (지도 생성기 gen_map.py로 그린 그림)
+public/village/map.svg   마을 지도 2800×4200 (scripts/gen_map2.py로 그린 그림. 출처 메타데이터 <metadata>가 붙어 있어 resvg에 넣을 때는 뺀다)
+scripts/gen_map2.py       마을 지도 생성기(python). map.svg와 scripts/village-layout.json(구역 이름표·범위·자리·빈 땅)을 만든다. 값은 data/village.ts에 옮겨 적는다
 public/forms/             형태 아이콘 SVG와 index.json(slug → ko·group). tests/forms.test.ts가 formIcon이 모두 있는지 검사
 scripts/build-dictionary.ts  data/seeds/*.txt → Message Batches API → dictionary.json + data/review/dictionary.csv (--dry-run, --limit, --resume)
 scripts/import-foodsafety.ts (선택, 실행 보류) 식품안전나라 원재료 → 재료 규칙 연결 뼈대

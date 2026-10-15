@@ -11,6 +11,7 @@ import { join } from 'node:path'
 import { Resvg } from '@resvg/resvg-js'
 import { BODY_COLORS, assembleCharacter, cleanPart } from '../shared/character-svg'
 import { PEOPLE, PEOPLE_LIST } from '../shared/data/people'
+import { MAP_H, MAP_W } from '../shared/data/village'
 import { PLACES } from '../shared/data/places'
 import type { Person } from '../shared/types'
 import { FLOWER_COLORS } from '../shared/visit'
@@ -55,13 +56,14 @@ function render(svg: string, file: string) {
 }
 
 /**
- * 마을 지도의 한쪽을 PNG로. resvg는 지도를 안쪽 <svg>로 넣거나 1배보다 크게 그리면 멈춰서(geom.rs unwrap)
- * 바깥 viewBox만 1:1 크기로 바꿔 따로 그린 뒤 <image>로 넣는다
+ * 마을 지도의 한쪽 (x, y에서 1200×630). resvg는 지도를 안쪽 <svg>로 넣거나 1배보다 크게 그리면 멈추고,
+ * viewBox로 잘라 그려도 잘린 창 밖에 통째로 있는 요소에서 멈춘다(geom.rs unwrap). 그래서 지도 전체를 1:1 PNG로 한 번 그린 뒤
+ * <image>로 넣고 위치만 옮긴다. 지도에 붙은 출처 메타데이터(<metadata>, c2pa)는 resvg가 읽지 못해 뺀다
  */
-function mapCrop(viewBox: string): string {
-  const svg = readFileSync('public/village/map.svg', 'utf8').replace(/<svg[^>]*>/, `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}" width="${W}" height="${H}">`)
-  const png = new Resvg(svg, { fitTo: { mode: 'width', value: W } }).render().asPng()
-  return `data:image/png;base64,${Buffer.from(png).toString('base64')}`
+function mapCrop(x: number, y: number): string {
+  const src = readFileSync('public/village/map.svg', 'utf8').replace(/<metadata>[\s\S]*?<\/metadata>/g, '').replace(/\sxmlns:c2pa="[^"]*"/, '')
+  const png = new Resvg(src).render().asPng()
+  return `<image x="${-x}" y="${-y}" width="${MAP_W}" height="${MAP_H}" href="data:image/png;base64,${Buffer.from(png).toString('base64')}"/>`
 }
 
 /** 마을 초대 공통 이미지: 마을 지도 한쪽 + 주민 셋과 꽃 + 제목 */
@@ -69,7 +71,7 @@ function villageCard(): string {
   const crew = ['coffee-picker', 'busan-crane', 'barista'].map((id) => PEOPLE[id]!)
   const spots: Array<[number, number]> = [[760, 520], [920, 560], [1080, 520]]
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
-<image x="0" y="0" width="${W}" height="${H}" href="${mapCrop('150 1150 1200 630')}"/>
+${mapCrop(100, 3150)}
 <rect width="${W}" height="${H}" fill="#0F1B2D" opacity=".35"/>
 <rect x="56" y="64" width="560" height="300" rx="32" fill="#0F1B2D" opacity=".9"/>
 <text x="96" y="132" font-family="${FONT}" font-size="30" font-weight="700" fill="#F2C14E">내 하루에 닿은 사람들</text>

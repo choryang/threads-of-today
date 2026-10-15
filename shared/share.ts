@@ -53,6 +53,8 @@ export interface VillagePayload {
   residents: string[]
   /** 마을 방문 받기 */
   open: boolean
+  /** 친해진 정도 100%(단짝)인 주민 id. 퍼센트 숫자는 담지 않는다 (예전 링크에는 없다) */
+  bestFriends?: string[]
 }
 export const MAX_RESIDENTS = 250
 
@@ -62,7 +64,8 @@ function validateVillage(raw: unknown): VillagePayload | null {
   const nickname = normalizeNickname(r.nickname)
   if (!nickname || !Array.isArray(r.residents) || r.residents.length > MAX_RESIDENTS) return null
   const residents = [...new Set(r.residents.filter((id): id is string => typeof id === 'string' && !!PEOPLE[id] && PEOPLE[id]!.kind !== 'link'))]
-  return { nickname, residents, open: r.open !== false }
+  const bestFriends = Array.isArray(r.bestFriends) ? [...new Set(r.bestFriends.filter((id): id is string => typeof id === 'string' && residents.includes(id)))] : []
+  return { nickname, residents, open: r.open !== false, bestFriends }
 }
 
 /** 사람 카드 소개: 사람 id, 보낸 사람 닉네임, 정해진 문구 id, (맛있어서 문구면) 먹는 대표 물건 id */

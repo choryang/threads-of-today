@@ -17,6 +17,8 @@ const fact = computed(() => (f.value.percent >= UNLOCK.fact ? factOf(props.perso
 const quiz = computed(() => (f.value.percent >= UNLOCK.quiz ? quizOf(props.personId) : undefined))
 const items = computed(() => (f.value.percent >= UNLOCK.items ? log.value?.metNames ?? [] : []))
 const hint = computed(() => nextUnlockHint(props.personId, f.value.percent))
+/** 100%: 단짝 (막대를 금색으로 채운다) */
+const best = computed(() => f.value.percent >= UNLOCK.workplace)
 
 /** 보기 순서는 사람 id 시드로 섞는다(데이터는 작은 수부터) */
 const quizOptions = computed(() => {
@@ -36,10 +38,10 @@ function pick(i: number) {
   <section class="friend" aria-label="친해진 정도">
     <div class="head">
       <span class="label">친해진 정도</span>
-      <span class="pct display">{{ f.percent }}%</span>
+      <span class="pct-wrap"><span class="pct display">{{ f.percent }}%</span><span v-if="best" class="best">단짝</span></span>
     </div>
     <div class="bar" role="progressbar" :aria-valuenow="f.percent" aria-valuemin="0" aria-valuemax="100" aria-label="친해진 정도">
-      <span class="fill" :style="{ width: `${f.percent}%` }" />
+      <span class="fill" :class="{ gold: best }" :style="{ width: `${f.percent}%` }" />
       <span class="tick" style="left: 50%" />
       <span class="tick" style="left: 75%" />
     </div>
@@ -94,9 +96,12 @@ function pick(i: number) {
 .friend { display: flex; flex-direction: column; gap: 10px; color: var(--ink); }
 .head { display: flex; justify-content: space-between; align-items: baseline; }
 .label { font-size: 14px; font-weight: 700; }
+.pct-wrap { display: flex; align-items: baseline; gap: 8px; }
 .pct { font-size: 32px; line-height: 1; }
+.best { padding: 2px 10px; border-radius: 12px; border: 2px solid #2a2a35; background: #f2c14e; color: #1a1a22; font-size: 13px; font-weight: 700; }
 .bar { position: relative; height: 12px; border-radius: 6px; background: #ddd8ca; }
 .fill { display: block; height: 100%; border-radius: 6px; background: var(--accent); transition: width var(--motion-friend) var(--motion-ease); }
+.fill.gold { background: #f2c14e; box-shadow: inset 0 0 0 2px #2a2a35; }
 .tick { position: absolute; top: -3px; width: 3px; height: 18px; margin-left: -1px; background: var(--paper); }
 .parts { margin: 0; font-size: 12px; color: #4a4a55; line-height: 1.5; }
 .items { display: flex; flex-wrap: wrap; gap: 6px; }
