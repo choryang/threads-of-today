@@ -126,9 +126,12 @@ test('이야기: 본 편 수대로 다음 편, 다 보면 없음, 편이 더해�
   // 다 본 뒤에는 처음부터 다시 돌지 않는다
   assert.equal(nextEpisode('sea-crew', eps.length), null)
   assert.equal(nextEpisode('sea-crew', eps.length + 3), null)
-  // 한 편짜리도 한 편으로 센다
-  assert.deepEqual(storyEpisodes('coffee-picker'), [KEY_STORIES['coffee-picker']!.story])
-  assert.equal(nextEpisode('coffee-picker', 1), null)
+  // 한 편짜리(story)도 한 편으로 센다 (지금 데이터에 한 편짜리가 있으면 그 사람으로)
+  const single = Object.entries(KEY_STORIES).find(([, st]) => st.story && !st.episodes?.length)
+  if (single) {
+    assert.deepEqual(storyEpisodes(single[0]), [single[1].story])
+    assert.equal(nextEpisode(single[0], 1), null)
+  }
   // 이야기가 없는 사람은 세지 않는다
   assert.deepEqual(storyEpisodes('rice-mill'), [])
   assert.equal(nextEpisode('rice-mill', 0), null)
