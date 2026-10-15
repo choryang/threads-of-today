@@ -42,6 +42,7 @@ shared/                 앱과 서버가 상대 경로로 함께 import (Nuxt �
   distance.ts           거리 계산기: 장소 좌표로 대권 거리 누적(바다는 건너뜀), 100km 단위 반올림
   incoming.ts           오고 있는 물건: 운송 구간(data/transport.ts)이 있고 못 만난 평범한 사람이 남으면 생김(최대 3), 다음 날 6시(서울) 도착,
                         진행 비율, 여정 데이터의 경유지 문구. 데려올 사람은 stage 사람만(희소도를 건드리지 않게)
+  day-type.ts           나의 하루 유형(10초 테스트): docs/day-types.md 기준표 그대로. 테스트 물건 18개, 재료 분류, 판정·숫자 3개(기본 경로만)
   village.ts            마을 자리 배정(먼저 만난 사람부터 hash(id) 자리, 모자라면 빈 땅), 빈 집터, 주민 나라 수
   rewind.ts             거꾸로 가는 여정 연출: 칸마다 형태(formsAlong), 문구, '이 전엔 어디 있었을까요?', 되감기 엔딩 순서
   random.ts             hash / mix32 / seeded
@@ -77,6 +78,7 @@ app/
   utils/character.ts      모자(hat)·소품(prop) 파츠를 조합한 SVG 콩 캐릭터
   utils/product-icon.ts   메인 물건 타일 아이콘. 대표 물건을 추가하면 여기도 그린다(없으면 상자 모양)
 scripts/check-data.ts     데이터 검사. 모든 변경 후 반드시 통과시킬 것
+scripts/day-type-dist.ts  하루 유형 분포(3~5개 조합 12,444가지). 한 유형이 25%를 넘으면 실패 (npm run check:day-types)
 scripts/sync-prop-icons.ts 캐릭터 소품 7개를 형태 아이콘(public/forms/prop-*.svg)으로 옮긴다. 소품을 고치면 다시 실행
 public/village/map.svg   마을 지도 1400×2000 (지도 생성기 gen_map.py로 그린 그림)
 public/forms/             형태 아이콘 SVG와 index.json(slug → ko·group). tests/forms.test.ts가 formIcon이 모두 있는지 검사
