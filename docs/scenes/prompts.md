@@ -63,7 +63,7 @@ Avoid: photorealistic, 3D render, glossy, neon, oversaturated, visible face, clo
 ```text
 Create a 4:3 landscape illustration.
 
-Scene: A steep coffee farm on the Andean slopes of Huila, Colombia. Rows of coffee shrubs with ripe red cherries clinging to a very steep green hillside, banana plants giving light shade between them, folded mountain ridges with thin drifting mist in the distance, a small farmhouse with a red tin roof far down the slope. In the middle ground, a farmer in a straw hat and long-sleeved shirt seen from behind, a woven basket tied at the waist, picking ripe cherries one by one.
+Scene: A steep coffee farm on the Andean slopes of Huila, Colombia. Rows of coffee shrubs with ripe red cherries clinging to a very steep green hillside, banana plants giving light shade between them, folded mountain ridges with thin drifting mist in the distance, a small farmhouse with a red tin roof far down the slope. In the middle ground, a woman farmer in a straw hat and long-sleeved shirt with her hair tied back, seen from behind with her face turned away, a woven basket tied at the waist, picking ripe cherries one by one.
 
 Style: editorial illustration matching the attached reference image, gouache and watercolor texture with visible soft brushstrokes, realistic proportions but gently simplified shapes, muted earthy palette with warm cream highlights, clear midday light with short soft shadows, open sky in the top third, calm and quiet mood. One worker in the middle ground absorbed in their work, face not visible, dignified and skilled, ordinary practical work clothes. No other people up close, no readable text, no logos, no flags.
 
@@ -93,7 +93,7 @@ Avoid: photorealistic, 3D render, glossy, neon, oversaturated, visible face, clo
 ```text
 Create a 4:3 landscape illustration.
 
-Scene: A large coffee farm in Minas Gerais, Brazil. Long straight rows of coffee shrubs running over gently rolling hills to the horizon, a tall mechanical coffee harvester parked at the end of a row, a red-earth farm track, a few tall trees on the ridge. In the middle ground, a farm manager in a cap and work shirt seen from behind, walking between the rows and checking the ripeness of the cherries on a branch.
+Scene: A large coffee farm in Minas Gerais, Brazil. Long straight rows of coffee shrubs running over gently rolling hills to the horizon, a tall mechanical coffee harvester parked at the end of a row, a red-earth farm track, a few tall trees on the ridge. In the middle ground, a middle-aged man, the farm manager, in a cap and work shirt seen from behind, walking between the rows and checking the ripeness of the cherries on a branch.
 
 Style: editorial illustration matching the attached reference image, gouache and watercolor texture with visible soft brushstrokes, realistic proportions but gently simplified shapes, muted earthy palette with warm cream highlights, clear midday light with short soft shadows, open sky in the top third, calm and quiet mood. One worker in the middle ground absorbed in their work, face not visible, dignified and skilled, ordinary practical work clothes. No other people up close, no readable text, no logos, no flags.
 
@@ -108,7 +108,7 @@ Avoid: photorealistic, 3D render, glossy, neon, oversaturated, visible face, clo
 ```text
 Create a 4:3 landscape illustration.
 
-Scene: Inside a small neighborhood cafe in Seoul in the morning before opening. An espresso machine and grinder on a wooden counter, ceramic cups stacked beside it, a small menu board with no readable text, a large window with soft morning daylight and a quiet street with a ginkgo tree outside. In the middle ground, a barista in an apron seen from behind, tasting the first shot from a small cup next to the machine.
+Scene: Inside a small neighborhood cafe in Seoul in the morning before opening. An espresso machine and grinder on a wooden counter, ceramic cups stacked beside it, a small blank chalkboard, a large window with soft morning daylight and a quiet street with a ginkgo tree outside. In the middle ground, a young woman barista in an apron seen from behind, tasting the first shot from a small cup next to the machine.
 
 Style: editorial illustration matching the attached reference image, gouache and watercolor texture with visible soft brushstrokes, realistic proportions but gently simplified shapes, muted earthy palette with warm cream highlights, soft natural daylight, calm and quiet mood. One worker in the middle ground absorbed in their work, face not visible, dignified and skilled, ordinary practical work clothes. No other people up close, no readable text, no logos, no flags.
 
@@ -123,7 +123,7 @@ Avoid: photorealistic, 3D render, glossy, neon, oversaturated, visible face, clo
 ```text
 Create a 4:3 landscape illustration.
 
-Scene: Inside a bright neighborhood supermarket in South Korea. A checkout counter with a short conveyor belt and a barcode scanner, two self-checkout kiosks at the side, shelves of colorful packaged goods with blank labels in the background, glass doors to the street letting in daylight. In the middle ground, a cashier in a store apron and cap seen from a three-quarter back view, handing a full shopping bag across the counter to an unseen customer.
+Scene: Inside a bright neighborhood supermarket in South Korea. A checkout counter with a short conveyor belt and a barcode scanner, two self-checkout kiosks at the side, shelves of colorful packaged goods with blank labels in the background, glass doors to the street letting in daylight. In the middle ground, a young woman cashier in a store apron and cap seen from a three-quarter back view with her face turned away, handing a full shopping bag across the counter to an unseen customer.
 
 Style: editorial illustration matching the attached reference image, gouache and watercolor texture with visible soft brushstrokes, realistic proportions but gently simplified shapes, muted earthy palette with warm cream highlights, soft natural daylight, calm and quiet mood. One worker in the middle ground absorbed in their work, face not visible, dignified and skilled, ordinary practical work clothes. No other people up close, no readable text, no logos, no flags.
 
@@ -184,7 +184,7 @@ Avoid: photorealistic, 3D render, glossy, neon, oversaturated, visible face, clo
 ```text
 Create a 4:3 landscape illustration.
 
-Scene: An oil field in the desert of eastern Saudi Arabia. Pumpjacks and a cluster of pipes and wellhead valves on pale sand, a small white control cabin, low sand dunes stretching to the horizon. In the middle ground, an engineer in blue coveralls with a headscarf under a white hard hat, seen from behind, holding a tablet and listening closely to a pump.
+Scene: An oil field in the desert of eastern Saudi Arabia. Pumpjacks and a cluster of pipes and wellhead valves on pale sand, a small white control cabin, low sand dunes stretching to the horizon. In the middle ground, a woman engineer in blue coveralls, a long dark hijab covering her hair under a white hard hat, seen from behind with her face turned away, holding a tablet and listening closely to a pump.
 
 Style: editorial illustration matching the attached reference image, gouache and watercolor texture with visible soft brushstrokes, realistic proportions but gently simplified shapes, muted earthy palette with warm cream highlights, clear midday light with short soft shadows, open sky in the top third, calm and quiet mood. One worker in the middle ground absorbed in their work, face not visible, dignified and skilled, ordinary practical work clothes. No other people up close, no readable text, no logos, no flags.
 
