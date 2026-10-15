@@ -329,7 +329,7 @@ function followTeaser(p: Product) {
   <main class="page">
     <div v-if="!journey" class="panel">
       <p>여정을 찾을 수 없어요.</p>
-      <NuxtLink to="/" class="btn btn-primary">처음으로</NuxtLink>
+      <NuxtLink to="/" class="btn btn-primary">마을로</NuxtLink>
     </div>
 
     <!-- 되감기 엔딩 -->
@@ -392,7 +392,7 @@ function followTeaser(p: Product) {
       </details>
 
       <div class="actions">
-        <NuxtLink to="/" class="btn btn-block" :class="{ 'btn-primary': !teaser }">다른 물건 고르기</NuxtLink>
+        <NuxtLink to="/add" class="btn btn-block" :class="{ 'btn-primary': !teaser }">다른 물건 고르기</NuxtLink>
         <NuxtLink to="/result" class="btn btn-block">오늘의 결과 카드</NuxtLink>
       </div>
 
@@ -414,7 +414,7 @@ function followTeaser(p: Product) {
     <!-- 여정 진행 중 -->
     <template v-else-if="current">
       <header class="bar">
-        <NuxtLink to="/" class="icon-btn" aria-label="처음으로">
+        <NuxtLink to="/" class="icon-btn" aria-label="마을로">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg>
         </NuxtLink>
         <div class="bar-title">

@@ -1,381 +1,187 @@
 <script setup lang="ts">
-import { computed, nextTick, ref } from 'vue'
-import { MATERIALS, PRODUCTS } from '../../shared/data/materials'
-import type { Decomposed } from '../../shared/logic'
-import type { Journey, JourneySource } from '../composables/useGame'
+import { computed, nextTick, onMounted, ref } from 'vue'
 import { PEOPLE } from '../../shared/data/people'
-import { PLACES } from '../../shared/data/places'
-import { buildTimeline } from '../../shared/journey'
-import { shrinkImage } from '../utils/image'
-import { matchLocal } from '../utils/local-match'
-import { productIconSvg } from '../utils/product-icon'
-import { renderVoice } from '../../shared/voice'
+import { HOME_POINT, MAP_H, MAP_W, RESIDENT_H, RESIDENT_W, WORKPLACES, ZONES } from '../../shared/data/village'
+import { UNLOCK } from '../../shared/friendship'
+import { countriesOf, villageLayout, type Placed } from '../../shared/village'
+import { centerOn } from '../utils/pan-zoom'
 
-type ApiResult = ({ ok: true; source: 'ai' | 'local' } & Decomposed) | { ok: false; message: string }
-
-/** 처음에 보이는 타일 수 (390px 폭에서 3줄) */
-const FIRST_TILES = 9
-
+/**
+ * 내 하루 마을 (홈). 지도가 화면 전체에 깔리고, 그 위에 제목 카드·확대 버튼·오고 있는 물건·'오늘 쓴 물건 넣기'를 올린다.
+ * 지도 좌표 1400×2000. 주민은 만난 사람(연결 카드 제외), 자리는 shared/village.ts가 사람 id로 정한다.
+ */
 const game = useGame()
+const route = useRoute()
 const router = useRouter()
 
-const showAll = ref(false)
-const writing = ref(false)
-const text = ref('')
-const textEl = ref<HTMLInputElement | null>(null)
-const loading = ref(false)
-const error = ref('')
-const preview = ref<(Decomposed & { source: JourneySource }) | null>(null)
-const photoUrl = ref('')
+const viewport = ref<HTMLElement | null>(null)
+const pz = usePanZoom(viewport, { w: MAP_W, h: MAP_H }, (s) => centerOn(HOME_POINT.x, HOME_POINT.y, HOME_POINT.scale, s))
+const transform = computed(() => `translate(${pz.view.value.x}px, ${pz.view.value.y}px) scale(${pz.view.value.scale})`)
 
-const tiles = computed(() => (showAll.value ? PRODUCTS : PRODUCTS.slice(0, FIRST_TILES)))
-const previewVoice = computed(() => renderVoice(preview.value?.voice, game.nickname.value))
-/** 오늘 떠난 여정 + 어제 이전에 떠나 아직 가는 중인 여정 */
-const trips = computed(() => {
-  const earlier = Object.entries(game.state.days)
-    .filter(([key]) => key !== game.todayKey)
-    .flatMap(([, day]) => day.journeys.filter((j) => !j.done))
-  return [...earlier, ...game.today.value.journeys]
-})
+const layout = computed(() => villageLayout(game.state.cards, game.state.people ?? {}))
+const countries = computed(() => countriesOf(layout.value.residents.map((r) => r.id)))
+const percentOf = (id: string) => game.friendship(id).percent
 
-/** 여정마다 지금 위치(나라 또는 '바다 위')와 몇 번째 장면인지 */
-function tripStatus(j: Journey): { where: string; left: string; state: 'arrived' | 'quiz' | 'moving' } {
-  if (j.done) return { where: '', left: '도착했어요', state: 'arrived' }
-  const timeline = buildTimeline(j.materialIds, j.id, j.name)
-  const item = timeline[j.step]
-  if (item?.type === 'quiz' && j.quiz[item.materialId] === undefined) return { where: '', left: '퀴즈가 기다리고 있어요', state: 'quiz' }
-  return { where: whereAt(timeline, j.step), left: `${j.step + 1}/${timeline.length} · 이어 보기`, state: 'moving' }
+/** 친해진 정도 100%인 주민의 일터 자리 (그림이 아직 없어 이름만 적은 점선 자리) */
+const workplaces = computed(() => layout.value.residents.filter((r) => percentOf(r.id) >= UNLOCK.workplace))
+const workplaceName = (id: string) => WORKPLACES[PEOPLE[id]!.workplace]
+const nameOf = (id: string) => PEOPLE[id]?.name ?? PEOPLE[id]?.job ?? ''
+const jobOf = (id: string) => PEOPLE[id]?.job ?? ''
+
+const boxStyle = (p: Placed) => ({ left: `${p.x - RESIDENT_W / 2}px`, top: `${p.y - RESIDENT_H}px` })
+
+const open = ref<string | null>(null)
+function openResident(id: string) {
+  // 지도를 끌다가 놓은 자리의 주민은 열지 않는다
+  if (pz.dragged()) return
+  open.value = id
 }
 
-/** index 칸에서 물건이 있는 곳. 이야기·퀴즈 칸은 바로 앞 사람의 자리 */
-function whereAt(timeline: ReturnType<typeof buildTimeline>, index: number): string {
-  for (let i = Math.min(index, timeline.length - 1); i >= 0; i--) {
-    const t = timeline[i]!
-    const personId = t.type === 'stage' || t.type === 'hidden' ? t.personId : t.type === 'pass' ? t.personIds[t.personIds.length - 1] : undefined
-    if (!personId) continue
-    const place = PLACES[PEOPLE[personId]?.placeId ?? '']
-    return place?.continent === 'sea' ? '바다 위' : place?.country ?? ''
-  }
-  return ''
-}
-
-/** "망고·딸기의 여정은 아직 준비 중이에요" */
-const missingNotice = computed(() => {
-  const names = preview.value?.missing
-  return names?.length ? `${names.join('·')}의 여정은 아직 준비 중이에요` : ''
-})
-
-function materialName(id: string) {
-  return MATERIALS[id]?.name ?? id
-}
-
-async function ask(body: Record<string, unknown>, source: JourneySource) {
-  loading.value = true
-  error.value = ''
-  preview.value = null
-  try {
-    const res = await $fetch<ApiResult>('/api/decompose', { method: 'POST', body })
-    if (res.ok) preview.value = { name: res.name, materialIds: res.materialIds, twist: res.twist, voice: res.voice, missing: res.missing, source }
-    else error.value = res.message
-  } catch {
-    error.value = '연결이 불안정해요. 잠시 후 다시 시도해 주세요.'
-  } finally {
-    loading.value = false
-  }
-}
-
-async function openWriting() {
-  writing.value = true
+/** ?focus=사람 id: 그 사람 자리로 화면을 옮긴다 (밤사이 도착한 주민을 마을로 모실 때) */
+onMounted(async () => {
+  const focus = typeof route.query.focus === 'string' ? route.query.focus : ''
+  if (!focus) return
   await nextTick()
-  textEl.value?.focus()
-}
-
-function submitText() {
-  const value = text.value.trim()
-  if (!value || loading.value) return
-  if (photoUrl.value) URL.revokeObjectURL(photoUrl.value)
-  photoUrl.value = ''
-  // 대표 물건·앱용 사전에서 찾으면 서버를 거치지 않고 바로 보여 준다. 못 찾을 때만 서버(캐시 → AI)로
-  const local = matchLocal(value)
-  if (local) {
-    error.value = ''
-    preview.value = { name: local.name, materialIds: local.materialIds, twist: local.twist, voice: local.voice, missing: local.missing, source: 'text' }
-    // 준비 중 재료 집계는 서버가 한다. 결과를 기다리지 않는다 (서버도 같은 사전에서 찾아 AI를 부르지 않는다)
-    if (local.missing?.length) $fetch('/api/decompose', { method: 'POST', body: { text: value } }).catch(() => {})
-    return
+  const spot = layout.value.residents.find((r) => r.id === focus)
+  if (spot) {
+    requestAnimationFrame(() => pz.goTo(spot.x, spot.y - RESIDENT_H / 2, Math.max(pz.view.value.scale, 0.8), true))
   }
-  ask({ text: value }, 'text')
-}
-
-async function onPhoto(event: Event) {
-  const file = (event.target as HTMLInputElement).files?.[0]
-  ;(event.target as HTMLInputElement).value = ''
-  if (!file) return
-  if (photoUrl.value) URL.revokeObjectURL(photoUrl.value)
-  photoUrl.value = URL.createObjectURL(file)
-  try {
-    const image = await shrinkImage(file)
-    await ask({ image }, 'photo')
-  } catch {
-    error.value = '사진을 읽을 수 없어요. 다른 사진으로 시도해 주세요.'
-  }
-}
-
-function pick(productId: string) {
-  const p = PRODUCTS.find((x) => x.id === productId)
-  if (!p) return
-  error.value = ''
-  photoUrl.value = ''
-  preview.value = { name: p.name, materialIds: [...p.materialIds], source: 'pick' }
-}
-
-/** 첫 방문(카드 0장, 떠난 여정 없음)에는 커피 한 잔으로 바로 떠나는 버튼 하나만 크게. '다른 물건 고르기'를 누르면 원래 메인 */
-const FIRST_PRODUCT_ID = 'americano'
-const skipWelcome = ref(false)
-const welcome = computed(() => game.firstVisit.value && !trips.value.length && !skipWelcome.value)
-
-function startFirst() {
-  const p = PRODUCTS.find((x) => x.id === FIRST_PRODUCT_ID)
-  if (!p) return
-  const journey = game.startJourney({ name: p.name, materialIds: [...p.materialIds] }, 'pick')
-  if (journey) router.push(`/journey/${journey.id}`)
-}
-
-function closePreview() {
-  preview.value = null
-}
-
-function start() {
-  if (!preview.value?.materialIds.length) return
-  const journey = game.startJourney(preview.value, preview.value.source)
-  if (!journey) {
-    preview.value = null
-    error.value = '오늘의 여정을 모두 떠났어요. 내일 다시 만나요!'
-    return
-  }
-  preview.value = null
-  text.value = ''
-  router.push(`/journey/${journey.id}`)
-}
+  router.replace({ query: {} })
+})
+const goHome = () => pz.goTo(HOME_POINT.x, HOME_POINT.y, HOME_POINT.scale, true)
 </script>
 
 <template>
-  <main v-if="welcome" class="page home welcome">
-    <header class="head">
-      <h1 class="display title">오늘 손에 닿은 물건은?</h1>
-      <p class="muted welcome-sub">물건 하나가 손에 오기까지 거쳐 온 사람들을 만나러 가요.</p>
-    </header>
-    <button class="first-go" @click="startFirst">
-      <!-- eslint-disable-next-line vue/no-v-html -- 직접 그린 SVG -->
-      <svg class="first-icon" viewBox="0 0 32 32" width="72" height="72" aria-hidden="true" v-html="productIconSvg(FIRST_PRODUCT_ID)" />
-      <span class="first-label">커피 한 잔부터 시작해 볼까요?</span>
-    </button>
-    <button class="link welcome-other" @click="skipWelcome = true">다른 물건 고르기</button>
-  </main>
+  <main class="village">
+    <div ref="viewport" class="viewport">
+      <div class="world" :class="{ gliding: pz.gliding.value }" :style="{ width: `${MAP_W}px`, height: `${MAP_H}px`, transform }">
+        <img src="/village/map.svg" :width="MAP_W" :height="MAP_H" alt="" draggable="false" class="map">
 
-  <main v-else class="page home">
-    <section v-if="trips.length" class="trips" aria-labelledby="trips-title">
-      <div class="trips-head">
-        <h2 id="trips-title" class="trips-title">오늘 떠난 여정</h2>
-      </div>
-      <NuxtLink v-for="j in trips" :key="j.id" :to="`/journey/${j.id}`" class="trip" :class="`trip-${tripStatus(j).state}`">
-        <span class="trip-name">{{ j.name }}</span>
-        <span class="trip-status">
-          <span v-if="tripStatus(j).where" class="trip-where">{{ tripStatus(j).where }}</span>
-          <span class="trip-left">{{ tripStatus(j).left }}</span>
-        </span>
-      </NuxtLink>
-    </section>
+        <span
+          v-for="z in ZONES"
+          :key="z.id"
+          class="zone-label display"
+          :class="{ home: z.id === 'town' }"
+          :style="{ left: `${z.label[0]}px`, top: `${z.label[1]}px` }"
+        >{{ z.name }}</span>
 
-    <header class="head">
-      <h1 class="display title">오늘 손에 닿은 물건은?</h1>
-      <p v-if="game.remaining.value > 0" class="muted left">오늘 <span class="mono">{{ game.remaining.value }}</span>번 더 떠날 수 있어요</p>
-    </header>
-
-    <template v-if="game.remaining.value > 0">
-      <section class="grid" aria-label="물건 고르기">
-        <button v-for="p in tiles" :key="p.id" class="tile" @click="pick(p.id)">
-          <!-- eslint-disable-next-line vue/no-v-html -- 직접 그린 SVG -->
-          <svg class="tile-icon" viewBox="0 0 32 32" width="44" height="44" aria-hidden="true" v-html="productIconSvg(p.id)" />
-          <span class="tile-name">{{ p.name }}</span>
-        </button>
-      </section>
-      <button v-if="!showAll" class="more" @click="showAll = true">
-        더 보기 <span class="mono muted">+{{ PRODUCTS.length - FIRST_TILES }}</span>
-      </button>
-
-      <div class="other">
-        <p class="other-line">
-          <span class="muted">찾는 물건이 없나요?</span>
-          <button class="link" :aria-expanded="writing" @click="openWriting">직접 쓰기</button>
-          <span class="muted" aria-hidden="true">·</span>
-          <label class="link">
-            <input type="file" accept="image/*" class="sr-only" @change="onPhoto">
-            사진 찍기
-          </label>
-        </p>
-        <form v-if="writing" class="text-form" @submit.prevent="submitText">
-          <label for="item" class="sr-only">오늘 나에게 닿은 것</label>
-          <input id="item" ref="textEl" v-model="text" maxlength="40" placeholder="물건, 음식, 고양이, 월요일… 뭐든지" autocomplete="off">
-          <button class="btn btn-primary" :disabled="!text.trim() || loading">분해하기</button>
-        </form>
-        <p v-if="loading" class="muted small thinking" role="status">
-          <span class="dots" aria-hidden="true"><span /><span /><span /></span>
-          {{ photoUrl ? '사진 속 물건을 알아보는 중…' : '재료를 살펴보는 중…' }}
-        </p>
-        <p v-if="error" class="error" role="alert">{{ error }}</p>
-      </div>
-    </template>
-
-    <section v-else class="panel done-panel">
-      <p class="p-name">오늘의 여정을 모두 마쳤어요</p>
-      <NuxtLink to="/result" class="btn btn-primary btn-block">결과 카드 보기</NuxtLink>
-    </section>
-
-    <div v-if="preview" class="sheet-wrap" role="dialog" aria-modal="true" :aria-label="`${preview.name} 미리보기`" @click.self="closePreview">
-      <div class="sheet">
-        <button class="close" aria-label="닫기" @click="closePreview">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
-        </button>
-        <img v-if="photoUrl && preview.source === 'photo'" :src="photoUrl" alt="고른 사진" class="photo">
-        <p v-if="preview.twist" class="twist">{{ preview.twist }}</p>
-        <div class="p-top">
-          <p class="p-name">{{ preview.name }}</p>
-          <span v-if="!game.knowsItem(preview.name)" class="first mono">FIRST</span>
+        <div v-for="lot in layout.lots" :key="`lot-${lot.id}`" class="lot" :style="{ left: `${lot.x - 65}px`, top: `${lot.y - 150}px` }" aria-hidden="true">
+          <span class="display">?</span>
         </div>
-        <p v-if="previewVoice" class="voice">“{{ previewVoice }}”</p>
-        <template v-if="preview.materialIds.length">
-          <p class="muted small">이렇게 나뉘어요</p>
-          <div class="mats">
-            <template v-for="(id, i) in preview.materialIds" :key="id">
-              <span v-if="i" class="plus" aria-hidden="true">+</span>
-              <span class="mat">{{ materialName(id) }}</span>
-            </template>
-          </div>
-        </template>
-        <div v-if="missingNotice" class="missing">
-          <p class="missing-title">{{ missingNotice }}</p>
-          <p class="muted small">{{ preview.materialIds.length ? '지금은 나머지 재료의 여정만 떠날 수 있어요.' : '다른 물건을 적거나 위에서 골라 볼까요?' }}</p>
+
+        <div
+          v-for="w in workplaces"
+          :key="`work-${w.id}`"
+          class="workplace"
+          :style="{ left: `${w.x + 56}px`, top: `${w.y - 96}px` }"
+          :title="`${nameOf(w.id)}의 일터`"
+        >
+          <span>{{ workplaceName(w.id) }}</span>
         </div>
-        <button v-if="preview.materialIds.length" class="btn btn-primary btn-block" @click="start">여정 떠나기 →</button>
+
+        <button
+          v-for="r in layout.residents"
+          :key="r.id"
+          class="resident"
+          :style="boxStyle(r)"
+          :aria-label="`${nameOf(r.id)} · ${jobOf(r.id)} 주민 카드 보기`"
+          draggable="false"
+          @click="openResident(r.id)"
+        >
+          <span class="pct mono" aria-hidden="true">{{ percentOf(r.id) }}%</span>
+          <Character :person-id="r.id" :size="RESIDENT_H" standing />
+        </button>
       </div>
     </div>
+
+    <div class="overlay">
+      <header class="title-card">
+        <h1 class="display title">내 하루 마을</h1>
+        <p v-if="layout.residents.length" class="sub">주민 {{ layout.residents.length }}명 · {{ countries.length }}개 나라에서 왔어요</p>
+        <p v-else class="sub">오늘 쓴 물건을 넣으면 그 물건을 거쳐 온 사람들이 마을에 와요</p>
+      </header>
+
+      <div class="zoom" role="group" aria-label="지도 보기">
+        <button class="zbtn" aria-label="확대" @click="pz.zoomIn">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+        </button>
+        <button class="zbtn" aria-label="축소" @click="pz.zoomOut">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14" /></svg>
+        </button>
+        <button class="zbtn home-btn" aria-label="우리 집으로" @click="goHome">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z" /></svg>
+        </button>
+      </div>
+
+      <div class="bottom">
+        <NuxtLink to="/add" class="add">오늘 쓴 물건 넣기</NuxtLink>
+      </div>
+    </div>
+
+    <!-- 마을(position: fixed)은 쌓임 맥락이 따로라, 아래 탭 위로 올라오게 body로 옮긴다 -->
+    <Teleport to="body">
+      <ResidentSheet v-if="open" :person-id="open" @close="open = null" />
+    </Teleport>
   </main>
 </template>
 
 <style scoped>
-.home { gap: 16px; }
-.welcome { justify-content: center; min-height: 70dvh; gap: 24px; }
-.welcome-sub { margin: 0; font-size: 15px; line-height: 1.5; word-break: keep-all; }
-.first-go {
-  display: flex; flex-direction: column; align-items: center; gap: 14px;
-  min-height: 200px; padding: 28px 20px;
-  border-radius: 24px; border: 0; background: var(--accent); color: var(--accent-ink);
-  box-shadow: 0 10px 30px rgba(242, 193, 78, 0.25);
-  animation: pop-in var(--motion-enter) var(--motion-ease);
-}
-.first-go:active { transform: scale(0.97); }
-.first-icon { padding: 10px; border-radius: 999px; background: var(--paper); }
-.first-label { font-family: var(--font-display); font-size: 24px; line-height: 1.3; word-break: keep-all; }
-.welcome-other { align-self: center; }
-.trips { display: flex; flex-direction: column; gap: 6px; }
-.trips-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.trips-title { margin: 0; font-size: 15px; }
-.trip {
-  display: flex; justify-content: space-between; align-items: center; gap: 12px;
-  min-height: 52px; padding: 8px 14px;
-  border-radius: 12px; background: var(--surface); border: 1px solid var(--line);
-  color: var(--text); text-decoration: none; font-size: 14px;
-}
-.trip-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
-.trip-status { flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; font-size: 12px; }
-.trip-where { color: var(--muted); }
-.trip-left { color: var(--muted); }
-.trip-quiz .trip-left, .trip-arrived .trip-left { color: var(--accent); font-weight: 700; font-size: 13px; }
+.village { position: fixed; inset: 0; overflow: hidden; background: #7fc3de; }
+.viewport { position: absolute; inset: 0; touch-action: none; user-select: none; -webkit-user-select: none; cursor: grab; }
+.viewport:active { cursor: grabbing; }
+.world { position: absolute; left: 0; top: 0; transform-origin: 0 0; will-change: transform; }
+.world.gliding { transition: transform var(--motion-pan) var(--motion-ease); }
+.map { position: absolute; left: 0; top: 0; display: block; pointer-events: none; -webkit-user-drag: none; }
 
-.head { display: flex; flex-direction: column; gap: 6px; }
-.title { font-size: 28px; line-height: 1.25; }
-.left { margin: 0; font-size: 13px; }
-
-.grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-.tile {
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
-  min-height: 96px; padding: 10px 6px;
-  border-radius: 18px; border: 1px solid var(--line); background: var(--surface);
-  transition: transform var(--motion-press) ease, background var(--motion-press) ease;
+.zone-label {
+  position: absolute; padding: 6px 18px; border-radius: 22px; border: 4px solid #2a2a35;
+  background: #fff; color: #2a2a35; font-size: 30px; white-space: nowrap; pointer-events: none;
 }
-.tile:active { transform: scale(0.96); background: var(--surface-2); }
-.tile-icon {
-  width: 52px; height: 52px; padding: 6px;
-  border-radius: 999px; background: var(--paper);
-}
-.tile-name { font-size: 13px; line-height: 1.3; text-align: center; word-break: keep-all; }
+.zone-label.home { background: #f2c14e; }
 
-.more {
-  min-height: 44px; margin-top: -6px;
-  border-radius: 14px; border: 1px dashed var(--line); background: transparent;
-  color: var(--text); font-size: 14px;
+.resident {
+  position: absolute; width: 140px; height: 190px; padding: 0; border: 0; background: none; cursor: pointer;
+  display: block; -webkit-tap-highlight-color: transparent;
+}
+.resident:focus-visible { outline: 4px solid var(--accent); outline-offset: 4px; border-radius: 20px; }
+.pct {
+  position: absolute; left: 50%; top: -14px; transform: translateX(-50%);
+  padding: 2px 10px; border-radius: 14px; border: 3px solid #2a2a35;
+  background: #f2c14e; color: #1a1a22; font-size: 18px; font-weight: 700; white-space: nowrap;
+}
+.lot {
+  position: absolute; width: 130px; height: 150px; border: 5px dashed #6e9b58; border-radius: 40px;
+  display: flex; align-items: center; justify-content: center; pointer-events: none;
+}
+.lot span { font-size: 54px; color: #6e9b58; }
+.workplace {
+  position: absolute; width: 112px; height: 80px; border: 4px dashed #8b5e3c; border-radius: 16px;
+  background: #fff8e8cc; display: flex; align-items: center; justify-content: center; text-align: center;
+  font-size: 18px; font-weight: 700; color: #6b4e00; padding: 4px; line-height: 1.2; pointer-events: none;
 }
 
-.other { display: flex; flex-direction: column; gap: 10px; }
-.other-line { margin: 0; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0 6px; font-size: 14px; }
-.link {
-  display: inline-flex; align-items: center; min-height: 44px; padding: 0 4px;
-  border: 0; background: none; color: var(--accent); font-size: 14px; font-weight: 700;
-  text-decoration: underline; text-underline-offset: 3px; cursor: pointer;
+/* 지도 위에 올린 것들. 지도는 끌 수 있게 겹친 빈 곳은 누름을 통과시킨다 */
+.overlay { position: absolute; inset: 0; pointer-events: none; display: flex; justify-content: center; }
+.overlay > * { pointer-events: auto; }
+.title-card {
+  position: absolute; top: max(16px, env(safe-area-inset-top)); left: 12px; right: 12px; max-width: 456px; margin: 0 auto;
+  display: flex; flex-direction: column; gap: 3px; padding: 14px 18px; border-radius: 20px; background: rgba(15, 27, 45, 0.9);
 }
-
-.text-form { display: flex; gap: 8px; animation: rise var(--motion-enter) var(--motion-ease); }
-.text-form input {
-  flex: 1; min-width: 0; min-height: 52px; padding: 0 14px;
-  border-radius: 14px; border: 1px solid var(--line); background: var(--surface); font-size: 16px;
+.title { margin: 0; font-size: 24px; line-height: 1.15; }
+.sub { margin: 0; font-size: 13px; color: #c9cfd9; word-break: keep-all; }
+.zoom { position: absolute; right: max(12px, calc(50% - 228px)); top: calc(max(16px, env(safe-area-inset-top)) + 92px); display: flex; flex-direction: column; gap: 8px; }
+.zbtn {
+  width: 44px; height: 44px; border-radius: 14px; border: 0; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; background: rgba(15, 27, 45, 0.9); color: var(--text);
 }
-.text-form input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
-
-.thinking { display: flex; align-items: center; justify-content: center; gap: 8px; }
-.dots { display: inline-flex; gap: 4px; }
-.dots span { width: 6px; height: 6px; border-radius: 999px; background: var(--accent); animation: bob var(--motion-bob) ease-in-out infinite; }
-.dots span:nth-child(2) { animation-delay: calc(var(--motion-bob) / -3); }
-.dots span:nth-child(3) { animation-delay: calc(var(--motion-bob) / -1.5); }
-
-.error { margin: 0; color: #ffb4a6; font-size: 14px; text-align: center; }
-.small { margin: 0; font-size: 13px; text-align: center; }
-
-.done-panel { display: flex; flex-direction: column; gap: 14px; }
-
-.sheet-wrap {
-  position: fixed; inset: 0; z-index: 30;
-  display: flex; align-items: flex-end; justify-content: center;
-  background: rgba(5, 10, 20, 0.6);
-}
-.sheet {
-  position: relative; width: 100%; max-width: 480px; max-height: 90dvh; overflow-y: auto;
+.home-btn { color: var(--accent); }
+.bottom {
+  position: absolute; left: 12px; right: 12px; bottom: calc(84px + env(safe-area-inset-bottom)); max-width: 456px; margin: 0 auto;
   display: flex; flex-direction: column; gap: 10px;
-  padding: 20px 20px calc(20px + env(safe-area-inset-bottom));
-  border-radius: 24px 24px 0 0; background: var(--surface); border-top: 1px solid var(--accent);
-  animation: rise var(--motion-enter) var(--motion-ease);
 }
-.sheet .small { text-align: left; }
-.close {
-  position: absolute; top: 8px; right: 8px; width: 44px; height: 44px;
-  display: flex; align-items: center; justify-content: center;
-  border: 0; border-radius: 999px; background: transparent; color: var(--muted);
+.add {
+  height: 56px; border-radius: 18px; display: flex; align-items: center; justify-content: center;
+  background: var(--accent); color: var(--accent-ink); font-size: 17px; font-weight: 700; text-decoration: none;
+  box-shadow: 0 4px 0 #2a2a35;
 }
-.photo { width: 100%; max-height: 180px; object-fit: cover; border-radius: 14px; }
-.p-top { display: flex; align-items: center; gap: 8px; padding-right: 44px; }
-.p-name { margin: 0; font-size: 20px; font-weight: 700; }
-.first { font-size: 11px; padding: 3px 7px; border-radius: 6px; background: var(--r-epic); color: var(--ink); }
-.twist { margin: 0; padding-right: 44px; font-size: 13px; color: var(--accent); }
-.voice {
-  margin: 0; padding: 10px 14px; border-radius: 14px 14px 14px 4px;
-  background: var(--paper); color: var(--ink); font-size: 14px; line-height: 1.5;
-  align-self: flex-start; max-width: 100%;
-}
-.mats { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-.mat { padding: 6px 12px; border-radius: 999px; background: var(--surface-2); font-size: 14px; }
-.plus { color: var(--accent); font-family: var(--font-mono); }
-.missing { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border: 1px dashed var(--line); border-radius: 10px; }
-.missing p { margin: 0; }
-.missing-title { font-size: 14px; font-weight: 600; }
-.sheet .btn-primary { margin-top: 6px; }
 </style>

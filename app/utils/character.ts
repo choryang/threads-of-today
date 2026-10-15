@@ -58,6 +58,8 @@ const HAT_PART: Record<Hat, string> = {
 
 /** 정사각형 상자에 넣는 viewBox. 밀짚모자 챙과 발 그림자까지 들어간다 */
 export const CHARACTER_VIEWBOX = '-30 56 572 572'
+/** 발끝에 맞춰 세우는 상자(가로:세로 = 140:190). 그림자 가운데(y 612)가 상자 아래 끝 가까이에 온다 */
+export const STANDING_VIEWBOX = '36 30 440 597'
 
 const LOCKED_INK = '#2A3F5C'
 const DROP_INK = 'fill="#3A3A48"'

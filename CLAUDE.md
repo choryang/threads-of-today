@@ -23,6 +23,8 @@ shared/                 앱과 서버가 상대 경로로 함께 import (Nuxt �
   data/shops.ts         여정 마지막 장면의 가게·사무실 사람. closingKind(물건 이름, 재료)로 종류를 정한다
   data/thanks.ts        고마워요 답·세트 감사 장면·엔딩 문구
   data/mystery.ts       미스터리 힌트 1·2번(대표 물건별 쓰임새 한 줄·분류). 대표 물건을 추가하면 여기도 채운다(check:data)
+  data/village.ts       내 하루 마을: 구역 5개(이름표·대략적인 범위·발끝 자리 slots·넘칠 때 빈 땅 overflow), 일터 목록,
+                        사람마다 구역·일터(RESIDENCE → Person.zone·workplace), 구역이 애매한 사람. 자리는 지도 생성기 도형으로 계산
   data/forms.ts         되감기 변신: 재료별 형태 목록(실제 가공 순서, by = 그 형태를 만드는 사람, formIcon = public/forms 아이콘 slug). 재료를 추가하면 여기도 채운다(check:data)
   data/dictionary.json  미리 만든 물건 사전 (scripts/build-dictionary.ts가 생성). 서버에서만 import
   data/dictionary-client.json 앱용 사전(한마디 하나만, scripts/build-client-dictionary.ts). 화면에서 바로 매칭할 때 쓴다
@@ -37,6 +39,7 @@ shared/                 앱과 서버가 상대 경로로 함께 import (Nuxt �
   journey.ts            buildTimeline(materialIds, journeyId): 여정 id 시드로 출발지·이야기·숨은 만남·퀴즈 변형. '-꼬리' 없는 예전 id는 기본 경로
                         id에 '-r'이 붙은 새 여정은 reverseTimeline(내 손 → 원산지). forwardTimeline을 재배치만 해서 판정은 정방향과 같다
   distance.ts           거리 계산기: 장소 좌표로 대권 거리 누적(바다는 건너뜀), 100km 단위 반올림
+  village.ts            마을 자리 배정(먼저 만난 사람부터 hash(id) 자리, 모자라면 빈 땅), 빈 집터, 주민 나라 수
   rewind.ts             거꾸로 가는 여정 연출: 칸마다 형태(formsAlong), 문구, '이 전엔 어디 있었을까요?', 되감기 엔딩 순서
   random.ts             hash / mix32 / seeded
   logic.ts              sanitizeMaterialIds / dayStats(여정별 실제 경로) / findLinkCards / 미스터리 등 순수 함수
@@ -57,17 +60,22 @@ server/
                         주재료가 목록에 없으면 대신하지 않고 missing_ingredients로 받는다 → 화면에 "○○의 여정은 아직 준비 중이에요"
 app/
   composables/useGame.ts  게임 상태·규칙 (effectScope로 저장 watch, 하루 여정 3번, 미스터리 보너스, 닉네임)
+  composables/usePanZoom.ts 마을 지도 끌기·두 손가락·휠 확대(라이브러리 없이), 8px 이상 끌면 클릭 무시
   composables/useSync.ts  서버 동기화·복구 코드로 이어 하기 (plugins/sync.client.ts가 호출)
-  components/             NicknameEditor(도감) · DeviceTransfer(도감 "다른 기기에서 이어 하기") · RecordTabs(기록 탭 안 오늘/나의 실타래 전환)
+  components/             ResidentSheet(주민 카드) · FriendshipPanel(친해진 정도) · MeetAgain(또 만났어요)
+                          NicknameEditor(도감) · DeviceTransfer(도감 "다른 기기에서 이어 하기") · RecordTabs(기록 탭 안 오늘/나의 실타래 전환)
                           FormBadge(지금 물건의 형태) · RewindReplay(빨리 감기 엔딩)
-  pages/                  index(물건 타일 + 직접 쓰기·사진) · journey/[id] · mystery · dex(통계) · result(기록: 오늘 여정·html-to-image 공유) · threads(기록 안 나의 실타래)
-                          하단 탭은 4개(오늘·미스터리·도감·기록)
+  pages/                  index(내 하루 마을: 지도·주민·주민 카드) · add(오늘 쓴 물건 넣기: 물건 타일 + 직접 쓰기·사진, 미스터리로 가는 길)
+                          journey/[id] · mystery · dex(통계) · result(기록: 오늘 여정·html-to-image 공유) · threads(기록 안 나의 실타래)
+                          하단 탭은 3개(마을·도감·기록). 미스터리는 물건 넣기 화면에서 연다
+  utils/pan-zoom.ts       지도 배율·위치 제한, 한 점 기준 확대 (usePanZoom.ts가 쓰는 순수 함수)
   utils/motion.ts         모든 시간 값(전환 0.3초·토스트·고마워요 손 흔들기·자동 넘김 3~6초). CSS는 plugins/motion.client.ts가 넣는 --motion-* 변수
   utils/local-match.ts    대표 물건 + 앱용 사전으로 서버 없이 즉시 분해
   utils/character.ts      모자(hat)·소품(prop) 파츠를 조합한 SVG 콩 캐릭터
   utils/product-icon.ts   메인 물건 타일 아이콘. 대표 물건을 추가하면 여기도 그린다(없으면 상자 모양)
 scripts/check-data.ts     데이터 검사. 모든 변경 후 반드시 통과시킬 것
 scripts/sync-prop-icons.ts 캐릭터 소품 7개를 형태 아이콘(public/forms/prop-*.svg)으로 옮긴다. 소품을 고치면 다시 실행
+public/village/map.svg   마을 지도 1400×2000 (지도 생성기 gen_map.py로 그린 그림)
 public/forms/             형태 아이콘 SVG와 index.json(slug → ko·group). tests/forms.test.ts가 formIcon이 모두 있는지 검사
 scripts/build-dictionary.ts  data/seeds/*.txt → Message Batches API → dictionary.json + data/review/dictionary.csv (--dry-run, --limit, --resume)
 scripts/import-foodsafety.ts (선택, 실행 보류) 식품안전나라 원재료 → 재료 규칙 연결 뼈대

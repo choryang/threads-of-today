@@ -2,14 +2,20 @@
 import { computed, useId } from 'vue'
 import { PEOPLE } from '../../shared/data/people'
 import { PLACES } from '../../shared/data/places'
-import { BODY_COLORS, CHARACTER_VIEWBOX, characterSvg } from '../utils/character'
+import { BODY_COLORS, CHARACTER_VIEWBOX, STANDING_VIEWBOX, characterSvg } from '../utils/character'
 
-const props = withDefaults(defineProps<{ personId: string; locked?: boolean; size?: number; bob?: boolean; wave?: boolean }>(), {
+/**
+ * standing: 마을처럼 발끝에 맞춰 세울 때. 높이 size, 폭은 그 0.737배(190 → 140)이고 발끝이 상자 아래 끝에 온다.
+ * 아니면 size×size 정사각형(카드·얼굴).
+ */
+const props = withDefaults(defineProps<{ personId: string; locked?: boolean; size?: number; bob?: boolean; wave?: boolean; standing?: boolean }>(), {
   locked: false,
   size: 96,
   bob: false,
   wave: false,
+  standing: false,
 })
+const box = computed(() => (props.standing ? { w: Math.round((props.size * 440) / 597), h: props.size, vb: STANDING_VIEWBOX } : { w: props.size, h: props.size, vb: CHARACTER_VIEWBOX }))
 
 // outfit-sailor의 clipPath id가 한 페이지에서 겹치지 않게 그릴 때마다 접미사를 붙인다
 const uid = useId()
@@ -29,9 +35,9 @@ const svg = computed(() => {
 
 <template>
   <svg
-    :width="size"
-    :height="size"
-    :viewBox="CHARACTER_VIEWBOX"
+    :width="box.w"
+    :height="box.h"
+    :viewBox="box.vb"
     aria-hidden="true"
     :class="{ bob, wave: wave && !locked }"
     :style="skin"

@@ -122,7 +122,7 @@ async function save(share: boolean) {
     <section v-if="!done.length" class="panel empty">
       <p>아직 마친 여정이 없어요.</p>
       <p class="muted small">물건 하나를 골라 여정을 마치면 오늘의 결과 카드가 만들어져요.</p>
-      <NuxtLink to="/" class="btn btn-primary btn-block">물건 고르러 가기</NuxtLink>
+      <NuxtLink to="/add" class="btn btn-primary btn-block">물건 고르러 가기</NuxtLink>
     </section>
 
     <template v-else>

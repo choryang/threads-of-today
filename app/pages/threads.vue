@@ -22,7 +22,7 @@ const hasThreads = computed(() => tapestry.value.threads.length > 0)
     <section v-else class="panel empty">
       <p>첫 여정을 떠나면 실이 생겨요.</p>
       <p class="muted small">물건 하나의 여정을 마치면, 그 재료가 지나온 나라에서 나에게로 실이 이어져요.</p>
-      <NuxtLink to="/" class="btn btn-primary btn-block">물건 고르러 가기</NuxtLink>
+      <NuxtLink to="/add" class="btn btn-primary btn-block">물건 고르러 가기</NuxtLink>
     </section>
 
     <div v-if="openPerson" class="modal" role="dialog" aria-modal="true" @click.self="openPerson = null">

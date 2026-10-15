@@ -1,14 +1,14 @@
 <script setup lang="ts">
 const route = useRoute()
 const items = [
-  { to: '/', label: '오늘', icon: 'M4 11 12 4l8 7v9a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z' },
-  { to: '/mystery', label: '미스터리', icon: 'M9 9a3 3 0 1 1 4 2.8c-.6.3-1 .9-1 1.6V15M12 19h.01M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z' },
+  // 마을 탭은 물건 넣기(/add)·미스터리(/mystery)에서도 켜져 있다 (그 흐름이 마을에서 시작한다)
+  { to: '/', label: '마을', also: ['/add', '/mystery'], icon: 'M4 11 12 4l8 7v9a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z' },
   { to: '/dex', label: '도감', icon: 'M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3zM5 17a3 3 0 0 1 3-3h11M9 8h6' },
-  { to: '/result', label: '기록', also: '/threads', icon: 'M4 20V10M10 20V4M16 20v-7M22 20H2' },
+  { to: '/result', label: '기록', also: ['/threads'], icon: 'M4 20V10M10 20V4M16 20v-7M22 20H2' },
 ]
 /** 기록 탭은 그 안의 '나의 실타래'에서도 켜져 있다 */
-const active = (item: { to: string; also?: string }) =>
-  item.to === '/' ? route.path === '/' : route.path.startsWith(item.to) || (!!item.also && route.path.startsWith(item.also))
+const active = (item: { to: string; also?: string[] }) =>
+  (item.to === '/' ? route.path === '/' : route.path.startsWith(item.to)) || !!item.also?.some((p) => route.path.startsWith(p))
 </script>
 
 <template>
@@ -31,7 +31,7 @@ const active = (item: { to: string; also?: string }) =>
   width: 100%;
   max-width: 480px;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   padding: 8px 12px calc(10px + env(safe-area-inset-bottom));
   background: rgba(15, 27, 45, 0.94);
   backdrop-filter: blur(10px);

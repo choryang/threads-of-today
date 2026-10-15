@@ -1,0 +1,134 @@
+import { onBeforeUnmount, onMounted, ref, shallowRef, type Ref } from 'vue'
+import { MOTION, reducedMotion } from '../utils/motion'
+import { centerOn, clampScale, clampView, zoomAt, type Size, type View } from '../utils/pan-zoom'
+
+/**
+ * 지도 확대·축소와 이동 (라이브러리 없이 포인터 이벤트로). 계산은 utils/pan-zoom.ts의 순수 함수.
+ *  - 한 손가락(마우스) 끌기: 이동 / 두 손가락: 두 손가락 가운데 기준 확대·축소 / 휠: 커서 기준 확대·축소
+ *  - wheel은 passive: false로 직접 붙인다(페이지가 스크롤되지 않게). 지도 영역에는 CSS로 touch-action: none
+ *  - 8px 이상 움직였으면 dragged()가 true: 끌다가 놓은 자리의 주민 카드가 열리지 않게 클릭을 무시한다
+ * 포인터 캡처는 쓰지 않는다(캡처하면 주민 버튼의 click이 지도 쪽으로 가서). 끄는 동안의 move·up은 window에서 받는다.
+ */
+export const DRAG_SLOP = 8
+const WHEEL_SPEED = 0.0015
+const STEP = 1.3
+
+export function usePanZoom(el: Ref<HTMLElement | null>, map: { w: number; h: number }, start: (s: Size) => View) {
+  const view = shallowRef<View>({ x: 0, y: 0, scale: 1 })
+  /** 화면을 옮기는 연출 중이면 true (transform에 transition을 건다) */
+  const gliding = ref(false)
+  let size: Size = { vw: 1, vh: 1, mw: map.w, mh: map.h }
+  const points = new Map<number, { x: number; y: number }>()
+  let moved = 0
+  let pinch: { d: number; scale: number; mx: number; my: number } | null = null
+  let glideTimer: ReturnType<typeof setTimeout> | undefined
+
+  const local = (e: { clientX: number; clientY: number }) => {
+    const r = el.value!.getBoundingClientRect()
+    return { x: e.clientX - r.left, y: e.clientY - r.top }
+  }
+  const set = (v: View) => { view.value = clampView(v, size) }
+
+  function measure(first = false) {
+    const r = el.value?.getBoundingClientRect()
+    if (!r) return
+    size = { vw: r.width, vh: r.height, mw: map.w, mh: map.h }
+    if (first) view.value = start(size)
+    else set(view.value)
+  }
+
+  function startPinch() {
+    const [a, b] = [...points.values()]
+    if (!a || !b) { pinch = null; return }
+    const v = view.value
+    const cx = (a.x + b.x) / 2
+    const cy = (a.y + b.y) / 2
+    pinch = { d: Math.hypot(a.x - b.x, a.y - b.y) || 1, scale: v.scale, mx: (cx - v.x) / v.scale, my: (cy - v.y) / v.scale }
+  }
+
+  function onDown(e: PointerEvent) {
+    if (e.pointerType === 'mouse' && e.button !== 0) return
+    if (points.size === 0) moved = 0
+    gliding.value = false
+    points.set(e.pointerId, local(e))
+    startPinch()
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
+    window.addEventListener('pointercancel', onUp)
+  }
+
+  function onMove(e: PointerEvent) {
+    const prev = points.get(e.pointerId)
+    if (!prev) return
+    const p = local(e)
+    points.set(e.pointerId, p)
+    if (points.size >= 2 && pinch) {
+      const [a, b] = [...points.values()]
+      const cx = (a!.x + b!.x) / 2
+      const cy = (a!.y + b!.y) / 2
+      const scale = clampScale(pinch.scale * (Math.hypot(a!.x - b!.x, a!.y - b!.y) / pinch.d), size)
+      moved += DRAG_SLOP + 1
+      // 처음 잡은 지도 위의 가운데 점이 두 손가락 가운데를 따라온다
+      set({ x: cx - pinch.mx * scale, y: cy - pinch.my * scale, scale })
+      return
+    }
+    const dx = p.x - prev.x
+    const dy = p.y - prev.y
+    moved += Math.abs(dx) + Math.abs(dy)
+    set({ ...view.value, x: view.value.x + dx, y: view.value.y + dy })
+  }
+
+  function onUp(e: PointerEvent) {
+    points.delete(e.pointerId)
+    startPinch()
+    if (points.size === 0) {
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+      window.removeEventListener('pointercancel', onUp)
+    }
+  }
+
+  function onWheel(e: WheelEvent) {
+    e.preventDefault()
+    const p = local(e)
+    gliding.value = false
+    view.value = zoomAt(view.value, p.x, p.y, view.value.scale * Math.exp(-e.deltaY * WHEEL_SPEED), size)
+  }
+
+  /** 화면 가운데 기준 확대(+)·축소(−) */
+  const zoomIn = () => { view.value = zoomAt(view.value, size.vw / 2, size.vh / 2, view.value.scale * STEP, size) }
+  const zoomOut = () => { view.value = zoomAt(view.value, size.vw / 2, size.vh / 2, view.value.scale / STEP, size) }
+
+  /** 지도의 한 점을 화면 가운데로. glide면 MOTION.panMs 동안 미끄러지듯 옮긴다 */
+  function goTo(mx: number, my: number, scale = view.value.scale, glide = false) {
+    clearTimeout(glideTimer)
+    gliding.value = glide && !reducedMotion()
+    view.value = centerOn(mx, my, scale, size)
+    if (gliding.value) glideTimer = setTimeout(() => { gliding.value = false }, MOTION.panMs)
+  }
+
+  /** 마지막 누름에서 8px 이상 끌었는지 (주민 클릭 무시용) */
+  const dragged = () => moved > DRAG_SLOP
+
+  let observer: ResizeObserver | undefined
+  onMounted(() => {
+    const node = el.value
+    if (!node) return
+    measure(true)
+    node.addEventListener('pointerdown', onDown)
+    node.addEventListener('wheel', onWheel, { passive: false })
+    observer = new ResizeObserver(() => measure())
+    observer.observe(node)
+  })
+  onBeforeUnmount(() => {
+    clearTimeout(glideTimer)
+    observer?.disconnect()
+    el.value?.removeEventListener('pointerdown', onDown)
+    el.value?.removeEventListener('wheel', onWheel)
+    window.removeEventListener('pointermove', onMove)
+    window.removeEventListener('pointerup', onUp)
+    window.removeEventListener('pointercancel', onUp)
+  })
+
+  return { view, gliding, zoomIn, zoomOut, goTo, dragged, size: () => size }
+}

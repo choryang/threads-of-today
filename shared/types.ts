@@ -1,3 +1,5 @@
+import type { WorkplaceId, ZoneId } from './data/village'
+
 export type Rarity = 'common' | 'rare' | 'epic' | 'legendary'
 
 export type Continent = 'korea' | 'asia' | 'africa' | 'europe' | 'oceania' | 'americas' | 'sea'
@@ -77,6 +79,9 @@ export interface Person {
   /** 일의 크기를 보여 주는 숫자 한 줄 (해요체, 40자 이내, 숫자 앞에 '약'·'보통'). 출처를 확인한 것만 */
   workFact?: string
   workFactSource?: FactSource
+  /** 내 하루 마을에서 사는 구역과 일터 (shared/data/village.ts의 RESIDENCE) */
+  zone: ZoneId
+  workplace: WorkplaceId
 }
 
 export interface Quiz {
