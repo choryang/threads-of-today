@@ -19,9 +19,12 @@
  *  - 본 열림 알림(unlockSeen, shared/unlocks.ts): 합집합. 둘 다 없으면 없는 채로 둔다(기존 사용자를 조용히 여는 표시라서).
  *  - 기능을 연 날짜(unlockedOn): 단계마다 이른 날짜. 둘 다 없으면 없는 채로.
  *  - 핵심 인물 이야기를 본 편 수(keyMeets, shared/key-story.ts): 사람마다 큰 값. 둘 다 없으면 없는 채로.
+ *  - 오늘 흐름의 하루 기록(todays, docs/redesign/README.md "저장"): 날짜마다 하나. 같은 날 둘 다 있으면 한마디를 건넨 쪽,
+ *    둘 다 건넸거나 둘 다 안 건넸으면 a. 둘 다 없으면 없는 채로. 한 줄·직접 쓴 말은 기기에만 있어 여기에 없다.
  *    여정마다 보여 준 편 번호(Journey.keyEpisodes)는 여정과 함께 간다.
  */
 import { MATERIALS, SETS } from './data/materials'
+import { isMoodId, type MoodId } from './data/moods'
 import { PEOPLE, PEOPLE_LIST } from './data/people'
 import { LOG_CAP, legacyMeeting, mergePersonLog } from './friendship'
 import { isManageKey, isToken } from './share'
@@ -48,6 +51,22 @@ export interface Journey {
   teaser?: string
   /** 핵심 인물 여정에서 사람마다 이 여정에 보여 준 이야기 편 번호(0부터). 없으면 그 만남엔 새 편이 없었다 (shared/key-story.ts) */
   keyEpisodes?: Record<string, number>
+}
+
+/**
+ * 오늘 흐름의 하루 기록 (docs/redesign/README.md "저장"). 서버에는 이것만 간다.
+ * 한 줄(선택)과 직접 쓴 한마디는 기기(localStorage)에만 남기고 여기에 넣지 않는다.
+ */
+export interface TodayRecord {
+  mood: MoodId
+  /** 물건 이름 */
+  item: string
+  /** 만난 사람 */
+  personId: string
+  /** 본 편 번호(0부터). 이야기 사람이 없어 카드 문구로 만났으면 null */
+  episode: number | null
+  /** 건넨 한마디: 고른 문구 번호(shared/data/replies.ts), 직접 썼으면 'own'(말은 기기에만). 아직이면 없음 */
+  reply?: number | 'own'
 }
 
 export interface DayLog {
@@ -157,12 +176,16 @@ export interface Save {
    * 다 본 뒤의 만남은 세지 않아서, 나중에 편이 더해지면 그 편부터 이어서 나온다
    */
   keyMeets?: Record<string, number>
+  /** 서울 날짜 → 오늘 흐름의 하루 기록 */
+  todays?: Record<string, TodayRecord>
   nickname?: Nickname
 }
 
 export const KEEP_DAYS = 30
 /** 핵심 자리에서 만난 횟수의 상한 (서버 입력 검사) */
 const MAX_KEY_MEETS = 100_000
+/** 하루 기록 상한 (서버 입력 검사, 몇 해치) */
+const MAX_TODAYS = 2000
 // journeysPerDay: 하루 여정 횟수 제한이 없어져서 서버 입력 검사용 상한만 둔다
 const LIMITS = { items: 2000, journeysPerDay: 60, name: 40, voice: 80, guesses: 10 }
 const DATE = /^\d{4}-\d{2}-\d{2}$/
@@ -189,6 +212,16 @@ function mergeEarliest(a: Record<string, string>, b: Record<string, string>): Re
   for (const [k, v] of Object.entries(b)) if (!out[k] || v < out[k]!) out[k] = v
   return out
 }
+/** 하루 기록: 날짜마다 하나, 한마디를 건넨 쪽을 남긴다 */
+function mergeTodays(a: Record<string, TodayRecord>, b: Record<string, TodayRecord>): Record<string, TodayRecord> {
+  const out = { ...a }
+  for (const [date, r] of Object.entries(b)) {
+    const x = out[date]
+    if (!x || (x.reply === undefined && r.reply !== undefined)) out[date] = r
+  }
+  return out
+}
+
 /** 키마다 큰 값 */
 function mergeLargest(a: Record<string, number>, b: Record<string, number>): Record<string, number> {
   const out = { ...a }
@@ -317,6 +350,7 @@ export function mergeSaves(a: Save, b: Save, todayKey: string): Save {
     ...(a.unlockSeen || b.unlockSeen ? { unlockSeen: union(a.unlockSeen ?? [], b.unlockSeen ?? []) } : {}),
     ...(a.unlockedOn || b.unlockedOn ? { unlockedOn: mergeEarliest(a.unlockedOn ?? {}, b.unlockedOn ?? {}) } : {}),
     ...(a.keyMeets || b.keyMeets ? { keyMeets: mergeLargest(a.keyMeets ?? {}, b.keyMeets ?? {}) } : {}),
+    ...(a.todays || b.todays ? { todays: mergeTodays(a.todays ?? {}, b.todays ?? {}) } : {}),
     ...(mergeVillage(a.village, b.village) ? { village: mergeVillage(a.village, b.village) } : {}),
     days: pickRecent(days, todayKey),
     mystery: pickRecent(mystery, todayKey),
@@ -331,6 +365,16 @@ const PEOPLE_COUNT = PEOPLE_LIST.length
 const strList = (v: unknown, max: number, len = 40) =>
   Array.isArray(v) ? [...new Set(v.filter((x): x is string => typeof x === 'string').map((x) => x.slice(0, len)))].slice(0, max) : []
 const isObj = (v: unknown): v is Record<string, any> => !!v && typeof v === 'object' && !Array.isArray(v)
+
+function sanitizeToday(v: unknown): TodayRecord | null {
+  if (!isObj(v) || !isMoodId(v.mood) || typeof v.personId !== 'string' || !PEOPLE[v.personId]) return null
+  const item = str(v.item, LIMITS.name).trim()
+  if (!item) return null
+  const episode = v.episode === null ? null : Number.isInteger(v.episode) && v.episode >= 0 && v.episode < 1000 ? (v.episode as number) : undefined
+  if (episode === undefined) return null
+  const reply = v.reply === 'own' ? 'own' : Number.isInteger(v.reply) && v.reply >= 0 && v.reply < 10 ? (v.reply as number) : undefined
+  return { mood: v.mood, item, personId: v.personId, episode, ...(reply !== undefined ? { reply } : {}) }
+}
 
 function keyEpisodesOf(v: Record<string, unknown>): Record<string, number> {
   const out: Record<string, number> = {}
@@ -416,6 +460,13 @@ export function sanitizeSave(raw: unknown, todayKey: string): Save {
   if (isObj(raw.unlockedOn)) {
     s.unlockedOn = {}
     for (const [k, v] of Object.entries(raw.unlockedOn)) if ((UNLOCK_STEP_IDS as string[]).includes(k) && typeof v === 'string' && DATE.test(v)) s.unlockedOn[k] = v
+  }
+  if (isObj(raw.todays)) {
+    s.todays = {}
+    for (const [date, r] of Object.entries(raw.todays).slice(-MAX_TODAYS)) {
+      const rec = sanitizeToday(r)
+      if (DATE.test(date) && rec) s.todays[date] = rec
+    }
   }
   if (isObj(raw.keyMeets)) {
     s.keyMeets = {}

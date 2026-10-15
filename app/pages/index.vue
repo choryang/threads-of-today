@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
+import { repliesFor } from '../../shared/data/replies'
 import type { MoodId } from '../../shared/data/moods'
 import { resolveItem } from '../utils/resolve-item'
 
@@ -17,6 +18,15 @@ const CHOICES = ['아이스 아메리카노', '스마트폰', '참치마요 삼�
 
 const busy = ref(false)
 const itemError = ref('')
+
+onMounted(() => today.open())
+
+/** 오늘의 결과에 보이는 건넨 말 */
+const saidText = computed(() => {
+  const r = d.reply
+  if (!r || !d.mood) return ''
+  return r.kind === 'own' ? r.text : repliesFor(d.mood)[r.index] ?? ''
+})
 
 function pickMood(mood: MoodId) {
   today.chooseMood(mood)
@@ -38,7 +48,7 @@ async function chooseItem(name: string) {
 }
 
 watch(() => d.step, () => window.scrollTo({ top: 0 }))
-const tightTop = computed(() => d.step === 'item' || d.step === 'person')
+const tightTop = computed(() => d.step === 'item' || d.step === 'person' || d.step === 'done')
 </script>
 
 <template>
@@ -49,7 +59,7 @@ const tightTop = computed(() => d.step === 'item' || d.step === 'person')
       :mood="d.mood"
       :note="d.note"
       @pick="pickMood"
-      @note="d.note = $event"
+      @note="today.setNote"
       @next="today.go('item')"
     />
     <TodayItemScreen
@@ -76,6 +86,7 @@ const tightTop = computed(() => d.step === 'item' || d.step === 'person')
       :item-name="d.item.name"
       :person-id="d.pick.personId"
       :episode="d.pick.episode"
+      :memory="d.memory"
       action="한마디 건네기"
       @next="today.go('reply')"
     />
@@ -85,6 +96,32 @@ const tightTop = computed(() => d.step === 'item' || d.step === 'person')
       :person-id="d.pick.personId"
       :reply="d.reply"
       @reply="today.giveReply"
-    />
+    >
+      <template #actions>
+        <button class="t-btn" @click="today.go('done')">다 했어요</button>
+      </template>
+    </TodayReplyScreen>
+    <!-- 하루 한 번: 오늘 기록이 있으면 오늘의 결과 -->
+    <TodayPersonScreen
+      v-else-if="d.step === 'done' && d.mood && d.item && d.pick"
+      :mood="d.mood"
+      :item-name="d.item.name"
+      :person-id="d.pick.personId"
+      :episode="d.pick.episode"
+      :memory="d.memory"
+    >
+      <div class="done">
+        <p v-if="d.note" class="done-note"><span class="t-dot" aria-hidden="true" />{{ d.note }}</p>
+        <p v-if="saidText" class="done-said">당신이 건넨 말: {{ saidText }}</p>
+        <p class="done-bye">내일 저녁에 또 만나요</p>
+      </div>
+    </TodayPersonScreen>
   </main>
 </template>
+
+<style scoped>
+.done { margin-top: 20px; display: flex; flex-direction: column; gap: 8px; }
+.done-note { margin: 0; display: flex; align-items: center; gap: 8px; font-size: 15px; color: var(--t-quiet); word-break: keep-all; }
+.done-said { margin: 0; font-size: 14px; color: var(--t-sub); word-break: keep-all; }
+.done-bye { margin: 12px 0 0; font-size: 17px; font-weight: 700; text-align: center; }
+</style>

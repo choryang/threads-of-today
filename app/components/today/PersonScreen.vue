@@ -57,6 +57,7 @@ const title = computed(() => (props.episode === null ? plainTitle(props.itemName
       <span class="doing">{{ doing }}</span>
     </div>
     <button v-if="action" class="t-btn" @click="emit('next')">{{ action }}</button>
+    <slot />
   </div>
 </template>
 

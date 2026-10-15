@@ -237,3 +237,23 @@ test('여정마다 보여 준 이야기 편(keyEpisodes)은 여정과 함께 남
   const s = sanitizeSave({ days: { [TODAY]: { journeys: [{ ...journey(id, 2), keyEpisodes: { 'sea-crew': 3, nobody: 1, barista: -1, 'busan-crane': 1.5 } }] } } }, TODAY)
   assert.deepEqual(s?.days[TODAY]?.journeys[0]?.keyEpisodes, { 'sea-crew': 3 })
 })
+
+test('오늘 흐름 하루 기록(todays): 날짜마다 하나, 한마디를 건넨 쪽, 이상한 값은 버리고 한 줄·직접 쓴 말은 없다', () => {
+  const a: Save = { ...emptySave(), todays: { [TODAY]: { mood: 'wronged', item: '아이스 아메리카노', personId: 'coffee-picker', episode: 2 } } }
+  const b: Save = { ...emptySave(), todays: { [TODAY]: { mood: 'wronged', item: '아이스 아메리카노', personId: 'coffee-picker', episode: 2, reply: 0 }, '2026-10-10': { mood: 'tired', item: '라면', personId: 'rice-farmer', episode: null, reply: 'own' } } }
+  const merged = mergeSaves(a, b, TODAY).todays!
+  assert.equal(merged[TODAY]!.reply, 0)
+  assert.equal(merged['2026-10-10']!.reply, 'own')
+  assert.equal('todays' in mergeSaves(emptySave(), emptySave(), TODAY), false)
+  const clean = sanitizeSave({
+    ...emptySave(),
+    todays: {
+      [TODAY]: { mood: 'glad', item: '라면', personId: 'barista', episode: 1, reply: 2, note: '비밀', ownText: '비밀' },
+      'bad-date': { mood: 'glad', item: '라면', personId: 'barista', episode: 1 },
+      '2026-10-13': { mood: 'happy', item: '라면', personId: 'barista', episode: 1 },
+      '2026-10-12': { mood: 'glad', item: '라면', personId: 'nobody', episode: 1 },
+      '2026-10-11': { mood: 'glad', item: '라면', personId: 'barista', episode: -1 },
+    },
+  }, TODAY)
+  assert.deepEqual(clean?.todays, { [TODAY]: { mood: 'glad', item: '라면', personId: 'barista', episode: 1, reply: 2 } })
+})
