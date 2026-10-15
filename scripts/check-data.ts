@@ -29,6 +29,19 @@ import { NAME_GROUPS } from '../shared/data/names'
 const errors: string[] = []
 const reachable = new Set<string>()
 
+// 장소마다 시간대(IANA): 여정 화면의 '지금 그곳의 시각'. 이 런타임의 Intl이 모르는 이름이면 실패
+for (const place of Object.values(PLACES)) {
+  if (!place.tz) {
+    errors.push(`장소 ${place.id}: 시간대(tz) 없음`)
+    continue
+  }
+  try {
+    new Intl.DateTimeFormat('en-US', { timeZone: place.tz })
+  } catch {
+    errors.push(`장소 ${place.id}: 알 수 없는 시간대 ${place.tz}`)
+  }
+}
+
 const personIds = new Set<string>()
 for (const person of PEOPLE_LIST) {
   if (personIds.has(person.id)) errors.push(`사람 id ${person.id} 중복`)

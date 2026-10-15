@@ -20,6 +20,8 @@ export interface Place {
   /** 국가명. 바다 위처럼 국가가 없으면 빈 문자열 */
   country: string
   continent: Continent
+  /** IANA 시간대 (예: Africa/Addis_Ababa). 여정 화면의 '지금 그곳의 시각'. 바다는 그 바다의 대략적인 시간대 */
+  tz: string
   /** 대표 지점의 위도·경도(거리 계산기). 지나가는 바다(sea)에는 없다 */
   lat?: number
   lng?: number
