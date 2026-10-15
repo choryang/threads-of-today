@@ -15,13 +15,13 @@ interface Tab {
 }
 const items: Tab[] = [
   // 마을 탭은 물건 넣기(/add)·미스터리·테스트·도착, 그리고 마을 메뉴에서 여는 지난 기록(/result·/threads)에서도 켜져 있다
-  { to: '/', label: '마을', also: ['/add', '/mystery', '/test', '/arrival', '/result', '/threads'], icon: 'M4 11 12 4l8 7v9a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z' },
+  { to: '/village', label: '마을', also: ['/add', '/mystery', '/test', '/arrival', '/result', '/threads'], icon: 'M4 11 12 4l8 7v9a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z' },
   // 도감 탭은 여정 3번 뒤에 열린다. 잠겨 있어도 숨기지 않는다
   { to: '/dex', label: '도감', feature: 'dex', icon: 'M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3zM5 17a3 3 0 0 1 3-3h11M9 8h6' },
 ]
 const locked = (item: Tab) => !!item.feature && !game.opens(item.feature)
 const active = (item: Tab) =>
-  (item.to === '/' ? route.path === '/' : route.path.startsWith(item.to)) || !!item.also?.some((p) => route.path.startsWith(p))
+  route.path.startsWith(item.to) || !!item.also?.some((p) => route.path.startsWith(p))
 
 /** 잠긴 탭을 누르면 탭 위에 짧은 안내 */
 const note = ref('')
@@ -38,7 +38,8 @@ const cols = computed(() => `repeat(${items.length}, 1fr)`)
 </script>
 
 <template>
-  <nav class="nav" aria-label="주요 메뉴" :style="{ gridTemplateColumns: cols }">
+  <!-- 오늘 흐름(첫 화면)은 화면마다 큰 버튼이 있어 메뉴를 감춘다 -->
+  <nav v-if="route.path !== '/'" class="nav" aria-label="주요 메뉴" :style="{ gridTemplateColumns: cols }">
     <p v-if="note" class="note" role="status">{{ note }}</p>
     <template v-for="item in items" :key="item.to">
       <button v-if="locked(item)" class="item locked" :aria-label="`${item.label}, 잠김`" @click="tapLocked(item)">

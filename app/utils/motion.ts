@@ -4,6 +4,10 @@
  * prefers-reduced-motion 사용자는 main.css가 애니메이션을 모두 끄고, JS 대기는 reducedMotion()으로 건너뛴다.
  */
 export const MOTION = {
+  /** 오늘 흐름 3번: 서울에서 그곳까지 실이 이어지는 시간 (거쳐 온 손이 점으로 하나씩) */
+  threadDrawMs: 1800,
+  /** 오늘 흐름 5번: 한마디를 건네고 실을 묶는 시간 */
+  knotDrawMs: 1100,
   /** 여정 화면 하늘(그곳의 지금 시각)을 다시 그리는 간격 */
   skyTickMs: 30_000,
   /** 화면 전환과 카드 등장. 모든 곳 같은 길이·같은 이징 */

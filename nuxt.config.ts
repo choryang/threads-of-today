@@ -11,7 +11,7 @@ export default defineNuxtConfig({
       },
     },
   },
-  css: ['~/assets/css/main.css'],
+  css: ['~/assets/css/main.css', '~/assets/css/today.css'],
   runtimeConfig: {
     // NUXT_ANTHROPIC_API_KEY, NUXT_ANTHROPIC_MODEL 환경 변수로 덮어쓴다.
     anthropicApiKey: '',

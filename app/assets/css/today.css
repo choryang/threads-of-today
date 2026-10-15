@@ -1,0 +1,57 @@
+/*
+ * 새 기획 화면의 디자인 기준 (docs/redesign/README.md "디자인 기준").
+ * 바탕 흰색, 강조색 없음(실의 색 = 오늘 고른 마음의 색, --mood). 장식(그림자·그라데이션 카드·테두리 상자) 없이 여백과 글자 크기로.
+ * 새 화면은 <html class="today-ui">를 달고(useHead), 그 안에서 .today 틀을 쓴다.
+ */
+html.today-ui,
+html.today-ui body {
+  background: #ffffff;
+  color: #14161a;
+}
+
+.today {
+  --t-bg: #ffffff;
+  --t-face: #f5f6f8;
+  --t-text: #14161a;
+  --t-sub: #6b7079;
+  --t-faint: #8a8f98;
+  --t-line: #e8eaee;
+  --t-body: #2a2d33;
+  --t-quiet: #3f434a;
+  --t-button-2: #f1f2f5;
+  --mood: #14161a;
+
+  max-width: 480px;
+  min-height: 100dvh;
+  margin: 0 auto;
+  padding: max(64px, calc(env(safe-area-inset-top) + 40px)) 24px calc(32px + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  background: var(--t-bg);
+  color: var(--t-text);
+  font-family: 'Noto Sans KR', system-ui, sans-serif;
+}
+.today.tight-top { padding-top: max(56px, calc(env(safe-area-inset-top) + 32px)); }
+.today.with-nav { padding-bottom: calc(32px + 72px + env(safe-area-inset-bottom)); }
+
+.today .t-kicker { margin: 0; font-size: 13px; color: var(--t-sub); }
+.today .t-title { margin: 8px 0 0; font-size: 26px; font-weight: 700; line-height: 1.35; letter-spacing: -0.01em; white-space: pre-line; word-break: keep-all; }
+.today .t-body { margin: 0; font-size: 16px; line-height: 1.8; color: var(--t-body); word-break: keep-all; }
+
+.today .t-btn {
+  height: 56px; border: 0; border-radius: 16px; background: #14161a; color: #ffffff;
+  display: flex; align-items: center; justify-content: center; text-decoration: none;
+  font-size: 17px; font-weight: 700; cursor: pointer; width: 100%;
+}
+.today .t-btn:disabled { background: #c9ccd2; cursor: default; }
+.today .t-btn.secondary { background: var(--t-button-2); color: var(--t-text); }
+.today .t-bottom { margin-top: auto; padding-top: 24px; }
+
+.today .t-back {
+  width: 44px; height: 44px; margin-left: -12px; border: 0; background: none; color: var(--t-text);
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+}
+.today .t-dot { display: inline-block; width: 10px; height: 10px; border-radius: 5px; background: var(--mood); flex-shrink: 0; }
+.today .sr-only {
+  position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+}
