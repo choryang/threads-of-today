@@ -1,14 +1,16 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, useId } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, useId, watch } from 'vue'
 import { PEOPLE } from '../../shared/data/people'
 import { PLACES } from '../../shared/data/places'
 import { SEOUL_TZ, SKY, clockAt, clockLabel, doingLine, orbAt, parseClock, seoulDiffText, shiftToLocal, skyPhase } from '../../shared/local-time'
 import { placeLabel } from '../../shared/rewind'
+import { sceneOf, sceneSrc } from '../../shared/data/scenes'
 import { MOTION } from '../utils/motion'
 
 /**
  * 여정 화면 사람 카드 위의 하늘(높이 380px): 그 사람 장소의 지금 시각으로 하늘색·해와 달·밤의 별, 왼쪽 위에 시계.
  * 아래에 '지금은 아마 …' 한 줄. 30초마다 다시 그린다.
+ * 그 사람의 장면 그림(shared/data/scenes.ts)이 있으면 깔고 시간대 색을 덧씌운다. 없거나 못 읽으면 단색 하늘과 땅.
  * 색과 시간대는 shared/local-time.ts의 SKY(문서 '여정 장면 스타일 가이드'의 시간대 표).
  * 개발 중에는 주소에 ?clock=05:30처럼 붙이면 그곳 시각을 바꿔 볼 수 있다
  */
@@ -41,12 +43,20 @@ const doing = computed(() => doingLine(props.personId, local.value.h))
 /** 별 자리 (가로 %, 위에서 px). 저녁 첫 별은 맨 앞 하나 */
 const STARS: [number, number][] = [[85, 60], [10, 70], [31, 40], [59, 90], [72, 150]]
 const stars = computed(() => STARS.slice(0, look.value.stars))
-/** 해·달: 가로 30~330px(폭 390 기준)을 따라 가고, 가장 높을 때 위에서 60px */
-const orbStyle = computed(() => ({ left: `${((30 + orb.value.x * 300) / 390) * 100}%`, top: `${210 - orb.value.lift * 150}px` }))
+/**
+ * 해·달: 가운데가 가로 120~360px(폭 390 기준)을 따라 가고, 가장 높을 때 위에서 60px.
+ * 왼쪽 위 시계와 겹치지 않게 길을 오른쪽으로 옮겼다(시계 옆을 지날 땐 이미 시계 아래 높이)
+ */
+const orbStyle = computed(() => ({ left: `${((120 + orb.value.x * 240) / 390) * 100}%`, top: `${210 - orb.value.lift * 150}px` }))
 const overlayStyle = computed(() => {
   const o = look.value.overlay
   return o ? { background: o.color, mixBlendMode: o.blend, opacity: o.opacity } : undefined
 })
+
+// 장면 그림: 읽히면 보인다(그 전·실패하면 단색 하늘)
+const scene = computed(() => sceneOf(props.personId))
+const sceneOk = ref(false)
+watch(scene, () => { sceneOk.value = false })
 
 // 흰 스티커 테두리(4px): 캐릭터 모양을 4px 부풀린 흰 그림자를 뒤에 깐다
 const filterId = `sticker-${useId()}`
@@ -63,9 +73,19 @@ const filterId = `sticker-${useId()}`
           <feMerge><feMergeNode in="outline" /><feMergeNode in="SourceGraphic" /></feMerge>
         </filter>
       </svg>
+      <img
+        v-if="scene"
+        v-show="sceneOk"
+        class="scene"
+        :src="sceneSrc(scene.id)"
+        :alt="scene.alt"
+        @load="sceneOk = true"
+        @error="sceneOk = false"
+      >
+      <span v-if="sceneOk && overlayStyle" class="tint" :style="overlayStyle" aria-hidden="true" />
       <span v-for="([x, y], i) in stars" :key="i" class="star" :style="{ left: `${x}%`, top: `${y}px` }" aria-hidden="true" />
       <span class="orb" :class="orb.kind" :style="orbStyle" aria-hidden="true" />
-      <div class="ground" :class="{ sea: atSea }" aria-hidden="true">
+      <div v-if="!sceneOk" class="ground" :class="{ sea: atSea }" aria-hidden="true">
         <span v-if="overlayStyle" class="tint" :style="overlayStyle" />
       </div>
       <div class="figure" aria-hidden="true">
@@ -92,6 +112,7 @@ const filterId = `sticker-${useId()}`
   transition: background var(--motion-enter) var(--motion-ease);
 }
 .defs { position: absolute; }
+.scene { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .star { position: absolute; width: 4px; height: 4px; border-radius: 2px; background: #f3f1ea; }
 .orb {
   position: absolute; width: 46px; height: 46px; margin-left: -23px; border-radius: 23px;

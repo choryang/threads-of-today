@@ -4,6 +4,7 @@ import { LINK_RULES, MATERIAL_LIST, PRODUCTS, SETS } from '../shared/data/materi
 import { PEOPLE, PEOPLE_LIST } from '../shared/data/people'
 import { PLACES } from '../shared/data/places'
 import { DOING, DOING_DEFAULT } from '../shared/data/doing'
+import { PERSON_SCENE, SCENES } from '../shared/data/scenes'
 import dictionary from '../shared/data/dictionary.json'
 import { EVENTS, HIDDEN_RULES } from '../shared/data/journey-extras'
 import { SYNONYM_GROUPS } from '../shared/data/synonyms'
@@ -54,6 +55,16 @@ for (const [id, d] of Object.entries(DOING)) {
 }
 for (const t of Object.values(DOING_DEFAULT)) if (looksFactual(t)) errors.push(`지금 하는 일 기본 문구: "${t}"`)
 for (const p of PEOPLE_LIST) if ((p.kind === 'stage' || p.kind === 'hidden') && !DOING[p.id]) errors.push(`${p.id}: 지금 하는 일 문구 없음 (shared/data/doing.ts)`)
+
+// 장면 그림: 사람·장면이 있는지. 그림 파일이 아직 없는 장면은 단색 하늘로 보이니 알려만 준다
+for (const [pid, sid] of Object.entries(PERSON_SCENE)) {
+  if (!PEOPLE[pid]) errors.push(`장면 연결 ${pid}: 사람 없음`)
+  if (!SCENES[sid]) errors.push(`장면 연결 ${pid}: 장면 ${sid} 없음`)
+}
+for (const scene of Object.values(SCENES)) {
+  if (!scene.alt.trim()) errors.push(`장면 ${scene.id}: 대체 글 없음`)
+  if (!existsSync(new URL(`../public/scenes/${scene.id}.webp`, import.meta.url))) console.log(`장면 ${scene.id}: 그림 아직 없음 (단색 하늘로 보여요)`)
+}
 
 const personIds = new Set<string>()
 for (const person of PEOPLE_LIST) {

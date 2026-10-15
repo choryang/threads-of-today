@@ -16,7 +16,8 @@
     "test": "node --import tsx --test tests/*.test.ts",
     "dict:build": "tsx scripts/build-dictionary.ts",
     "cache:export": "tsx scripts/export-cache.ts",
-    "stats": "tsx scripts/user-stats.ts"
+    "stats": "tsx scripts/user-stats.ts",
+    "scenes": "tsx scripts/build-scenes.ts"
   },
   "dependencies": {
     "@upstash/redis": "^1.39.0",
@@ -30,6 +31,7 @@
     "@anthropic-ai/sdk": "^0.133.0",
     "@resvg/resvg-js": "^2.6.2",
     "@types/node": "^22.20.5",
+    "sharp": "^0.35.5",
     "tsx": "^4.19.0",
     "typescript": "^5.6.0",
     "vue-tsc": "^3.3.13"

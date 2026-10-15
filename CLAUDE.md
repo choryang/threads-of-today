@@ -15,7 +15,7 @@
 ```
 shared/                 앱과 서버가 상대 경로로 함께 import (Nuxt 자동 import 대상 아님)
   types.ts              Person, Material, Product, LinkRule, CardSet 타입
-  data/places.ts        장소 (country, continent → 캐릭터 몸 색)
+  data/places.ts        장소 (country, continent → 캐릭터 몸 색, tz → 여정 화면 그곳의 시각)
   data/people.ts        사람 카드. kind: stage | quiz | link | set | hidden, rarity: common | rare | epic | legendary
   data/materials.ts     재료 여정(stages = 사람 id 순서), 출발지 변형(originHead, origins), 퀴즈(quiz + extraQuizzes), 대표 물건(PRODUCTS), 연결 규칙, 세트
   data/synonyms.ts      동의어 묶음 (첫 단어가 대표 표기)
@@ -26,6 +26,8 @@ shared/                 앱과 서버가 상대 경로로 함께 import (Nuxt �
   data/village.ts       내 하루 마을: 구역 5개(이름표·대략적인 범위·발끝 자리 slots·넘칠 때 빈 땅 overflow), 일터 목록,
                         사람마다 구역·일터(RESIDENCE → Person.zone·workplace), 구역이 애매한 사람. 자리는 지도 생성기 도형으로 계산
   data/transport.ts     운송 구간 사람(배·비행기·트럭)과 '배'·'바다를 건너는 중' 같은 말
+  data/doing.ts         여정 화면 '지금은 아마 …': 사람마다 일(7~18시)·저녁(18~22시)·잠 문구, 없으면 일반 문구(check:data)
+  data/scenes.ts        여정 장면 그림 목록(public/scenes/{id}.webp, 대체 글)과 사람 → 장면. 원본은 art/scenes에 두고 npm run scenes
   data/forms.ts         되감기 변신: 재료별 형태 목록(실제 가공 순서, by = 그 형태를 만드는 사람, formIcon = public/forms 아이콘 slug). 재료를 추가하면 여기도 채운다(check:data)
   data/dictionary.json  미리 만든 물건 사전 (scripts/build-dictionary.ts가 생성). 서버에서만 import
   data/dictionary-client.json 앱용 사전(한마디 하나만, scripts/build-client-dictionary.ts). 화면에서 바로 매칭할 때 쓴다
@@ -55,6 +57,7 @@ shared/                 앱과 서버가 상대 경로로 함께 import (Nuxt �
   character-svg.ts      캐릭터 SVG 조립(순수 함수)과 피부색. 앱(app/utils/character.ts)과 OG 스크립트가 같이 쓴다
   village.ts            마을 자리 배정(먼저 만난 사람부터 hash(id) 자리, 모자라면 빈 땅), 빈 집터, 주민 나라 수
   rewind.ts             거꾸로 가는 여정 연출: 칸마다 형태(formsAlong), 문구, '이 전엔 어디 있었을까요?', 되감기 엔딩 순서
+  local-time.ts         지금 그곳의 시각: 장소 tz(IANA)로 시계·서울과의 차이·하늘 시간대(가이드 표의 색·섞는 방식)·해와 달 자리·'지금은 아마'
   random.ts             hash / mix32 / seeded
   logic.ts              sanitizeMaterialIds / dayStats(여정별 실제 경로) / findLinkCards / 미스터리 등 순수 함수
   mystery.ts            미스터리 힌트 5개. 3·4번은 보기의 다른 물건과 겹치지 않는 사람·출발지를 고른다
@@ -92,7 +95,7 @@ app/
   components/             ResidentSheet(주민 카드) · FriendshipPanel(친해진 정도) · MeetAgain(또 만났어요)
                           NicknameEditor·DeviceTransfer(마을 메뉴의 설정) · RecordTabs(지난 기록 안 오늘/나의 실타래 전환)
                           VillageMap(내 마을·친구 마을이 같이 쓰는 지도) · FriendResidentSheet · FlowerMark · IntroSheet(이 분 소개하기)
-                          FormBadge(지금 물건의 형태) · RewindReplay(빨리 감기 엔딩) · IncomingCard(오고 있는 물건)
+                          PlaceSky(여정 사람 카드 위 하늘·시계·장면 그림) · FormBadge(지금 물건의 형태) · RewindReplay(빨리 감기 엔딩) · IncomingCard(오고 있는 물건)
   pages/                  index(내 하루 마을: 지도·주민·주민 카드·오고 있는 물건, 처음 온 사람은 /test로) · test(10초 테스트)·test/result
                           d/[token](친구가 보낸 하루 → "당신의 하루는요?") · v/[token](친구 마을: 주민에게 고마워요 → 꽃)
                           p/[token](소개받은 사람: 15초 안에 끝나는 다섯 단계, 가입 없이 고마워요) · arrival/[id](밤사이 도착했어요) · add(오늘 쓴 물건 넣기: 물건 타일 + 직접 쓰기·사진, 미스터리로 가는 길)
@@ -109,6 +112,7 @@ app/
   utils/product-icon.ts   메인 물건 타일 아이콘. 대표 물건을 추가하면 여기도 그린다(없으면 상자 모양)
 scripts/check-data.ts     데이터 검사. 모든 변경 후 반드시 통과시킬 것
 scripts/build-og-cards.ts OG 이미지를 resvg로(마을 초대 공통 한 장, 사람 카드 소개 사람마다 한 장). 글꼴은 scripts/fonts의 Pretendard OTF(OFL) (npm run build:og-cards)
+scripts/build-scenes.ts   장면 그림을 webp, 가로 1200px 이하로 (npm run scenes, sharp)
 scripts/build-og.ts       OG 이미지(하루 유형 9장 1200×630)를 이 컴퓨터의 Chrome·Edge로 찍어 public/og에 (npm run build:og)
 scripts/day-type-dist.ts  하루 유형 분포(3~5개 조합 12,444가지). 한 유형이 25%를 넘으면 실패 (npm run check:day-types)
 scripts/sync-prop-icons.ts 캐릭터 소품 7개를 형태 아이콘(public/forms/prop-*.svg)으로 옮긴다. 소품을 고치면 다시 실행
