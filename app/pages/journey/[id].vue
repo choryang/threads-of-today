@@ -7,6 +7,7 @@ import { EVENTS } from '../../../shared/data/journey-extras'
 import { buildTimeline, forwardTimeline, isReverseJourney, optionOrder, quizFor, reverseTimeline } from '../../../shared/journey'
 import { dayStats, withJosa } from '../../../shared/logic'
 import { formatKm, reverseDistances, roundKm } from '../../../shared/distance'
+import { journeyMeetLine } from '../../../shared/today'
 import { formsAlong, placeLabel, replayFrames, reverseKicker, stopQuestion } from '../../../shared/rewind'
 import { lineupOf, linkPersonOf, pickTeaser } from '../../../shared/next'
 import type { Product } from '../../../shared/types'
@@ -278,6 +279,11 @@ onBeforeUnmount(clearTimers)
 const summary = computed(() => (journey.value ? dayStats([journey.value]) : { people: [], countries: [] }))
 const metPeople = computed(() => summary.value.people)
 
+// ── 모두의 오늘: 이번 여정 사람들을 오늘 만난 사람 수의 합 (끝 화면 한 줄) ──
+const meets = useTodayMeets()
+watch(() => journey.value?.done, (done) => { if (done) void meets.load(metPeople.value) }, { immediate: true })
+const togetherLine = computed(() => journeyMeetLine(metPeople.value.reduce((sum, id) => sum + (meets.counts[id] ?? 0), 0)))
+
 // ── 끝 장면 ──
 const productId = computed(() => PRODUCTS.find((p) => p.name === journey.value?.name)?.id ?? '')
 /** 끝 장면은 원산지 → 내 손 순서로 줄을 선다 (거꾸로 간 여정도) */
@@ -352,6 +358,7 @@ function followTeaser(p: Product) {
         <strong class="mono">{{ metPeople.length }}</strong>명의 손을 거쳐 왔어요
       </p>
       <p class="muted small">{{ summary.countries.length }}개 나라를 지나왔어요</p>
+      <p v-if="togetherLine" class="together-line">{{ togetherLine }}</p>
       <p v-if="voice" class="voice">“{{ voice }}”</p>
 
       <section v-if="linkGained.length && !reunionCard" class="link-banner">
@@ -682,6 +689,7 @@ function followTeaser(p: Product) {
 .next-btn { position: sticky; bottom: calc(84px + env(safe-area-inset-bottom)); z-index: 5; }
 .preload { position: absolute; width: 1px; height: 1px; overflow: hidden; opacity: 0; pointer-events: none; }
 
+.together-line { margin: 0; font-size: 14px; font-weight: 700; color: var(--accent); word-break: keep-all; }
 .touched { margin: 0; font-size: 17px; line-height: 1.5; word-break: keep-all; }
 .touched strong { color: var(--accent); font-size: 22px; font-weight: 500; }
 

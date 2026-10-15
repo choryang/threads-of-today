@@ -116,3 +116,38 @@ export async function readScoresOf(key: string, members: string[]): Promise<numb
   const counts = (await kv().getItem<Record<string, number>>(key)) ?? {}
   return members.map((m) => counts[m] ?? 0)
 }
+
+/**
+ * HyperLogLog: 키마다 member를 더한다(PFADD)고 기간을 건다(EXPIRE). 같은 member를 여러 번 더해도 한 번으로 센다.
+ * Upstash에서는 키 전부를 파이프라인 한 번으로 보낸다. 개발용 저장소에서는 배열로 흉내 낸다(정확히 센다).
+ */
+export async function hllAdd(keys: string[], member: string, ttlSeconds: number): Promise<void> {
+  if (!keys.length) return
+  const r = redisClient()
+  if (r) {
+    const p = r.pipeline()
+    for (const k of keys) {
+      p.pfadd(`${KV_PREFIX}:${k}`, member)
+      p.expire(`${KV_PREFIX}:${k}`, ttlSeconds)
+    }
+    await p.exec()
+    return
+  }
+  for (const k of keys) {
+    const set = new Set((await kv().getItem<string[]>(k)) ?? [])
+    set.add(member)
+    await kv().setItem(k, [...set], { ttl: ttlSeconds })
+  }
+}
+
+/** HyperLogLog 키마다 센 수 (PFCOUNT를 파이프라인으로). 없는 키는 0 */
+export async function hllCount(keys: string[]): Promise<number[]> {
+  if (!keys.length) return []
+  const r = redisClient()
+  if (r) {
+    const p = r.pipeline()
+    for (const k of keys) p.pfcount(`${KV_PREFIX}:${k}`)
+    return (await p.exec<number[]>()).map((n) => Number(n) || 0)
+  }
+  return Promise.all(keys.map(async (k) => ((await kv().getItem<string[]>(k)) ?? []).length))
+}

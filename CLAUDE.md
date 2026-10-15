@@ -46,6 +46,7 @@ shared/                 앱과 서버가 상대 경로로 함께 import (Nuxt �
   share.ts              공유 링크 공통 구조: 종류(day /d · person /p · village /v)별 TTL·주소·내용 검사, 발급·조회·재발급(이전 링크 닫기)·답.
                         링크를 만든 기기의 관리 키 해시만 저장. 복구 코드·사용자 id는 토큰·저장 값·응답·로그 어디에도 넣지 않는다
   visit.ts              마을에 놀러 가서 꽃 남기기: 꽃(닉네임·주민·날짜) 색(구역별)·하루 한 송이·새 꽃 알림 문구, 못 만난 주민의 힌트 물건
+  today.ts              모두의 오늘: 숫자 포맷, "오늘 1,203명이 이 분을 만났어요"·여정 끝 합 문구, 사람마다 하루 한 번만 보내기
   character-svg.ts      캐릭터 SVG 조립(순수 함수)과 피부색. 앱(app/utils/character.ts)과 OG 스크립트가 같이 쓴다
   village.ts            마을 자리 배정(먼저 만난 사람부터 hash(id) 자리, 모자라면 빈 땅), 빈 집터, 주민 나라 수
   rewind.ts             거꾸로 가는 여정 연출: 칸마다 형태(formsAlong), 문구, '이 전엔 어디 있었을까요?', 되감기 엔딩 순서
@@ -62,6 +63,7 @@ server/
   api/village/          [token] GET(공개용: 닉네임·주민 id·최근 꽃만) · [token]/flower POST(하루 한 송이, 감사 수 B에도) · flowers POST(주인, 관리 키)
   routes/v/[token].get.ts  /v/{token}: 마을 초대 OG(공통 이미지 og/village.png). /d·/v·/p는 utils/share-page.ts의 defineShareRoute 하나로
   utils/village.ts      마을 꽃 저장(village-flowers:{주인 해시} 최근 200개·60일, village-flower-day 하루 한 송이)
+  api/meet/             모두의 오늘: POST(만난 사람들, PFADD meet:{사람}:{YYYYMMDD} 48시간) · GET ?ids=(PFCOUNT 파이프라인, 60초 캐시). utils/meet.ts
   api/thanks/           다른 사람들의 고마움: POST(고마워요 1번 세기, 같은 기기·같은 날·같은 사람은 한 번) · GET ?ids=(오늘 수·누적 수)
   plugins/kv.ts         useStorage('kv'): Upstash(env 있을 때) / 개발 .data/kv 파일 / 그 밖 메모리
   utils/kv.ts           incrementCounter(INCR+EXPIRE), incrementScores(ZINCRBY), setIfAbsent, hashIp. 키는 Redis에서 mdp: 아래
@@ -73,6 +75,7 @@ server/
                         주재료가 목록에 없으면 대신하지 않고 missing_ingredients로 받는다 → 화면에 "○○의 여정은 아직 준비 중이에요"
 app/
   composables/useGame.ts  게임 상태·규칙 (effectScope로 저장 watch, 하루 여정 3번, 미스터리 보너스, 닉네임)
+  composables/useTodayMeets.ts 모두의 오늘 보내기(모아서·하루 한 번)·읽기. plugins/meet.client.ts가 useGame의 onMeet에 붙인다
   composables/usePanZoom.ts 마을 지도 끌기·두 손가락·휠 확대(라이브러리 없이), 8px 이상 끌면 클릭 무시
   composables/useSync.ts  서버 동기화·복구 코드로 이어 하기 (plugins/sync.client.ts가 호출)
   components/             ResidentSheet(주민 카드) · FriendshipPanel(친해진 정도) · MeetAgain(또 만났어요)

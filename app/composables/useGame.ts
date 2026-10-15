@@ -99,6 +99,13 @@ export function onJourneyFinish(listener: () => void) {
   return () => finishListeners.delete(listener)
 }
 
+const meetListeners = new Set<(personId: string) => void>()
+/** 여정에서 사람을 만날 때마다 불린다 (모두의 오늘 집계용) */
+export function onMeet(listener: (personId: string) => void) {
+  meetListeners.add(listener)
+  return () => meetListeners.delete(listener)
+}
+
 export { buildTimeline }
 
 /** 보여 줄 감사 장면(세트 감사·엔딩). 화면 어디서 고마움을 전해도 app.vue의 ThanksScene이 띄운다 */
@@ -143,6 +150,7 @@ export function useGame() {
     if (!PEOPLE[cardId]) return
     if (!s.people) s.people = {}
     s.people[cardId] = addMeeting(s.people[cardId], journey.id, journey.name)
+    for (const listener of meetListeners) listener(cardId)
   }
 
   /**

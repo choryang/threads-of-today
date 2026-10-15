@@ -4,6 +4,7 @@ import { PEOPLE } from '../../shared/data/people'
 import { PLACES } from '../../shared/data/places'
 import { WORKPLACES } from '../../shared/data/village'
 import { thanksReply } from '../../shared/thanks'
+import { todayMeetLine } from '../../shared/today'
 import { MOTION } from '../utils/motion'
 
 /** 주민 카드: 마을에서 주민을 누르면 아래에서 올라온다. 친해진 정도와 고마워요 */
@@ -20,7 +21,13 @@ const where = computed(() => {
 const thankedToday = computed(() => game.thankedToday(props.personId))
 const reply = computed(() => (thankedToday.value ? thanksReply(props.personId) : ''))
 const others = computed(() => gratitude.counts[props.personId])
-watch(() => props.personId, (id) => void gratitude.load(id), { immediate: true })
+const meets = useTodayMeets()
+watch(() => props.personId, (id) => { void gratitude.load(id); void meets.load([id]) }, { immediate: true })
+const todayLine = computed(() => {
+  const n = meets.counts[props.personId]
+  const mine = meets.metToday(props.personId)
+  return n === undefined && !mine ? '' : todayMeetLine(n ?? 0, mine)
+})
 
 const waving = ref(false)
 let timer: ReturnType<typeof setTimeout> | undefined
@@ -53,6 +60,7 @@ onBeforeUnmount(() => clearTimeout(timer))
         </div>
       </div>
 
+      <p v-if="todayLine" class="today-line">{{ todayLine }}</p>
       <FriendshipPanel :person-id="personId" />
 
       <p v-if="reply" class="reply">“{{ reply }}”</p>
@@ -93,6 +101,7 @@ onBeforeUnmount(() => clearTimeout(timer))
 .where { font-size: 12px; font-weight: 700; color: #4e7a3e; }
 .name { margin: 0; font-size: 26px; line-height: 1.2; word-break: keep-all; }
 .job { font-size: 14px; color: #4a4a55; }
+.today-line { margin: 0; font-size: 14px; font-weight: 700; color: #2f5a73; }
 .reply { margin: 0; padding: 10px 14px; border-radius: 14px; background: #fff; font-size: 14px; line-height: 1.5; }
 .thanks-row { display: flex; align-items: center; gap: 12px; }
 .counts { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
