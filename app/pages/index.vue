@@ -52,7 +52,7 @@ const tightTop = computed(() => d.step === 'item' || d.step === 'person' || d.st
 </script>
 
 <template>
-  <main class="today" :class="{ 'tight-top': tightTop }">
+  <main class="today" :class="{ 'tight-top': tightTop, 'with-nav': d.step === 'mood' || d.step === 'done' }">
     <TodayMoodScreen
       v-if="d.step === 'mood'"
       :date="d.date"
@@ -98,7 +98,8 @@ const tightTop = computed(() => d.step === 'item' || d.step === 'person' || d.st
       @reply="today.giveReply"
     >
       <template #actions>
-        <button class="t-btn" @click="today.go('done')">다 했어요</button>
+        <button class="t-btn secondary" @click="today.go('done')">다 했어요</button>
+        <NuxtLink to="/people" class="t-btn">이어진 사람들</NuxtLink>
       </template>
     </TodayReplyScreen>
     <!-- 하루 한 번: 오늘 기록이 있으면 오늘의 결과 -->
