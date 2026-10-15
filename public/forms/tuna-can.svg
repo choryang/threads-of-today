@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+<!-- tuna-can: 참치 통조림 -->
+<ellipse cx="64" cy="116" rx="40" ry="6" fill="#000" opacity=".14"/><ellipse cx="64" cy="88" rx="44" ry="18" fill="#9AA6B6" stroke="#2A2A35" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/><rect x="20" y="62" width="88" height="26" fill="#3B6EA8"/><path d="M20 62 V88 M108 62 V88" stroke="#2A2A35" stroke-width="5"/><ellipse cx="64" cy="62" rx="44" ry="18" fill="#C9D2DE" stroke="#2A2A35" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/><ellipse cx="64" cy="62" rx="32" ry="11" fill="none" stroke="#9AA6B6" stroke-width="3"/><path d="M48 76 q16 -8 32 0" stroke="#F3F1EA" stroke-width="4" fill="none"/>
+</svg>

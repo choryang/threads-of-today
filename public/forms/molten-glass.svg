@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+<!-- molten-glass: 녹은 유리 -->
+<ellipse cx="64" cy="116" rx="40" ry="6" fill="#000" opacity=".14"/><path d="M24 70 Q24 110 64 110 Q104 110 104 70 Z" fill="#5A5A66" stroke="#2A2A35" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/><ellipse cx="64" cy="70" rx="40" ry="11" fill="#FF9A3C" stroke="#2A2A35" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/><ellipse cx="64" cy="70" rx="22" ry="5" fill="#FFE07A"/><path d="M64 20 Q76 40 64 58" stroke="#FF9A3C" stroke-width="10" fill="none" stroke-linecap="round"/>
+</svg>

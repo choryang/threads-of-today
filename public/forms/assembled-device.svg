@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+<!-- assembled-device: 조립한 기기 -->
+<ellipse cx="64" cy="116" rx="40" ry="6" fill="#000" opacity=".14"/><rect x="38" y="14" width="52" height="98" rx="12" fill="#2E3440" stroke="#2A2A35" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/><rect x="44" y="24" width="40" height="72" rx="4" fill="#7FB2E5"/><circle cx="64" cy="104" r="4" fill="#8C9AAD"/><path d="M50 32 L50 60" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" opacity="0.5"/>
+</svg>

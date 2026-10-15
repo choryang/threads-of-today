@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+<!-- plastic-product: 플라스틱 제품 -->
+<ellipse cx="64" cy="116" rx="40" ry="6" fill="#000" opacity=".14"/><path d="M30 46 H98 L92 108 Q91 112 86 112 H42 Q37 112 36 108 Z" fill="#7FC4B8" stroke="#2A2A35" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/><rect x="26" y="34" width="76" height="14" rx="5" fill="#5FA89B" stroke="#2A2A35" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/><path d="M42 58 L46 100" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" opacity="0.6"/>
+</svg>

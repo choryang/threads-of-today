@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+<!-- napa-cabbage: 배추 -->
+<ellipse cx="64" cy="116" rx="40" ry="6" fill="#000" opacity=".14"/><path d="M38 112 Q22 70 40 30 Q64 10 88 30 Q106 70 90 112 Z" fill="#B9DB8A" stroke="#2A2A35" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/><path d="M50 112 Q42 70 54 34 M78 112 Q86 70 74 34" fill="none" stroke="#8DB86A" stroke-width="4"/><path d="M48 112 Q46 84 64 60 Q82 84 80 112 Z" fill="#F4F2DC" stroke="#2A2A35" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/>
+</svg>

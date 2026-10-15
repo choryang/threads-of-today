@@ -1,0 +1,386 @@
+{
+ "green-coffee-sack": {
+  "ko": "생두 자루",
+  "group": "자루·상자·포장"
+ },
+ "cacao-bean-sack": {
+  "ko": "카카오 콩 자루",
+  "group": "자루·상자·포장"
+ },
+ "green-banana-box": {
+  "ko": "초록 바나나 상자",
+  "group": "자루·상자·포장"
+ },
+ "apple-box": {
+  "ko": "선별한 사과 상자",
+  "group": "자루·상자·포장"
+ },
+ "parcel-box": {
+  "ko": "택배 상자",
+  "group": "자루·상자·포장"
+ },
+ "egg-tray": {
+  "ko": "달걀 한 판",
+  "group": "자루·상자·포장"
+ },
+ "raw-cotton-bale": {
+  "ko": "원면",
+  "group": "자루·상자·포장"
+ },
+ "pulp-bale": {
+  "ko": "펄프",
+  "group": "자루·상자·포장"
+ },
+ "rubber-block": {
+  "ko": "생고무 덩어리",
+  "group": "자루·상자·포장"
+ },
+ "green-coffee-beans": {
+  "ko": "생두",
+  "group": "낟알·콩·가루"
+ },
+ "roasted-coffee-beans": {
+  "ko": "볶은 원두",
+  "group": "낟알·콩·가루"
+ },
+ "dried-cacao-beans": {
+  "ko": "말린 카카오 콩",
+  "group": "낟알·콩·가루"
+ },
+ "raw-sugar": {
+  "ko": "갈색 원당",
+  "group": "낟알·콩·가루"
+ },
+ "white-sugar": {
+  "ko": "하얀 설탕",
+  "group": "낟알·콩·가루"
+ },
+ "flour": {
+  "ko": "밀가루",
+  "group": "낟알·콩·가루"
+ },
+ "rice": {
+  "ko": "쌀",
+  "group": "낟알·콩·가루"
+ },
+ "rice-paddy": {
+  "ko": "벼",
+  "group": "낟알·콩·가루"
+ },
+ "soybeans": {
+  "ko": "콩",
+  "group": "낟알·콩·가루"
+ },
+ "red-beans": {
+  "ko": "팥",
+  "group": "낟알·콩·가루"
+ },
+ "buckwheat": {
+  "ko": "메밀",
+  "group": "낟알·콩·가루"
+ },
+ "barley": {
+  "ko": "보리",
+  "group": "낟알·콩·가루"
+ },
+ "malt": {
+  "ko": "맥아",
+  "group": "낟알·콩·가루"
+ },
+ "corn-kernels": {
+  "ko": "옥수수알",
+  "group": "낟알·콩·가루"
+ },
+ "chili-powder": {
+  "ko": "고춧가루",
+  "group": "낟알·콩·가루"
+ },
+ "plastic-pellets": {
+  "ko": "플라스틱 알갱이",
+  "group": "낟알·콩·가루"
+ },
+ "cocoa-liquor": {
+  "ko": "코코아 원료",
+  "group": "액체·통"
+ },
+ "crude-palm-oil": {
+  "ko": "팜 원유",
+  "group": "액체·통"
+ },
+ "edible-oil": {
+  "ko": "식용 유지",
+  "group": "액체·통"
+ },
+ "crude-oil": {
+  "ko": "원유",
+  "group": "액체·통"
+ },
+ "naphtha": {
+  "ko": "나프타",
+  "group": "액체·통"
+ },
+ "latex": {
+  "ko": "고무 수액",
+  "group": "액체·통"
+ },
+ "oj-concentrate": {
+  "ko": "농축 오렌지 주스",
+  "group": "액체·통"
+ },
+ "orange-juice": {
+  "ko": "오렌지 주스",
+  "group": "액체·통"
+ },
+ "raw-milk": {
+  "ko": "갓 짠 원유",
+  "group": "액체·통"
+ },
+ "milk-carton": {
+  "ko": "팩 우유",
+  "group": "액체·통"
+ },
+ "molten-glass": {
+  "ko": "녹은 유리",
+  "group": "액체·통"
+ },
+ "glass-bottle": {
+  "ko": "유리병",
+  "group": "액체·통"
+ },
+ "starch-syrup": {
+  "ko": "전분·물엿",
+  "group": "액체·통"
+ },
+ "tomato-paste": {
+  "ko": "토마토 페이스트",
+  "group": "액체·통"
+ },
+ "ketchup": {
+  "ko": "케첩",
+  "group": "액체·통"
+ },
+ "cobalt-ore": {
+  "ko": "코발트 광석",
+  "group": "광석·금속·소재"
+ },
+ "lithium-concentrate": {
+  "ko": "리튬 정광",
+  "group": "광석·금속·소재"
+ },
+ "bauxite": {
+  "ko": "보크사이트",
+  "group": "광석·금속·소재"
+ },
+ "iron-ore": {
+  "ko": "철광석",
+  "group": "광석·금속·소재"
+ },
+ "cobalt-compound": {
+  "ko": "코발트 화합물",
+  "group": "광석·금속·소재"
+ },
+ "lithium-compound": {
+  "ko": "리튬 화합물",
+  "group": "광석·금속·소재"
+ },
+ "aluminum-ingot": {
+  "ko": "알루미늄 덩어리",
+  "group": "광석·금속·소재"
+ },
+ "aluminum-can": {
+  "ko": "알루미늄 캔",
+  "group": "광석·금속·소재"
+ },
+ "steel-coil": {
+  "ko": "강판",
+  "group": "광석·금속·소재"
+ },
+ "battery": {
+  "ko": "배터리",
+  "group": "광석·금속·소재"
+ },
+ "assembled-device": {
+  "ko": "조립한 기기",
+  "group": "광석·금속·소재"
+ },
+ "plastic-product": {
+  "ko": "플라스틱 제품",
+  "group": "광석·금속·소재"
+ },
+ "sugarcane": {
+  "ko": "사탕수수",
+  "group": "나무·종이"
+ },
+ "eucalyptus-log": {
+  "ko": "유칼립투스 통나무",
+  "group": "나무·종이"
+ },
+ "log": {
+  "ko": "통나무",
+  "group": "나무·종이"
+ },
+ "planks": {
+  "ko": "판재",
+  "group": "나무·종이"
+ },
+ "furniture": {
+  "ko": "가구",
+  "group": "나무·종이"
+ },
+ "paper": {
+  "ko": "종이",
+  "group": "나무·종이"
+ },
+ "wet-laver": {
+  "ko": "물김",
+  "group": "채소·과일"
+ },
+ "dried-laver": {
+  "ko": "마른김",
+  "group": "채소·과일"
+ },
+ "napa-cabbage": {
+  "ko": "배추",
+  "group": "채소·과일"
+ },
+ "kimchi": {
+  "ko": "김치",
+  "group": "채소·과일"
+ },
+ "tea-leaves": {
+  "ko": "찻잎",
+  "group": "채소·과일"
+ },
+ "roasted-green-tea": {
+  "ko": "덖은 녹차",
+  "group": "채소·과일"
+ },
+ "potato": {
+  "ko": "감자",
+  "group": "채소·과일"
+ },
+ "frozen-fries": {
+  "ko": "냉동 감자튀김",
+  "group": "채소·과일"
+ },
+ "sweet-potato": {
+  "ko": "고구마",
+  "group": "채소·과일"
+ },
+ "cured-sweet-potato": {
+  "ko": "큐어링한 고구마",
+  "group": "채소·과일"
+ },
+ "radish": {
+  "ko": "무",
+  "group": "채소·과일"
+ },
+ "apple": {
+  "ko": "사과",
+  "group": "채소·과일"
+ },
+ "grapes": {
+  "ko": "포도송이",
+  "group": "채소·과일"
+ },
+ "tomato": {
+  "ko": "토마토",
+  "group": "채소·과일"
+ },
+ "red-chili": {
+  "ko": "붉은 고추",
+  "group": "채소·과일"
+ },
+ "palm-fruit-bunch": {
+  "ko": "기름야자 열매송이",
+  "group": "채소·과일"
+ },
+ "cotton-boll": {
+  "ko": "목화송이",
+  "group": "채소·과일"
+ },
+ "frozen-tuna": {
+  "ko": "냉동 참치",
+  "group": "고기·생선·가공식품"
+ },
+ "tuna-can": {
+  "ko": "참치 통조림",
+  "group": "고기·생선·가공식품"
+ },
+ "salmon": {
+  "ko": "연어",
+  "group": "고기·생선·가공식품"
+ },
+ "salmon-fillet": {
+  "ko": "손질한 연어",
+  "group": "고기·생선·가공식품"
+ },
+ "shrimp": {
+  "ko": "새우",
+  "group": "고기·생선·가공식품"
+ },
+ "frozen-shrimp": {
+  "ko": "냉동 새우",
+  "group": "고기·생선·가공식품"
+ },
+ "squid": {
+  "ko": "오징어",
+  "group": "고기·생선·가공식품"
+ },
+ "dried-squid": {
+  "ko": "마른오징어",
+  "group": "고기·생선·가공식품"
+ },
+ "cow": {
+  "ko": "소",
+  "group": "고기·생선·가공식품"
+ },
+ "pig": {
+  "ko": "돼지",
+  "group": "고기·생선·가공식품"
+ },
+ "chicken": {
+  "ko": "닭",
+  "group": "고기·생선·가공식품"
+ },
+ "chilled-beef": {
+  "ko": "냉장 소고기",
+  "group": "고기·생선·가공식품"
+ },
+ "chilled-pork": {
+  "ko": "냉장 돼지고기",
+  "group": "고기·생선·가공식품"
+ },
+ "dressed-chicken": {
+  "ko": "손질한 닭",
+  "group": "고기·생선·가공식품"
+ },
+ "fried-chicken": {
+  "ko": "치킨",
+  "group": "고기·생선·가공식품"
+ },
+ "egg": {
+  "ko": "달걀",
+  "group": "고기·생선·가공식품"
+ },
+ "tofu": {
+  "ko": "두부",
+  "group": "고기·생선·가공식품"
+ },
+ "red-bean-paste": {
+  "ko": "팥앙금",
+  "group": "고기·생선·가공식품"
+ },
+ "buckwheat-noodles": {
+  "ko": "메밀국수",
+  "group": "고기·생선·가공식품"
+ },
+ "cotton-clothes": {
+  "ko": "면 옷",
+  "group": "옷"
+ },
+ "clothes": {
+  "ko": "옷",
+  "group": "옷"
+ }
+}

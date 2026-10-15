@@ -1,4 +1,4 @@
-import type { Continent, Hat, Person, Prop } from '../../shared/types'
+import type { Continent, Hat, Person } from '../../shared/types'
 
 /** 대륙별 피부색. 파츠의 var(--skin)에 들어간다 */
 export const BODY_COLORS: Record<Continent, string> = {
@@ -99,12 +99,4 @@ export function characterSvg(person: Person, { locked = false, wave = false }: C
   }
   cache.set(key, svg)
   return svg
-}
-
-/** 소품만 따로 그릴 때의 viewBox. 소품은 캐릭터 오른손 자리(512×640 원점)에 있어서 그 부분만 잘라 본다 */
-export const PROP_VIEWBOX = '296 330 190 190'
-
-/** 소품 하나의 안쪽 마크업 (되감기 변신의 임시 형태 아이콘) */
-export function propSvg(prop: Prop): string {
-  return part(`prop-${prop}`)
 }

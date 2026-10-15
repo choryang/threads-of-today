@@ -29,8 +29,8 @@ export interface Place {
  */
 export interface MaterialForm {
   name: string
-  /** 새 아이콘을 그리기 전까지 임시로 쓰는 기존 소품 */
-  prop: Prop
+  /** 아이콘 public/forms/<formIcon>.svg (public/forms/index.json의 slug). 맞는 아이콘이 없으면 비운다 */
+  formIcon?: string
   /** 이 사람들의 손을 거치면 이 형태가 된다. 첫 형태(출발지에서 나오는 모습)는 비워 둔다 */
   by?: string[]
 }

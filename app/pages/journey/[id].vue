@@ -11,7 +11,7 @@ import { formsAlong, placeLabel, replayFrames, reverseKicker, stopQuestion } fro
 import { lineupOf, linkPersonOf, pickTeaser } from '../../../shared/next'
 import type { Product } from '../../../shared/types'
 import { renderVoice } from '../../../shared/voice'
-import { PROP_VIEWBOX, characterSvg, propSvg } from '../../utils/character'
+import { characterSvg } from '../../utils/character'
 import { MOTION, autoDwellMs, reducedMotion } from '../../utils/motion'
 import { productIconSvg } from '../../utils/product-icon'
 
@@ -459,11 +459,10 @@ function followTeaser(p: Product) {
         <section v-if="current.type === 'stage'" class="stage">
           <p v-if="kicker" class="kicker-q">{{ kicker }}</p>
           <!-- 건네기: 지금 사람이 앞사람에게서 물건을 받아 든다 -->
-          <span v-if="reverse && currentForm && !reduced" class="handover" aria-hidden="true">
-            <!-- eslint-disable vue/no-v-html -- 직접 그린 SVG -->
-            <svg v-if="currentForm.prop" :viewBox="PROP_VIEWBOX" width="40" height="40" v-html="propSvg(currentForm.prop)" />
+          <span v-if="reverse && currentForm && (currentForm.icon || currentForm.product) && !reduced" class="handover" aria-hidden="true">
+            <img v-if="currentForm.icon" :src="`/forms/${currentForm.icon}.svg`" alt="" width="40" height="40">
+            <!-- eslint-disable-next-line vue/no-v-html -- 직접 그린 SVG -->
             <svg v-else viewBox="0 0 32 32" width="40" height="40" v-html="productIconSvg(productId)" />
-            <!-- eslint-enable vue/no-v-html -->
           </span>
           <PersonCard :person-id="current.personId" :is-new="journey.newCards.includes(current.personId)" />
           <div v-if="stop" class="stop panel">
@@ -619,7 +618,7 @@ function followTeaser(p: Product) {
 .stage { position: relative; animation: pop-in var(--motion-enter) var(--motion-ease); }
 .kicker-q { margin: 0 0 8px; font-family: var(--font-display); font-size: 20px; line-height: 1.35; word-break: keep-all; }
 
-.rewind { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 12px; }
+.rewind { display: flex; flex-direction: column; gap: 6px; }
 .km { margin: 0; font-size: 13px; color: var(--muted); }
 .km strong { color: var(--accent); font-weight: 500; }
 

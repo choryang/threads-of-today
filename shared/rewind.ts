@@ -9,12 +9,13 @@ import { PLACES } from './data/places'
 import { forwardTimeline, materialRoute, type TimelineItem } from './journey'
 import { withJosa } from './logic'
 import { hash } from './random'
-import type { Place, Prop } from './types'
+import type { Place } from './types'
 
-/** 화면에 보여 줄 형태. prop이 없으면 완성된 물건(물건 아이콘으로 그린다) */
+/** 화면에 보여 줄 형태. product: 완성된 물건(물건 아이콘으로 그린다) / icon: 형태 아이콘 slug */
 export interface ShownForm {
   name: string
-  prop?: Prop
+  icon?: string
+  product?: true
 }
 
 /** 우리나라·바다는 장소 이름만, 나라 밖은 이름에 나라가 없으면 앞에 붙인다 */
@@ -29,14 +30,14 @@ export function placeLabel(place: Place): string {
  */
 export function formsAlong(timeline: TimelineItem[], materialIds: string[], journeyId: string | undefined, itemName: string): ShownForm[] {
   const routes = new Map(materialIds.map((id) => [id, materialRoute(materialIds, journeyId, id)]))
-  const product: ShownForm = { name: itemName }
+  const product: ShownForm = { name: itemName, product: true }
   let last: ShownForm = product
   return timeline.map((t) => {
     if (t.type === 'stage' && t.closing) last = product
     else if (t.type === 'stage' || t.type === 'pass') {
       const personId = t.type === 'stage' ? t.personId : t.personIds[t.personIds.length - 1]!
       const f = formAt(t.materialId, routes.get(t.materialId) ?? [], personId)
-      if (f) last = { name: f.name, prop: f.prop }
+      if (f) last = { name: f.name, ...(f.formIcon ? { icon: f.formIcon } : {}) }
     }
     return last
   })

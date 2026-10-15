@@ -67,7 +67,8 @@ test('되감기 변신: 거꾸로 가면 완성품 → 가공품 → 원재료',
   const t = buildTimeline(['coffee'], id, '아이스 아메리카노')
   const forms = formsAlong(t, ['coffee'], id, '아이스 아메리카노')
   assert.equal(forms[0]?.name, '아이스 아메리카노')
-  assert.equal(forms[0]?.prop, undefined)
+  assert.equal(forms[0]?.product, true)
+  assert.equal(forms[2]?.icon, 'roasted-coffee-beans')
   const names = [...new Set(forms.slice(2).map((f) => f.name))]
   const order = FORMS.coffee!.map((f) => f.name)
   // 형태가 가공 순서의 거꾸로만 바뀐다

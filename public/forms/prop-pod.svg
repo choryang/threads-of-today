@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="268 282 247 247" width="128" height="128">
+<!-- prop-pod: 카카오 꼬투리 -->
+
+<path d="M392 340 Q442 368 438 424 Q432 478 392 490 Q352 478 346 424 Q342 368 392 340 Z" fill="#D9822B" stroke="#2A2A35" stroke-width="8" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M392 346 V484 M372 352 Q362 420 376 484 M412 352 Q422 420 408 484" fill="none" stroke="#B5651D" stroke-width="6"/>
+<path d="M392 340 V320" stroke="#7A5A2A" stroke-width="9" stroke-linecap="round"/>
+</svg>

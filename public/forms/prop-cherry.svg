@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="333 333 166 166" width="128" height="128">
+<!-- prop-cherry: 빨간 커피 열매 -->
+
+<path d="M370 470 Q396 420 420 380" fill="none" stroke="#5A8F4E" stroke-width="8" stroke-linecap="round"/>
+<ellipse cx="440" cy="384" rx="22" ry="12" fill="#6DBA6A" stroke="#2A2A35" stroke-width="8" stroke-linejoin="round" stroke-linecap="round" transform="rotate(-30 440 384)"/>
+<circle cx="384" cy="430" r="18" fill="#D2463A" stroke="#2A2A35" stroke-width="8" stroke-linejoin="round" stroke-linecap="round"/><circle cx="408" cy="414" r="18" fill="#B8352B" stroke="#2A2A35" stroke-width="8" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="404" cy="446" r="18" fill="#D2463A" stroke="#2A2A35" stroke-width="8" stroke-linejoin="round" stroke-linecap="round"/><circle cx="428" cy="430" r="16" fill="#E0705F" stroke="#2A2A35" stroke-width="8" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="378" cy="424" r="5" fill="#fff" opacity=".6"/>
+</svg>

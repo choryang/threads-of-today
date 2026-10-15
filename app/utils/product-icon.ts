@@ -1,5 +1,5 @@
 /**
- * 대표 물건 아이콘 (viewBox 0 0 32 32). 캐릭터 소품(character.ts propSvg)과 같은 색·선 굵기로 그린다.
+ * 대표 물건 아이콘 (viewBox 0 0 32 32). 캐릭터 소품(app/assets/character/prop-*.svg)과 같은 색·선 굵기로 그린다.
  * 대표 물건을 추가했는데 아이콘이 없으면 상자 모양으로 보인다.
  */
 const L = '#2A2A35'
