@@ -90,3 +90,29 @@ export async function setIfAbsent(key: string, value: string, ttlSeconds: number
 export function hashIp(ip: string): string {
   return createHash('sha256').update(`${process.env.NUXT_IP_SALT ?? 'my-day-people'}:${ip}`).digest('base64url').slice(0, 16)
 }
+
+/** incrementCounter로 센 값들을 읽는다. 없는 키는 0 */
+export async function readCounters(keys: string[]): Promise<number[]> {
+  if (!keys.length) return []
+  const r = redisClient()
+  if (r) {
+    const values = await r.mget<(number | string | null)[]>(...keys.map((k) => `${KV_PREFIX}:${k}`))
+    return values.map((v) => Number(v ?? 0) || 0)
+  }
+  return Promise.all(keys.map(async (k) => (await kv().getItem<number>(k)) ?? 0))
+}
+
+/** incrementScores로 센 점수 중 몇 이름만 읽는다. 없는 이름은 0 */
+export async function readScoresOf(key: string, members: string[]): Promise<number[]> {
+  if (!members.length) return []
+  const r = redisClient()
+  if (r) {
+    const full = `${KV_PREFIX}:${key}`
+    const p = r.pipeline()
+    for (const m of members) p.zscore(full, m)
+    const values = await p.exec<(number | null)[]>()
+    return values.map((v) => Number(v ?? 0) || 0)
+  }
+  const counts = (await kv().getItem<Record<string, number>>(key)) ?? {}
+  return members.map((m) => counts[m] ?? 0)
+}

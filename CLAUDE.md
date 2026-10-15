@@ -44,9 +44,11 @@ shared/                 앱과 서버가 상대 경로로 함께 import (Nuxt �
 server/
   api/decompose.post.ts 텍스트·사진 → 재료 id. 로컬 매칭 → 공유 캐시 → (IP별 하루 한도 안에서) Claude → 캐시 저장
   api/profile/          index(익명 id·복구 코드 발급) · sync · restore
+  api/thanks/           다른 사람들의 고마움: POST(고마워요 1번 세기, 같은 기기·같은 날·같은 사람은 한 번) · GET ?ids=(오늘 수·누적 수)
   plugins/kv.ts         useStorage('kv'): Upstash(env 있을 때) / 개발 .data/kv 파일 / 그 밖 메모리
   utils/kv.ts           incrementCounter(INCR+EXPIRE), incrementScores(ZINCRBY), setIfAbsent, hashIp. 키는 Redis에서 mdp: 아래
   utils/ai-cache.ts     캐시 읽기·쓰기(hits, firstSeen), allowAiCall(한국 자정 기준), countMissing(준비 중 재료 집계)
+  utils/gratitude.ts    고마움 수 키(thanks:day·thanks:total·thanks:seen). 사람 한 명씩만 읽고 순위는 만들지 않는다
   utils/users.ts        user:{id}(메타+진행 상황 한 값), code:{code}→id. 나중 로그인 연결 구조 주석
   utils/matcher.ts      대표 물건 + 물건 사전으로 만든 서버 매처 (사전을 클라이언트 번들에 넣지 않으려고 서버에 둔다)
   utils/decompose.ts    Claude Messages API 호출. SYSTEM·buildTool을 사전 스크립트와 공유. voice/twist는 looksFactual로 거름

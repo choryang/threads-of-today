@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { PEOPLE } from '../../shared/data/people'
 import { PLACES } from '../../shared/data/places'
 import { placeLabel as labelOf } from '../../shared/rewind'
@@ -16,6 +16,11 @@ const met = computed(() => game.owns(props.personId))
 const thanked = computed(() => game.thanked(props.personId))
 const reply = computed(() => (thanked.value ? thanksReply(props.personId) : ''))
 
+// 다른 사람들의 고마움: 만난 사람 카드에서만 읽는다
+const gratitude = useGratitude()
+watch([() => props.personId, met], ([id, isMet]) => { if (isMet) void gratitude.load(id) }, { immediate: true })
+const others = computed(() => gratitude.counts[props.personId])
+
 /** 일의 크기 한 줄을 누르면 출처를 펼친다 */
 const showSource = ref(false)
 
@@ -23,7 +28,7 @@ const showSource = ref(false)
 const waving = ref(false)
 let waveTimer: ReturnType<typeof setTimeout> | undefined
 function thank() {
-  game.thank(props.personId)
+  if (game.thank(props.personId) !== null) void gratitude.send(props.personId)
   waving.value = true
   clearTimeout(waveTimer)
   waveTimer = setTimeout(() => { waving.value = false }, MOTION.waveMs)
@@ -68,6 +73,10 @@ onBeforeUnmount(() => clearTimeout(waveTimer))
             {{ person.name ? `${person.name}에게 ` : '' }}고마움을 전했어요
           </p>
         </template>
+        <p v-if="others && others.total" class="others">
+          <strong>오늘 {{ others.today.toLocaleString('ko-KR') }}명이 고마워했어요</strong>
+          <span>지금까지 {{ others.total.toLocaleString('ko-KR') }}번</span>
+        </p>
       </div>
     </div>
   </article>
@@ -132,6 +141,8 @@ onBeforeUnmount(() => clearTimeout(waveTimer))
 .fact-source { margin: 0; padding: 0 4px; font-size: 12px; line-height: 1.5; color: #4a4a4a; word-break: keep-all; }
 .fact-source a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 4px; color: #6b4e00; font-weight: 700; }
 .thanks { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
+.others { margin: 2px 0 0; display: flex; flex-wrap: wrap; gap: 2px 8px; align-items: baseline; font-size: 13px; color: #4a4a4a; }
+.others strong { color: var(--ink); font-size: 14px; }
 .thank-btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 6px;
   min-height: 44px; padding: 0 18px; align-self: flex-start;
