@@ -20,7 +20,8 @@
     "scenes": "tsx scripts/build-scenes.ts",
     "scenes:gen": "tsx scripts/gen-scenes.ts",
     "holidays": "tsx scripts/build-holidays.ts",
-    "key-candidates": "tsx scripts/key-candidates.ts"
+    "key-candidates": "tsx scripts/key-candidates.ts",
+    "mood-tags": "tsx scripts/mood-tags.ts"
   },
   "dependencies": {
     "@upstash/redis": "^1.39.0",

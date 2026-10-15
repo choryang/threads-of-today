@@ -1,4 +1,5 @@
-import { KEY_STORIES } from './data/stories'
+import type { MoodId } from './data/moods'
+import { KEY_STORIES, type Episode } from './data/stories'
 
 /**
  * 핵심 인물 이야기를 보여 주는 규칙 (docs/key-people.md). 문구는 shared/data/stories.ts.
@@ -8,11 +9,16 @@ import { KEY_STORIES } from './data/stories'
  * - 한 편짜리(story)도 한 편으로 센다. 이야기가 없는 사람은 세지 않는다(나중에 이야기가 생기면 첫 편부터).
  */
 
-/** 이 사람의 이야기 편들 (episodes, 없으면 story 한 편, 둘 다 없으면 빈 목록) */
-export function storyEpisodes(personId: string): string[] {
+/** 이 사람의 이야기 편들과 마음 태그 (episodes, 없으면 story 한 편(태그 없음), 둘 다 없으면 빈 목록) */
+export function storyEpisodeList(personId: string): Episode[] {
   const s = KEY_STORIES[personId]
   if (s?.episodes?.length) return s.episodes
-  return s?.story ? [s.story] : []
+  return s?.story ? [{ moods: [] as MoodId[], text: s.story }] : []
+}
+
+/** 이 사람의 이야기 편 글 */
+export function storyEpisodes(personId: string): string[] {
+  return storyEpisodeList(personId).map((e) => e.text)
 }
 
 /** 이번에 보여 줄 편 번호(0부터). 이미 다 봤으면 null */

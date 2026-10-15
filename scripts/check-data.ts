@@ -7,6 +7,7 @@ import { DEFAULT_HOURS, DOING, DOING_DEFAULT } from '../shared/data/doing'
 import { COUNTRY_CODE, HOLIDAY_YEARS, holidayCountries } from '../shared/data/calendar'
 import { PERSON_SCENE, SCENES } from '../shared/data/scenes'
 import { KEY_STORIES } from '../shared/data/stories'
+import { isMoodId } from '../shared/data/moods'
 import dictionary from '../shared/data/dictionary.json'
 import { EVENTS, HIDDEN_RULES } from '../shared/data/journey-extras'
 import { SYNONYM_GROUPS } from '../shared/data/synonyms'
@@ -118,7 +119,12 @@ for (const [pid, story] of Object.entries(KEY_STORIES)) {
     errors.push(`이야기 ${pid}: 사람 없음`)
     continue
   }
-  const texts = [story.story, ...(story.episodes ?? [])].filter((t): t is string => !!t)
+  const texts = [story.story, ...(story.episodes ?? []).map((e) => e.text)].filter((t): t is string => !!t)
+  // 마음 태그: 편마다 하나 이상, 아는 마음 id만 (docs/redesign/mood-tags.md에서 검토)
+  ;(story.episodes ?? []).forEach((e, i) => {
+    if (!e.moods.length) errors.push(`이야기 ${pid} ${i + 1}편: 마음 태그가 없음`)
+    for (const m of e.moods) if (!isMoodId(m)) errors.push(`이야기 ${pid} ${i + 1}편: 모르는 마음 '${m}'`)
+  })
   if (!texts.length) errors.push(`이야기 ${pid}: story나 episodes가 없음`)
   if (story.seasons && story.seasons.length * EPISODES_PER_SEASON !== (story.episodes?.length ?? 0)) {
     errors.push(`이야기 ${pid}: 시즌 ${story.seasons.length}개 × ${EPISODES_PER_SEASON}편 = ${story.seasons.length * EPISODES_PER_SEASON}편이어야 하는데 ${story.episodes?.length ?? 0}편`)

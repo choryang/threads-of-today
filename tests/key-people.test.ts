@@ -119,7 +119,7 @@ test("'-k'가 없는 예전 여정은 타임라인 그대로", () => {
 })
 
 test('이야기: 본 편 수대로 다음 편, 다 보면 없음, 편이 더해지면 이어서. 카드에는 본 편만', () => {
-  const eps = KEY_STORIES['sea-crew']!.episodes!
+  const eps = KEY_STORIES['sea-crew']!.episodes!.map((e) => e.text)
   assert.deepEqual(storyEpisodes('sea-crew'), eps)
   assert.equal(nextEpisode('sea-crew', 0), 0)
   assert.equal(nextEpisode('sea-crew', 1), 1)
