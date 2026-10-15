@@ -39,6 +39,9 @@ export const MOTION = {
   heartMs: 1200,
   /** 단짝 연출 문구("단짝이 됐어요 · …")가 떠 있는 시간 */
   bestFriendMs: 3500,
+  /** 여정을 마치고 마을로 모실 때 이번에 만난 사람이 자리로 걸어오는 시간, 사람 사이 간격 (화면을 옮긴 뒤 시작) */
+  walkInMs: 1200,
+  walkStaggerMs: 120,
 } as const
 
 /** 자동으로 넘어가는 화면이 머무는 시간. 글자 수에 비례하고 최소·최대 사이로 자른다 */
@@ -67,5 +70,7 @@ export function motionCssVars(): Record<string, string> {
     '--motion-pan': `${MOTION.panMs}ms`,
     '--motion-bloom': `${MOTION.bloomMs}ms`,
     '--motion-heart': `${MOTION.heartMs}ms`,
+    '--motion-walk': `${MOTION.walkInMs}ms`,
+    '--motion-walk-stagger': `${MOTION.walkStaggerMs}ms`,
   }
 }

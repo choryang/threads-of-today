@@ -5,7 +5,7 @@ import { HOME_POINT, MAP_H, MAP_W, RESIDENT_H, RESIDENT_W, WORKPLACES, ZONES } f
 import type { Placed } from '../../shared/village'
 import { flowerColor, flowerLabel, type Flower } from '../../shared/visit'
 import { MOTION, reducedMotion } from '../utils/motion'
-import { FAR_SCALE, FAR_TAP_SCALE, centerOn, hitBox, zoneLabelScale, type View } from '../utils/pan-zoom'
+import { FAR_SCALE, FAR_TAP_SCALE, centerOn, fitBox, hitBox, zoneLabelScale, type View } from '../utils/pan-zoom'
 
 /**
  * 마을 지도 (내 마을과 친구 마을이 같이 쓴다): 지도·구역 이름표·주민·빈 집터·도착 예정·단짝 표시·일터 자리·꽃, 확대·축소·우리 집 버튼.
@@ -141,7 +141,35 @@ function celebrate(p: Placed): Promise<void> {
   })
 }
 
+// ── 마을로 모시기: 이번에 만난 사람들이 모두 보이게 옮긴 뒤, 한 명씩 자리로 걸어온다 ──
+/** 걸어오는 주민 id → 순서 (CSS 애니메이션 지연) */
+const walking = ref<Record<string, number>>({})
+let walkTimer: ReturnType<typeof setTimeout> | undefined
+onBeforeUnmount(() => clearTimeout(walkTimer))
+function walkIn(ids: string[]): Promise<void> {
+  const spots = props.residents.filter((r) => ids.includes(r.id))
+  if (!spots.length) return Promise.resolve()
+  // 캐릭터 머리 위·좌우와 걸어오는 거리만큼 여유를 둔 상자
+  const x0 = Math.min(...spots.map((r) => r.x)) - 220
+  const x1 = Math.max(...spots.map((r) => r.x)) + 120
+  const y0 = Math.min(...spots.map((r) => r.y)) - RESIDENT_H - 80
+  const y1 = Math.max(...spots.map((r) => r.y)) + 80
+  const fit = fitBox(x0, y0, x1, y1, pz.size())
+  pz.goTo((x0 + x1) / 2, (y0 + y1) / 2, fit.scale, true)
+  if (reducedMotion()) return Promise.resolve()
+  walking.value = Object.fromEntries(spots.map((r, i) => [r.id, i]))
+  return new Promise((resolve) => {
+    clearTimeout(walkTimer)
+    walkTimer = setTimeout(() => {
+      walking.value = {}
+      resolve()
+    }, MOTION.panMs + MOTION.walkInMs + MOTION.walkStaggerMs * (spots.length - 1))
+  })
+}
+
 defineExpose({
+  /** 이번 여정에서 만난 사람들이 자리로 걸어온다 (줄인 움직임 설정이면 화면만 옮긴다). 끝나면 resolve */
+  walkIn,
   /** 한 주민 자리로 화면을 옮긴다 */
   focus: (p: Placed) => pz.goTo(p.x, p.y - RESIDENT_H / 2, Math.max(pz.view().scale, 0.8), true),
   /** 단짝이 된 순간 연출 (옮기기 → 하트). 끝나면 resolve */
@@ -171,13 +199,13 @@ defineExpose({
         v-for="r in residents"
         :key="r.id"
         class="resident"
-        :class="{ best: best.has(r.id), cheer: cheering === r.id }"
+        :class="{ best: best.has(r.id), cheer: cheering === r.id, walking: r.id in walking }"
         :style="hitStyle(r)"
         :aria-label="`${nameOf(r.id)} · ${jobOf(r.id)}${best.has(r.id) ? ' · 단짝' : ''} 주민 카드 보기`"
         draggable="false"
         @click="tapResident(r)"
       >
-        <span class="body" :style="{ width: `${RESIDENT_W}px`, height: `${RESIDENT_H}px` }">
+        <span class="body" :style="{ width: `${RESIDENT_W}px`, height: `${RESIDENT_H}px`, '--i': walking[r.id] ?? 0 }">
           <svg v-if="best.has(r.id)" class="glow" width="150" height="56" viewBox="0 0 150 56" aria-hidden="true">
             <ellipse cx="75" cy="28" rx="70" ry="24" fill="#F2C14E" opacity=".35" />
             <ellipse cx="75" cy="28" rx="62" ry="19" fill="none" stroke="#F2C14E" stroke-width="7" />
@@ -252,6 +280,20 @@ defineExpose({
 .glow { position: absolute; left: -5px; top: 162px; }
 .heart { position: absolute; left: 48px; top: -58px; transform-origin: 50% 90%; }
 .resident.cheer .heart { animation: heart-pop var(--motion-heart) var(--motion-ease); }
+/* 자리로 걸어오기: 화면을 옮긴 뒤(--motion-pan) 한 명씩, 왼쪽에서 통통 걸어 들어온다 */
+.resident.walking .body {
+  animation: walk-in var(--motion-walk) linear both;
+  animation-delay: calc(var(--motion-pan) + var(--i) * var(--motion-walk-stagger));
+}
+@keyframes walk-in {
+  0% { transform: translate(-150px, 0); opacity: 0; }
+  15% { opacity: 1; }
+  20% { transform: translate(-120px, -10px); }
+  40% { transform: translate(-90px, 0); }
+  60% { transform: translate(-60px, -10px); }
+  80% { transform: translate(-30px, 0); }
+  100% { transform: translate(0, 0); opacity: 1; }
+}
 @keyframes heart-pop {
   0% { transform: scale(1); }
   35% { transform: scale(2.2); }

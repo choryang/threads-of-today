@@ -142,12 +142,14 @@ async function saveTogether() {
       <button class="show" :disabled="shown" @click="showBack">{{ shown ? `${friend.nickname}님에게 보여 줬어요` : `${friend.nickname}님에게 내 하루 보여주기` }}</button>
     </section>
 
+    <!-- 큰 버튼은 하나: 만나러 가기. 저장·보내기는 그 아래 작은 글자 버튼 -->
     <div class="actions">
-      <div class="two">
-        <button class="ghost" :disabled="busy" @click="saveImage">이미지로 저장</button>
-        <button class="ghost" :disabled="busy" @click="send">친구에게 보내기</button>
-      </div>
       <button class="go" @click="meet">이 사람들 만나러 가기</button>
+      <div class="small-actions">
+        <button class="text-btn" :disabled="busy" @click="saveImage">이미지로 저장</button>
+        <span aria-hidden="true">·</span>
+        <button class="text-btn" :disabled="busy" @click="send">친구에게 보내기</button>
+      </div>
       <p v-if="message" class="message" role="status">{{ message }}</p>
     </div>
   </main>
@@ -171,12 +173,17 @@ async function saveTogether() {
 .together .ghost { border-color: #1a1a22; color: #1a1a22; }
 .wide { width: 100%; }
 .actions { margin-top: auto; padding: 20px 16px 0; display: flex; flex-direction: column; gap: 10px; }
-.two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .ghost {
   min-height: 52px; border-radius: 16px; border: 2px solid #f3f1ea; background: transparent; color: #f3f1ea;
   font-size: 15px; font-weight: 700; cursor: pointer;
 }
 .ghost:disabled { opacity: 0.6; }
+.small-actions { display: flex; justify-content: center; align-items: center; gap: 4px; color: #c9cfd9; }
+.text-btn {
+  min-height: 44px; padding: 0 10px; border: 0; background: none; color: #f3f1ea;
+  font-size: 14px; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; cursor: pointer;
+}
+.text-btn:disabled { opacity: 0.6; cursor: default; }
 .go { min-height: 56px; border-radius: 18px; border: 0; background: #f2c14e; color: #1a1a22; font-size: 17px; font-weight: 700; cursor: pointer; }
 .message { margin: 0; text-align: center; font-size: 13px; }
 </style>

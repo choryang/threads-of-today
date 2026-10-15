@@ -308,7 +308,7 @@ const reunionPerson = computed(() => (reunionCard.value ? linkPersonOf(reunionCa
 const reunionOpen = ref(true)
 
 /**
- * 다음 여정 예고. 이 여정과 같은 날 떠나야 연결 카드가 나오므로, 오늘 떠난 여정일 때만.
+ * 다음 여정 추천 한 줄("다음엔 바나나는 어때요?"). 이 여정과 같은 날 떠나야 연결 카드가 나오므로, 오늘 떠난 여정일 때만.
  * 화면에 처음 보일 때의 카드로 한 번 정한다 (예고를 따라 떠나도 이 화면의 예고가 바뀌지 않게).
  */
 const teaser = shallowRef<ReturnType<typeof pickTeaser>>(null)
@@ -370,25 +370,6 @@ function followTeaser(p: Product) {
         </div>
       </section>
 
-      <section v-if="teaser" class="teaser" aria-labelledby="next-title">
-        <div class="teaser-who">
-          <Character :person-id="teaser.personId" :size="72" bob />
-          <div class="teaser-say">
-            <p class="bubble">나는 오늘 다른 물건도 날랐어요. 뭘까요?</p>
-            <p class="small muted">{{ jobOf(teaser.personId) }}</p>
-          </div>
-        </div>
-        <h2 id="next-title" class="h2">다음 여정 추천</h2>
-        <div class="next-list">
-          <button v-for="p in teaser.products" :key="p.id" class="next" @click="followTeaser(p)">
-            <!-- eslint-disable-next-line vue/no-v-html -- 직접 그린 SVG -->
-            <svg class="next-icon" viewBox="0 0 32 32" width="40" height="40" aria-hidden="true" v-html="productIconSvg(p.id)" />
-            <span class="next-name">{{ p.name }}</span>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" class="next-go"><path d="M9 6l6 6-6 6" /></svg>
-          </button>
-        </div>
-      </section>
-
       <details class="cards">
         <summary>만난 사람 카드 <span class="mono">{{ metPeople.length + quizRewards.length }}</span>장 보기</summary>
         <div class="grid">
@@ -397,9 +378,13 @@ function followTeaser(p: Product) {
         </div>
       </details>
 
+      <!-- 큰 버튼은 하나: 마을로 모시기(이번에 만난 사람들이 자리로 걸어온다). 다음 여정 추천·다른 물건은 작은 글자 버튼 -->
       <div class="actions">
-        <NuxtLink to="/add" class="btn btn-block" :class="{ 'btn-primary': !teaser }">다른 물건 고르기</NuxtLink>
-        <NuxtLink to="/result" class="btn btn-block">오늘의 결과 카드</NuxtLink>
+        <NuxtLink :to="{ path: '/', query: { arrive: journey.id } }" class="btn btn-primary btn-block">마을로 모시기</NuxtLink>
+        <button v-if="teaser?.products[0]" class="text-btn next-line" @click="followTeaser(teaser.products[0])">
+          다음엔 {{ withJosa(teaser.products[0].name, '은', '는') }} 어때요?
+        </button>
+        <NuxtLink to="/add" class="text-btn">다른 물건 고르기</NuxtLink>
       </div>
 
       <!-- 추천을 따라와 다시 만난 사람: 평소 연결 카드보다 크게 -->
@@ -692,28 +677,12 @@ function followTeaser(p: Product) {
 .touched { margin: 0; font-size: 17px; line-height: 1.5; word-break: keep-all; }
 .touched strong { color: var(--accent); font-size: 22px; font-weight: 500; }
 
-.teaser {
-  display: flex; flex-direction: column; gap: 10px;
-  padding: 16px; border-radius: 18px; background: var(--surface); border: 1px solid var(--line);
-  animation: rise var(--motion-enter) var(--motion-ease) calc(var(--motion-enter) * 3) both;
+.text-btn {
+  align-self: center; min-height: 44px; padding: 0 12px; border: 0; background: none; color: var(--text);
+  display: inline-flex; align-items: center; justify-content: center;
+  font: inherit; font-size: 15px; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; cursor: pointer;
 }
-.teaser-who { display: flex; align-items: center; gap: 12px; }
-.teaser-say { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-.bubble {
-  margin: 0; padding: 10px 14px; border-radius: 14px 14px 14px 4px;
-  background: var(--paper); color: var(--ink); font-size: 15px; font-weight: 700; line-height: 1.45; word-break: keep-all;
-}
-.teaser .h2 { margin: 4px 0 0; }
-.next-list { display: flex; flex-direction: column; gap: 8px; }
-.next {
-  display: flex; align-items: center; gap: 12px;
-  min-height: 60px; padding: 8px 14px; border-radius: 14px;
-  background: var(--ground); border: 1px solid var(--accent); color: var(--text); text-align: left;
-}
-.next:active { transform: scale(0.98); }
-.next-icon { flex-shrink: 0; padding: 4px; border-radius: 999px; background: var(--paper); }
-.next-name { flex: 1; font-size: 15px; font-weight: 700; }
-.next-go { color: var(--accent); flex-shrink: 0; }
+.next-line { color: var(--accent); }
 
 .cards summary {
   min-height: 44px; display: flex; align-items: center; gap: 4px; cursor: pointer;

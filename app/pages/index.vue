@@ -3,7 +3,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { PEOPLE } from '../../shared/data/people'
 import { WORKPLACES } from '../../shared/data/village'
 import { UNLOCK } from '../../shared/friendship'
-import { withJosa } from '../../shared/logic'
+import { dayStats, withJosa } from '../../shared/logic'
 import { arrivalShort, isArrived, isWaiting } from '../../shared/incoming'
 import { villageShareTitle } from '../../shared/share'
 import { countriesOf, villageLayout, type Placed } from '../../shared/village'
@@ -18,7 +18,7 @@ const game = useGame()
 const route = useRoute()
 const router = useRouter()
 const villageLink = useVillageLink()
-const map = ref<{ focus: (p: Placed) => void; celebrate: (p: Placed) => Promise<void> } | null>(null)
+const map = ref<{ focus: (p: Placed) => void; celebrate: (p: Placed) => Promise<void>; walkIn: (ids: string[]) => Promise<void> } | null>(null)
 
 // ── 오고 있는 물건: 1분마다 진행 막대를 새로 그린다 ──
 const now = ref(Date.now())
@@ -143,9 +143,21 @@ async function renewLink() {
 const acceptVisits = computed(() => villageLink.link.value?.open ?? true)
 const visited = computed(() => game.state.visitedVillages ?? [])
 
-/** ?focus=사람 id: 그 사람 자리로 화면을 옮긴다 (밤사이 도착한 주민을 마을로 모실 때) */
+/** 마을로 모시기(?arrive=여정 id): 그 여정에서 만난 사람 중 마을 주민 (연결 카드는 이미 사는 원래 사람이다) */
+function arrivedPeople(journeyId: string): string[] {
+  const j = game.findJourney(journeyId)
+  if (!j) return []
+  const met = new Set([...dayStats([j]).people, ...j.newCards])
+  return layout.value.residents.map((r) => r.id).filter((id) => met.has(id))
+}
+
+/**
+ * ?focus=사람 id: 그 사람 자리로 화면을 옮긴다 (밤사이 도착한 주민을 마을로 모실 때)
+ * ?arrive=여정 id: 여정 끝의 '마을로 모시기'. 이번에 만난 사람들이 자리로 걸어온다
+ */
 onMounted(async () => {
   const focus = typeof route.query.focus === 'string' ? route.query.focus : ''
+  const arrive = typeof route.query.arrive === 'string' ? route.query.arrive : ''
   // 처음 온 사람(만난 사람도 떠난 여정도 없음)은 10초 테스트부터
   if (game.firstVisit.value && !Object.values(game.state.days).some((d) => d.journeys.length)) {
     router.replace('/test')
@@ -153,11 +165,18 @@ onMounted(async () => {
   }
   // 도착했는데 아직 열지 않은 물건이 있으면 도착 화면부터 (도착 후 처음 열 때)
   const due = waiting.value.find((x) => isArrived(x, Date.now()))
-  if (!focus && due) {
+  if (!focus && !arrive && due) {
     router.replace(`/arrival/${due.journeyId}`)
     return
   }
   void loadVillageSocial()
+  if (arrive) {
+    router.replace({ query: {} })
+    await nextTick()
+    await map.value?.walkIn(arrivedPeople(arrive))
+    void celebrateNext()
+    return
+  }
   if (!focus) {
     await nextTick()
     void celebrateNext()

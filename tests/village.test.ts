@@ -3,7 +3,7 @@ import { test } from 'node:test'
 import { PEOPLE_LIST } from '../shared/data/people'
 import { HOME_POINT, MAP_H, MAP_W, ZONES, ZONE_BY_ID } from '../shared/data/village'
 import { OVERFLOW_GAP, emptyLots, placeAll, villageLayout, villagers } from '../shared/village'
-import { FAR_SCALE, HIT_BELOW, MAX_SCALE, MIN_HIT_PX, centerOn, clampScale, clampView, hitBox, minScale, zoneLabelScale, zoomAt, type Size } from '../app/utils/pan-zoom'
+import { FAR_SCALE, HIT_BELOW, fitBox, MAX_SCALE, MIN_HIT_PX, centerOn, clampScale, clampView, hitBox, minScale, zoneLabelScale, zoomAt, type Size } from '../app/utils/pan-zoom'
 
 const stage = PEOPLE_LIST.filter((p) => p.kind !== 'link')
 
@@ -130,4 +130,16 @@ test('친구 마을: 링크의 주민 순서로 placeAll하면 주인 마을과 
   // 새 지도에서는 구역 자리가 넉넉해서 모두 자리(slot) 위에 선다
   const all = placeAll(stage.map((p) => p.id))
   for (const p of all) assert.ok(ZONE_BY_ID[p.zone].slots.some(([x, y]) => x === p.x && y === p.y), p.id)
+})
+
+test('마을로 모시기: 이번에 만난 사람들 상자가 화면에 다 들어오는 배율(최대 0.6)로 가운데에', () => {
+  // 작은 상자는 0.6배 그대로
+  const near = fitBox(1000, 2000, 1300, 2300, PHONE)
+  assert.equal(near.scale, 0.6)
+  // 섬 위아래로 퍼진 사람들은 높이에 맞춰 줄인다
+  const wide = fitBox(300, 500, 2400, 3800, PHONE)
+  assert.ok(Math.abs(wide.scale - Math.min(390 / 2100, 844 / 3300)) < 1e-9)
+  assert.ok(wide.scale * 2100 <= 390 + 1e-9 && wide.scale * 3300 <= 844 + 1e-9)
+  // 지도 최소 배율보다는 작아지지 않는다
+  assert.ok(fitBox(0, 0, MAP_W * 3, MAP_H * 3, PHONE).scale >= 390 / MAP_W - 1e-12)
 })

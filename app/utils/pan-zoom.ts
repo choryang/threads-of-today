@@ -60,6 +60,15 @@ export function centerOn(mx: number, my: number, scale: number, s: Size): View {
   return clampView({ x: s.vw / 2 - mx * sc, y: s.vh / 2 - my * sc, scale: sc }, s)
 }
 
+/**
+ * 지도 위 상자(x0, y0, x1, y1)가 화면에 다 들어오게: 상자 가운데를 화면 가운데에 두고, 들어가는 가장 큰 배율(maxScale 이하).
+ * 마을로 모실 때 이번에 만난 사람들이 모두 보이게 쓴다
+ */
+export function fitBox(x0: number, y0: number, x1: number, y1: number, s: Size, maxScale = 0.6): View {
+  const scale = Math.min(maxScale, s.vw / Math.max(1, x1 - x0), s.vh / Math.max(1, y1 - y0))
+  return centerOn((x0 + x1) / 2, (y0 + y1) / 2, scale, s)
+}
+
 /** 주민 누르는 영역 (지도 좌표): 가로 140, 세로 210(발끝 아래 20까지). 캐릭터 그림(140×190)보다 넉넉하다 */
 export const HIT_W = 140
 export const HIT_H = 210
