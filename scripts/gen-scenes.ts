@@ -9,8 +9,8 @@
  *
  * - 키는 .env.local의 GEMINI_API_KEY에서만 읽는다(다른 값은 읽지 않고, 키를 출력하지 않는다).
  * - 프롬프트는 "## <장면 id>" 아래 ```text 블록 그대로. 블록이 없는 장면('있음')은 건너뛴다.
- * - 요청마다 art/style-ref.png를 참고 이미지로 붙인다(없고 art/style-ref.webp만 있으면 그것을).
- * - 4:3, 2K. 동시 요청 2개. 429·5xx는 최대 3번 다시 시도. 그림 없이 글만 오거나 막히면 그 응답을 로그로 남기고 다음 장면으로.
+ * - 요청마다 art/style-ref.webp(시다마 커피 밭 그림)를 참고 이미지로 붙인다.
+ * - 4:3, 2K (imageConfig의 aspectRatio·imageSize). 동시 요청 2개. 429·5xx는 최대 3번 다시 시도. 그림 없이 글만 오거나 막히면 그 응답을 로그로 남기고 다음 장면으로.
  * - 로그: data/review/gen-scenes.log (커밋하지 않는 폴더)
  */
 import { existsSync, mkdirSync, readFileSync, renameSync, appendFileSync } from 'node:fs'
@@ -32,10 +32,7 @@ const path = (p: string) => new URL(p, root)
 const PROMPTS = path('docs/scenes/prompts.md')
 const OUT_DIR = path('art/scenes/')
 const LOG = path('data/review/gen-scenes.log')
-const STYLE_REFS = [
-  { file: path('art/style-ref.png'), mimeType: 'image/png' },
-  { file: path('art/style-ref.webp'), mimeType: 'image/webp' },
-]
+const STYLE_REF = { file: path('art/style-ref.webp'), mimeType: 'image/webp' }
 
 // ── 옵션 ──
 const args = process.argv.slice(2)
@@ -100,12 +97,11 @@ console.log(`예상 비용: 약 ${cost(targets.length)} (장당 약 $${COST_PER_
 if (dryRun || !targets.length) process.exit(0)
 
 // ── 참고 이미지 ──
-const ref = STYLE_REFS.find((r) => existsSync(r.file))
-if (!ref) {
-  console.error('art/style-ref.png가 없어요. 참고 그림을 넣고 다시 실행해 주세요.')
+const ref = STYLE_REF
+if (!existsSync(ref.file)) {
+  console.error('art/style-ref.webp가 없어요. 참고 그림을 넣고 다시 실행해 주세요.')
   process.exit(1)
 }
-if (ref.mimeType !== 'image/png') console.log('art/style-ref.png가 없어 art/style-ref.webp를 참고 그림으로 써요.')
 const refData = readFileSync(ref.file).toString('base64')
 
 // ── 키: .env.local의 GEMINI_API_KEY만 ──
@@ -153,7 +149,7 @@ async function generate(scene: ScenePrompt): Promise<Result> {
     try {
       const res = await ai.models.generateContent({
         model: MODEL,
-        contents: [{ role: 'user', parts: [{ text: scene.prompt! }, { inlineData: { mimeType: ref!.mimeType, data: refData } }] }],
+        contents: [{ role: 'user', parts: [{ text: scene.prompt! }, { inlineData: { mimeType: ref.mimeType, data: refData } }] }],
         config: { responseModalities: [Modality.IMAGE, Modality.TEXT], imageConfig: { aspectRatio: ASPECT, imageSize: SIZE } },
       })
       const parts = res.candidates?.[0]?.content?.parts ?? []
