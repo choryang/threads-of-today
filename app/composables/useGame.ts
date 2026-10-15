@@ -13,7 +13,7 @@ import { REVERSE_SUFFIX, buildTimeline, journeyOrderSuffix, quizFor, secondJourn
 import { addJourneyToThreads, backfillThreads } from '../../shared/threads'
 import { everyoneThanked, sceneKey, thanksReply, unseenScenes, type ThanksScene } from '../../shared/thanks'
 import { emptySave, type DayLog, type Journey, type JourneySource, type MysteryLog, type Save } from '../../shared/progress'
-import { isOpen, nextUnlock, openSteps, pendingNotices, silentUnlocks, unlockStats, type FeatureId, type UnlockStepId } from '../../shared/unlocks'
+import { isOpen, nextLocked, nextUnlock, openSteps, pendingNotices, silentUnlocks, stepState, unlockStats, type FeatureId, type UnlockStepId } from '../../shared/unlocks'
 
 export type { DayLog, Journey, JourneySource, MysteryLog, Save } from '../../shared/progress'
 
@@ -402,6 +402,10 @@ export function useGame() {
   const openNow = computed(() => openSteps(unlocks.value, s.unlockedOn ?? {}, seoulDateKey()))
   /** 이 기능을 보여 줄지. 링크로 들어온 화면(/d, /p, /v)은 이 함수를 쓰지 않는다 */
   const opens = (feature: FeatureId) => isOpen(feature, openNow.value)
+  /** 단계 하나의 지금 상태 (열림 / 여정 n번 더 / 며칠 뒤 / 단짝이 생기면) */
+  const unlockState = (id: UnlockStepId) => stepState(id, unlocks.value, s.unlockedOn ?? {}, seoulDateKey())
+  /** 아직 안 열린 단계 중 가장 앞 단계 (모두 열렸으면 null) */
+  const nextLockedStep = computed(() => nextLocked(unlocks.value, s.unlockedOn ?? {}, seoulDateKey()))
   /** 열렸는데 아직 안 본 알림 하나 (표 순서로 하나씩) */
   const unlockNotice = computed(() => pendingNotices(openNow.value, s.unlockSeen ?? [])[0] ?? null)
   function markUnlockSeen(id: UnlockStepId) {
@@ -445,5 +449,7 @@ export function useGame() {
     opens,
     unlockNotice,
     markUnlockSeen,
+    unlockState,
+    nextLockedStep,
   }
 }

@@ -49,7 +49,7 @@ shared/                 앱과 서버가 상대 경로로 함께 import (Nuxt �
   visit.ts              마을에 놀러 가서 꽃 남기기: 꽃(닉네임·주민·날짜) 색(구역별)·하루 한 송이·새 꽃 알림 문구, 못 만난 주민의 힌트 물건(없으면 세트 보상: setRewardOf)
   intro.ts              사람 카드 소개: 정해진 문구 4개(맛있어서는 먹는 대표 물건만), 소개 화면의 사람 크기 사실(workFactHuman), 보낸 사람 알림 문구
   unlocks.ts            기능을 여는 순서 (docs/screen-cleanup.md 표 그대로): 단계·조건(마친 여정 수·첫 단짝)·알림 문구, 순수 판정 함수.
-                        화면은 game.opens(기능)만 보고 보여 준다. 열림은 서울 날짜로 하루에 하나씩(연 날짜 Save.unlockedOn, 이른 날짜). 본 알림은 Save.unlockSeen(합집합). 링크로 들어온 화면(/d·/p·/v)은 조건과 상관없이
+                        화면은 game.opens(기능)만 보고 보여 준다. 잠긴 단계도 stepState·nextLocked로 남은 조건을 보여 준다(마을 한 줄·메뉴 열리는 기능·도감 탭). 열림은 서울 날짜로 하루에 하나씩(연 날짜 Save.unlockedOn, 이른 날짜). 본 알림은 Save.unlockSeen(합집합). 링크로 들어온 화면(/d·/p·/v)은 조건과 상관없이
   today.ts              모두의 오늘: 숫자 포맷, "오늘 1,203명이 이 분을 만났어요"·여정 끝 합 문구, 사람마다 하루 한 번만 보내기, 스냅샷(MEET_SNAPSHOT_MINUTES, 기본 30분)·스냅샷 뒤 내 몫 더하기
   cleanup.ts            날짜 키 청소 규칙: 기간 없이 두는 meet:*·thanks:day:* 중 어제보다 이전 것
   character-svg.ts      캐릭터 SVG 조립(순수 함수)과 피부색. 앱(app/utils/character.ts)과 OG 스크립트가 같이 쓴다

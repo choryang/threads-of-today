@@ -44,17 +44,19 @@ export interface UnlockStep {
   features: FeatureId[]
   /** 새로 열릴 때 마을 위에 한 번 띄우는 알림. 첫날은 없다 */
   notice?: string
+  /** 마을 메뉴 '열리는 기능' 목록의 이름 */
+  label?: string
 }
 
 export const UNLOCK_STEPS: UnlockStep[] = [
   { id: 'day1', when: {}, features: ['test', 'journey', 'village', 'thanks', 'incoming'] },
   // 두 번째 여정부터 여정 속 퀴즈가 나온다(여정 id로). 알림은 두 번째 여정을 마친 뒤 마을에서
-  { id: 'second-journey', when: { journeys: 2 }, features: ['journey-extras'], notice: '이제 여정 중에 퀴즈가 나와요' },
-  { id: 'journeys-3', when: { journeys: 3 }, features: ['friendship', 'dex', 'rarity-badge', 'work-fact'], notice: '주민과 친해질 수 있어요' },
-  { id: 'journeys-5', when: { journeys: 5 }, features: ['invite', 'flowers', 'others-thanks', 'today-count'], notice: '친구를 마을에 부를 수 있어요' },
-  { id: 'journeys-7', when: { journeys: 7 }, features: ['mystery'], notice: '매일 새 미스터리 물건이 열려요' },
-  { id: 'journeys-10', when: { journeys: 10 }, features: ['records', 'sets'], notice: '내 하루가 실로 이어졌어요' },
-  { id: 'first-best', when: { bestFriend: true }, features: ['intro', 'workplace'], notice: '단짝을 친구에게 소개할 수 있어요' },
+  { id: 'second-journey', when: { journeys: 2 }, features: ['journey-extras'], notice: '이제 여정 중에 퀴즈가 나와요', label: '여정 속 퀴즈' },
+  { id: 'journeys-3', when: { journeys: 3 }, features: ['friendship', 'dex', 'rarity-badge', 'work-fact'], notice: '주민과 친해질 수 있어요', label: '도감' },
+  { id: 'journeys-5', when: { journeys: 5 }, features: ['invite', 'flowers', 'others-thanks', 'today-count'], notice: '친구를 마을에 부를 수 있어요', label: '내 마을 초대하기' },
+  { id: 'journeys-7', when: { journeys: 7 }, features: ['mystery'], notice: '매일 새 미스터리 물건이 열려요', label: '오늘의 미스터리' },
+  { id: 'journeys-10', when: { journeys: 10 }, features: ['records', 'sets'], notice: '내 하루가 실로 이어졌어요', label: '지난 기록' },
+  { id: 'first-best', when: { bestFriend: true }, features: ['intro', 'workplace'], notice: '단짝을 친구에게 소개할 수 있어요', label: '주민 소개하기' },
 ]
 
 export const UNLOCK_STEP_IDS = UNLOCK_STEPS.map((s) => s.id)
@@ -128,3 +130,64 @@ export function silentUnlocks(save: UnlockSource, today: string): { unlockSeen: 
   const met = UNLOCK_STEPS.filter((step) => conditionMet(step.when, s)).map((step) => step.id)
   return { unlockSeen: met, unlockedOn: Object.fromEntries(met.filter((id) => id !== 'day1').map((id) => [id, today])) }
 }
+
+/**
+ * 단계 하나의 지금 상태 (잠겨 있어도 "앞으로 열릴 게 있다"를 보여 주려고)
+ *   open: 열림 / journeys: 마친 여정이 left번 더 필요 / waiting: 조건은 채웠지만 하루 하나 규칙으로 days일 뒤 열림(1이면 내일)
+ *   best-friend: 주민 한 명과 100% 친해지면
+ */
+export type UnlockState =
+  | { kind: 'open' }
+  | { kind: 'journeys'; need: number; have: number; left: number }
+  | { kind: 'waiting'; days: number }
+  | { kind: 'best-friend' }
+
+export function stepState(id: UnlockStepId, s: UnlockStats, unlockedOn: UnlockedOn, today: string): UnlockState {
+  const open = openSteps(s, unlockedOn, today)
+  if (open.includes(id)) return { kind: 'open' }
+  const step = UNLOCK_STEPS.find((x) => x.id === id)!
+  if (!conditionMet(step.when, s)) {
+    if (step.when.journeys !== undefined && s.journeys < step.when.journeys) {
+      return { kind: 'journeys', need: step.when.journeys, have: s.journeys, left: step.when.journeys - s.journeys }
+    }
+    return { kind: 'best-friend' }
+  }
+  // 조건을 채운 채 기다리는 단계들 중 몇 번째인지: 하루에 하나씩 표 순서로 열린다 (오늘 몫은 이미 썼다)
+  const queue = UNLOCK_STEPS.filter((x) => x.id !== 'day1' && !open.includes(x.id) && conditionMet(x.when, s)).map((x) => x.id)
+  return { kind: 'waiting', days: queue.indexOf(id) + 1 }
+}
+
+/** 아직 안 열린 단계 중 표에서 가장 앞 단계와 그 상태. 모두 열렸으면 null */
+export function nextLocked(s: UnlockStats, unlockedOn: UnlockedOn, today: string): { step: UnlockStep; state: Exclude<UnlockState, { kind: 'open' }> } | null {
+  for (const step of UNLOCK_STEPS) {
+    const state = stepState(step.id, s, unlockedOn, today)
+    if (state.kind !== 'open') return { step, state }
+  }
+  return null
+}
+
+const whenText = (days: number) => (days <= 1 ? '내일 열려요' : `${days}일 뒤에 열려요`)
+
+/** 마을 제목 카드의 짧은 조건: "여정 3번 더" / "내일 열려요" / "주민 한 명과 100% 친해지면" */
+export function shortCondition(state: Exclude<UnlockState, { kind: 'open' }>): string {
+  if (state.kind === 'journeys') return `여정 ${state.left}번 더`
+  if (state.kind === 'waiting') return whenText(state.days)
+  return '주민 한 명과 100% 친해지면'
+}
+
+/** 메뉴 목록의 조건: "여정 7번이면 열려요 · 지금 2번" / "내일 열려요" / "주민 한 명과 100% 친해지면 열려요" */
+export function listCondition(state: Exclude<UnlockState, { kind: 'open' }>): string {
+  if (state.kind === 'journeys') return `여정 ${state.need}번이면 열려요 · 지금 ${state.have}번`
+  if (state.kind === 'waiting') return whenText(state.days)
+  return '주민 한 명과 100% 친해지면 열려요'
+}
+
+/** 잠긴 것을 눌렀을 때 짧은 안내: "아직 잠겨 있어요. 여정을 5번 더 떠나면 열려요." */
+export function lockedNotice(state: Exclude<UnlockState, { kind: 'open' }>): string {
+  if (state.kind === 'journeys') return `아직 잠겨 있어요. 여정을 ${state.left}번 더 떠나면 열려요.`
+  if (state.kind === 'waiting') return `아직 잠겨 있어요. ${whenText(state.days)}.`
+  return '아직 잠겨 있어요. 주민 한 명과 100% 친해지면 열려요.'
+}
+
+/** 기능이 들어 있는 단계 */
+export const stepOf = (feature: FeatureId): UnlockStep => UNLOCK_STEPS.find((x) => x.features.includes(feature))!

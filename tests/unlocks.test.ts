@@ -3,7 +3,8 @@ import { test } from 'node:test'
 import { PEOPLE_LIST } from '../shared/data/people'
 import { emptySave, type Save } from '../shared/progress'
 import {
-  UNLOCK_STEPS, conditionMet, isOpen, nextUnlock, openSteps, pendingNotices, silentUnlocks, unlockStats,
+  UNLOCK_STEPS, conditionMet, isOpen, listCondition, lockedNotice, nextLocked, nextUnlock, openSteps, pendingNotices, shortCondition, silentUnlocks,
+  stepState, unlockStats,
   type UnlockStats, type UnlockStepId, type UnlockedOn,
 } from '../shared/unlocks'
 
@@ -108,4 +109,38 @@ test('기존 사용자는 하루 하나 규칙 없이 오늘 한꺼번에 조용
   assert.deepEqual(open, ['day1', 'second-journey', 'journeys-3', 'journeys-5'])
   assert.deepEqual(pendingNotices(open, q.unlockSeen), [])
   assert.equal(nextUnlock(stats(7), q.unlockedOn, dayAfter(TODAY, 1)), 'journeys-7')
+})
+
+test('잠긴 단계의 남은 조건: 여정 수 부족 / 조건은 채웠지만 오늘 이미 열림 / 단짝', () => {
+  // 첫 여정 뒤: 두 번째 여정 단계가 다음, 여정 1번 더
+  const first = nextLocked(stats(1), {}, TODAY)!
+  assert.equal(first.step.id, 'second-journey')
+  assert.deepEqual(first.state, { kind: 'journeys', need: 2, have: 1, left: 1 })
+  assert.equal(shortCondition(first.state), '여정 1번 더')
+  assert.equal(listCondition(first.state), '여정 2번이면 열려요 · 지금 1번')
+  // 여정 3번 단계: "여정 7번이면 열려요 · 지금 2번" 꼴, 누르면 짧은 안내
+  const j7 = stepState('journeys-7', stats(2), { 'second-journey': TODAY }, TODAY)
+  assert.equal(listCondition(j7 as Exclude<typeof j7, { kind: 'open' }>), '여정 7번이면 열려요 · 지금 2번')
+  assert.equal(lockedNotice(stepState('journeys-5', stats(0), {}, TODAY) as never), '아직 잠겨 있어요. 여정을 5번 더 떠나면 열려요.')
+  // 하루에 여정 10번: 오늘은 두 번째 여정 단계만 열렸고, 나머지는 내일·모레… 차례로
+  const on = { 'second-journey': TODAY }
+  assert.deepEqual(stepState('second-journey', stats(10), on, TODAY), { kind: 'open' })
+  const next = nextLocked(stats(10), on, TODAY)!
+  assert.equal(next.step.id, 'journeys-3')
+  assert.deepEqual(next.state, { kind: 'waiting', days: 1 })
+  assert.equal(shortCondition(next.state), '내일 열려요')
+  assert.deepEqual(stepState('journeys-5', stats(10), on, TODAY), { kind: 'waiting', days: 2 })
+  assert.equal(listCondition({ kind: 'waiting', days: 2 }), '2일 뒤에 열려요')
+  assert.equal(lockedNotice({ kind: 'waiting', days: 1 }), '아직 잠겨 있어요. 내일 열려요.')
+  // 단짝: 여정 수와 상관없이 단짝이 없으면
+  const restOpen = Object.fromEntries(['second-journey', 'journeys-3', 'journeys-5', 'journeys-7', 'journeys-10'].map((id) => [id, '2026-10-01']))
+  assert.deepEqual(stepState('first-best', stats(30), restOpen, TODAY), { kind: 'best-friend' })
+  assert.deepEqual(nextLocked(stats(30), restOpen, TODAY)?.state, { kind: 'best-friend' })
+  assert.equal(shortCondition({ kind: 'best-friend' }), '주민 한 명과 100% 친해지면')
+  assert.equal(lockedNotice({ kind: 'best-friend' }), '아직 잠겨 있어요. 주민 한 명과 100% 친해지면 열려요.')
+  // 모두 열리면 다음 잠긴 단계가 없다
+  const all = Object.fromEntries(UNLOCK_STEPS.filter((x) => x.id !== 'day1').map((x) => [x.id, '2026-10-01']))
+  assert.equal(nextLocked(stats(30, true), all, TODAY), null)
+  // 모든 단계에 메뉴 이름이 있다 (첫날 빼고)
+  assert.ok(UNLOCK_STEPS.filter((x) => x.id !== 'day1').every((x) => x.label))
 })

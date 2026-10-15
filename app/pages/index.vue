@@ -6,7 +6,7 @@ import { UNLOCK } from '../../shared/friendship'
 import { dayStats, seoulDateKey, withJosa } from '../../shared/logic'
 import { arrivalShort, isArrived, isWaiting } from '../../shared/incoming'
 import { villageShareTitle } from '../../shared/share'
-import type { UnlockStep } from '../../shared/unlocks'
+import { UNLOCK_STEPS, listCondition, lockedNotice, shortCondition, stepOf, type UnlockStep, type UnlockStepId } from '../../shared/unlocks'
 import { VILLAGE_CAPACITY, countriesOf, nextResident, villageLayout, type Placed } from '../../shared/village'
 import { flowerLabel, newFlowerNotice, type Flower } from '../../shared/visit'
 import { MOTION } from '../utils/motion'
@@ -178,6 +178,44 @@ function toggleDetails() {
   }
 }
 
+// ── 앞으로 열릴 것 (shared/unlocks.ts 표): 마을 제목 카드 한 줄과 메뉴의 '열리는 기능' 목록 ──
+/** 메뉴 목록: 첫날 단계는 늘 열려 있어 빼고 표 순서대로 */
+const unlockRows = computed(() => UNLOCK_STEPS.filter((step) => step.id !== 'day1').map((step) => ({ step, state: game.unlockState(step.id) })))
+/** 잠긴 줄을 누르면 메뉴 안에 짧은 안내 */
+const menuNote = ref('')
+let menuNoteTimer: ReturnType<typeof setTimeout> | undefined
+onBeforeUnmount(() => clearTimeout(menuNoteTimer))
+function showLocked(id: UnlockStepId) {
+  const state = game.unlockState(id)
+  if (state.kind === 'open') return
+  menuNote.value = lockedNotice(state)
+  clearTimeout(menuNoteTimer)
+  menuNoteTimer = setTimeout(() => { menuNote.value = '' }, MOTION.noticeMs * 2)
+}
+/** 열린 줄을 누르면 그 기능으로 (여정 속 퀴즈·주민 소개하기는 갈 곳이 없어 안내만) */
+const OPEN_NOTE: Partial<Record<UnlockStepId, string>> = {
+  'second-journey': '여정 중에 퀴즈와 이야기가 나와요',
+  'first-best': '주민 카드에서 이 분 소개하기를 눌러요',
+}
+function openRow(id: UnlockStepId) {
+  if (id === 'journeys-3') return router.push('/dex')
+  if (id === 'journeys-5') {
+    menuOpen.value = false
+    return invite()
+  }
+  if (id === 'journeys-7') return router.push('/mystery')
+  if (id === 'journeys-10') return router.push('/result')
+  menuNote.value = OPEN_NOTE[id] ?? ''
+  clearTimeout(menuNoteTimer)
+  menuNoteTimer = setTimeout(() => { menuNote.value = '' }, MOTION.noticeMs * 2)
+}
+const visitStep = stepOf('invite')
+/** 다녀온 마을이 아직 없고 초대가 잠겨 있을 때의 조건 */
+const visitLock = computed(() => {
+  const state = game.unlockState(visitStep.id)
+  return state.kind === 'open' ? '' : listCondition(state)
+})
+
 // ── 초대·메뉴 ──
 const menuOpen = ref(false)
 const message = ref('')
@@ -306,6 +344,12 @@ onMounted(async () => {
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
           </button>
           <p v-else class="sub fold">마을에 살 수 있는 사람을 모두 만났어요</p>
+          <!-- 다음에 열리는 것: 아직 안 열린 단계 중 가장 앞 단계 하나 (모두 열리면 없음, 많이 축소하면 접힘) -->
+          <p v-if="game.nextLockedStep.value" class="next-unlock fold">
+            <svg class="lock" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>
+            <span>{{ game.nextLockedStep.value.step.notice }}</span>
+            <span class="cond">· {{ shortCondition(game.nextLockedStep.value.state) }}</span>
+          </p>
           <p v-if="details" id="village-card-details" class="sub details fold">
             {{ countries.length }}개 나라에서 왔어요<template v-if="bestFriends.length"> · 단짝 {{ bestFriends.length }}명</template>
           </p>
@@ -343,17 +387,36 @@ onMounted(async () => {
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
           </button>
           <h2 class="menu-title">마을 메뉴</h2>
-          <button v-if="game.opens('invite')" class="item" @click="invite(); menuOpen = false">내 마을 초대하기</button>
           <NuxtLink to="/test" class="item">나의 하루 유형 테스트</NuxtLink>
-          <!-- 지난 기록: 오늘의 기록·나의 실타래·분해해 본 물건 (하단 탭에서 옮겨 왔다) -->
-          <NuxtLink v-if="game.opens('records')" to="/result" class="item">지난 기록</NuxtLink>
           <button v-if="game.allThanked.value" class="item" @click="menuOpen = false; game.replayEnding()">엔딩 다시 보기</button>
 
-          <!-- 다녀온 마을은 링크로 간 곳이라 열림과 상관없이, 아직 없으면 초대가 열린 뒤에만 안내 -->
-          <template v-if="visited.length || game.opens('invite')">
-            <h3 class="menu-sub">다녀온 마을</h3>
-            <NuxtLink v-for="v in visited" :key="v.token" :to="`/v/${v.token}`" class="item">{{ v.nickname }}님의 마을</NuxtLink>
-            <p v-if="!visited.length" class="hint">친구가 보낸 초대 링크를 열면 여기에 남아요</p>
+          <!-- 열리는 기능: 표의 단계를 순서대로. 열린 것은 누르면 그 기능으로(내 마을 초대하기·도감·미스터리·지난 기록),
+               잠긴 것은 흐린 글씨 + 자물쇠 + 조건, 누르면 짧은 안내 -->
+          <h3 class="menu-sub">열리는 기능</h3>
+          <p v-if="menuNote" class="menu-note" role="status">{{ menuNote }}</p>
+          <template v-for="row in unlockRows" :key="row.step.id">
+            <button v-if="row.state.kind === 'open'" class="item" @click="openRow(row.step.id)">{{ row.step.label }}</button>
+            <button v-else class="item locked" :aria-label="`${row.step.label}, 잠김. ${listCondition(row.state)}`" @click="showLocked(row.step.id)">
+              <span class="locked-text">
+                <span>{{ row.step.label }}</span>
+                <span class="locked-cond">{{ listCondition(row.state) }}</span>
+              </span>
+              <svg class="lock" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>
+            </button>
+          </template>
+
+          <!-- 다녀온 마을: 친구 링크로 간 적이 있으면 잠김과 상관없이 보인다. 아직 없으면 초대 단계를 따른다 -->
+          <h3 class="menu-sub">다녀온 마을</h3>
+          <NuxtLink v-for="v in visited" :key="v.token" :to="`/v/${v.token}`" class="item">{{ v.nickname }}님의 마을</NuxtLink>
+          <template v-if="!visited.length">
+            <p v-if="game.opens('invite')" class="hint">친구가 보낸 초대 링크를 열면 여기에 남아요</p>
+            <button v-else class="item locked" @click="showLocked(visitStep.id)">
+              <span class="locked-text">
+                <span>다녀온 마을</span>
+                <span class="locked-cond">{{ visitLock }}</span>
+              </span>
+              <svg class="lock" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>
+            </button>
           </template>
 
           <h3 class="menu-sub">설정</h3>
@@ -457,4 +520,11 @@ onMounted(async () => {
 .item:disabled { opacity: 0.5; cursor: default; }
 .toggle input { width: 24px; height: 24px; }
 .hint { margin: 0; font-size: 12px; color: var(--muted); }
+.item.locked { color: var(--muted); border-style: dashed; }
+.locked-text { display: flex; flex-direction: column; gap: 2px; padding: 6px 0; }
+.locked-cond { font-size: 12px; }
+.lock { flex-shrink: 0; }
+.menu-note { margin: 0; padding: 8px 12px; border-radius: 12px; background: #f3f1ea; color: #1a1a22; font-size: 13px; font-weight: 700; }
+.next-unlock { margin: 0; display: flex; align-items: center; gap: 6px; font-size: 13px; color: #c9cfd9; word-break: keep-all; }
+.next-unlock .cond { color: var(--accent); white-space: nowrap; }
 </style>
