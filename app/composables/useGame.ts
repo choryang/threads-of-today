@@ -258,6 +258,11 @@ export function useGame() {
     const next = steps[journey.step]
     // 같은 길(pass)의 사람은 앞에서 이미 만났지만, 카드가 빠진 기록이어도 얻게 한다. 묶음 칸은 그 사람들 모두
     const ids = screenPeople(next)
+    // 핵심 자리에서 만난 횟수: 여러 편 있는 이야기는 이 횟수대로 다음 편 (shared/key-story.ts)
+    if (next?.type === 'key') {
+      if (!s.keyMeets) s.keyMeets = {}
+      s.keyMeets[next.personId] = (s.keyMeets[next.personId] ?? 0) + 1
+    }
     const gained = ids.flatMap((id) => collect(id, journey))
     journey.newCards.push(...gained)
     return gained

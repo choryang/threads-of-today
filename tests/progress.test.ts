@@ -215,3 +215,13 @@ test('기능을 연 날짜(unlockedOn) 동기화: 단계마다 이른 날짜, �
   assert.deepEqual(sanitizeSave({ unlockedOn: { 'journeys-3': '2026-10-15', nope: '2026-10-15', 'journeys-5': 'tomorrow', 'journeys-7': 7 } }, TODAY).unlockedOn, { 'journeys-3': '2026-10-15' })
   assert.equal(sanitizeSave({}, TODAY).unlockedOn, undefined)
 })
+
+test('핵심 자리에서 만난 횟수(keyMeets) 동기화: 사람마다 큰 값, 둘 다 없으면 없는 채로, 모르는 사람·이상한 값은 버린다', () => {
+  const a: Save = { ...emptySave(), keyMeets: { 'sea-crew': 3, barista: 1 } }
+  const b: Save = { ...emptySave(), keyMeets: { 'sea-crew': 2, 'busan-crane': 4 } }
+  assert.deepEqual(mergeSaves(a, b, TODAY).keyMeets, { 'sea-crew': 3, barista: 1, 'busan-crane': 4 })
+  assert.deepEqual(mergeSaves(emptySave(), b, TODAY).keyMeets, b.keyMeets)
+  assert.equal('keyMeets' in mergeSaves(emptySave(), emptySave(), TODAY), false)
+  const clean = sanitizeSave({ ...emptySave(), keyMeets: { 'sea-crew': 2, nobody: 5, barista: -1, roaster: 1.5, 'busan-crane': '3' } }, TODAY)
+  assert.deepEqual(clean?.keyMeets, { 'sea-crew': 2 })
+})

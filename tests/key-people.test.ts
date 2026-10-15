@@ -16,6 +16,9 @@ import {
   type TimelineItem,
 } from '../shared/journey'
 import { MATERIALS } from '../shared/data/materials'
+import { PEOPLE } from '../shared/data/people'
+import { KEY_STORIES } from '../shared/data/stories'
+import { keyJoy, keyStory } from '../shared/key-story'
 
 const shopOf = (timeline: TimelineItem[]) => timeline.filter((t) => t.type === 'stage' && t.closing).map((t) => (t as { personId: string }).personId)
 
@@ -114,4 +117,14 @@ test("'-k'가 없는 예전 여정은 타임라인 그대로", () => {
   assert.ok(isReverseJourney('2026-10-15-1-abcd-r-k-first'))
   assert.ok(isFirstJourney('2026-10-15-1-abcd-r-k-first'))
   assert.ok(isSecondJourney('2026-10-15-1-abcd-r-k-second'))
+})
+
+test('이야기: 핵심 자리에서 만난 횟수대로 다음 편, 다 보면 처음부터. 없으면 카드 문구', () => {
+  const eps = KEY_STORIES['sea-crew']!.episodes!
+  assert.equal(keyStory('sea-crew', 1), eps[0])
+  assert.equal(keyStory('sea-crew', 2), eps[1])
+  assert.equal(keyStory('sea-crew', eps.length + 1), eps[0])
+  assert.equal(keyStory('coffee-picker', 5), KEY_STORIES['coffee-picker']!.story)
+  assert.equal(keyStory('rice-mill'), PEOPLE['rice-mill']!.story)
+  assert.equal(keyJoy('rice-mill'), undefined)
 })

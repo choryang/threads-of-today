@@ -18,6 +18,7 @@
  *  - 단짝 연출을 본 주민(bestSeen): 합집합. 한 기기에서 본 연출은 다른 기기에서 다시 띄우지 않는다.
  *  - 본 열림 알림(unlockSeen, shared/unlocks.ts): 합집합. 둘 다 없으면 없는 채로 둔다(기존 사용자를 조용히 여는 표시라서).
  *  - 기능을 연 날짜(unlockedOn): 단계마다 이른 날짜. 둘 다 없으면 없는 채로.
+ *  - 핵심 자리에서 만난 횟수(keyMeets, docs/key-people.md): 사람마다 큰 값. 둘 다 없으면 없는 채로.
  */
 import { MATERIALS, SETS } from './data/materials'
 import { PEOPLE, PEOPLE_LIST } from './data/people'
@@ -148,10 +149,14 @@ export interface Save {
   unlockSeen?: string[]
   /** 단계 id → 그 단계를 연 날짜(서울). 하루에 하나씩만 연다 (shared/unlocks.ts) */
   unlockedOn?: Record<string, string>
+  /** 사람 id → 핵심 자리(시작한 손·건너온 손·건네준 손)에서 만난 횟수. 여러 편 있는 이야기의 다음 편을 고른다 (shared/key-story.ts) */
+  keyMeets?: Record<string, number>
   nickname?: Nickname
 }
 
 export const KEEP_DAYS = 30
+/** 핵심 자리에서 만난 횟수의 상한 (서버 입력 검사) */
+const MAX_KEY_MEETS = 100_000
 // journeysPerDay: 하루 여정 횟수 제한이 없어져서 서버 입력 검사용 상한만 둔다
 const LIMITS = { items: 2000, journeysPerDay: 60, name: 40, voice: 80, guesses: 10 }
 const DATE = /^\d{4}-\d{2}-\d{2}$/
@@ -174,6 +179,12 @@ const union = (a: string[], b: string[]) => [...new Set([...a, ...b])]
 function mergeEarliest(a: Record<string, string>, b: Record<string, string>): Record<string, string> {
   const out = { ...a }
   for (const [k, v] of Object.entries(b)) if (!out[k] || v < out[k]!) out[k] = v
+  return out
+}
+/** 키마다 큰 값 */
+function mergeLargest(a: Record<string, number>, b: Record<string, number>): Record<string, number> {
+  const out = { ...a }
+  for (const [k, v] of Object.entries(b)) if (!(out[k]! >= v)) out[k] = v
   return out
 }
 
@@ -297,6 +308,7 @@ export function mergeSaves(a: Save, b: Save, todayKey: string): Save {
     bestSeen: union(a.bestSeen ?? [], b.bestSeen ?? []),
     ...(a.unlockSeen || b.unlockSeen ? { unlockSeen: union(a.unlockSeen ?? [], b.unlockSeen ?? []) } : {}),
     ...(a.unlockedOn || b.unlockedOn ? { unlockedOn: mergeEarliest(a.unlockedOn ?? {}, b.unlockedOn ?? {}) } : {}),
+    ...(a.keyMeets || b.keyMeets ? { keyMeets: mergeLargest(a.keyMeets ?? {}, b.keyMeets ?? {}) } : {}),
     ...(mergeVillage(a.village, b.village) ? { village: mergeVillage(a.village, b.village) } : {}),
     days: pickRecent(days, todayKey),
     mystery: pickRecent(mystery, todayKey),
@@ -389,6 +401,12 @@ export function sanitizeSave(raw: unknown, todayKey: string): Save {
   if (isObj(raw.unlockedOn)) {
     s.unlockedOn = {}
     for (const [k, v] of Object.entries(raw.unlockedOn)) if ((UNLOCK_STEP_IDS as string[]).includes(k) && typeof v === 'string' && DATE.test(v)) s.unlockedOn[k] = v
+  }
+  if (isObj(raw.keyMeets)) {
+    s.keyMeets = {}
+    for (const [k, v] of Object.entries(raw.keyMeets).slice(0, PEOPLE_COUNT)) {
+      if (PEOPLE[k] && Number.isInteger(v) && (v as number) > 0 && (v as number) <= MAX_KEY_MEETS) s.keyMeets[k] = v as number
+    }
   }
   if (Array.isArray(raw.unlockSeen)) s.unlockSeen = strList(raw.unlockSeen, UNLOCK_STEP_IDS.length).filter((id) => (UNLOCK_STEP_IDS as string[]).includes(id))
   s.bestSeen = strList(raw.bestSeen, PEOPLE_COUNT).filter((id) => PEOPLE[id] && PEOPLE[id]!.kind !== 'link')
