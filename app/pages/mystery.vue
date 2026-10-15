@@ -50,11 +50,19 @@ async function share() {
 </script>
 
 <template>
-  <main class="page">
+  <!-- 오늘의 미스터리는 주민 15명 뒤에 열린다 (shared/unlocks.ts). 주소로 바로 와도 그 전에는 안내만 -->
+  <main v-if="!game.opens('mystery')" class="page">
+    <section class="panel locked-panel">
+      <p class="r-title">마을 주민이 15명이 되면 열려요</p>
+      <p class="muted small">그때부터 매일 새 미스터리 물건이 열려요.</p>
+      <NuxtLink to="/" class="btn btn-primary btn-block">마을로</NuxtLink>
+    </section>
+  </main>
+  <main v-else class="page">
     <header class="head">
       <p class="muted kicker">오늘의 미스터리</p>
       <h1 class="display title">오늘의 미스터리 물건</h1>
-      <p class="muted small">힌트가 하나씩 열려요. 적은 힌트로 맞힐수록 좋아요. 맞히면 보너스 여정이 열려요.</p>
+      <p class="muted small">힌트가 하나씩 열려요. 적은 힌트로 맞힐수록 좋아요. 맞히면 미스터리 여정이 열려요.</p>
     </header>
 
     <ol class="hints">
@@ -89,7 +97,7 @@ async function share() {
       <p class="r-title">정답은 <strong>{{ answer.name }}</strong></p>
       <p class="muted small">{{ log.solved ? `${log.guesses.length}번 만에 맞혔어요!` : '내일 새로운 미스터리가 열려요.' }}</p>
       <button v-if="log.solved" class="btn btn-primary btn-block" @click="bonus">
-        {{ game.mysteryJourney.value ? '보너스 여정 이어 가기' : '보너스 여정 떠나기 →' }}
+        {{ game.mysteryJourney.value ? '미스터리 여정 이어 가기' : '미스터리 여정 떠나기 →' }}
       </button>
       <button class="btn btn-block" @click="share">{{ copied ? '복사했어요' : '결과 공유하기' }}</button>
     </section>
@@ -97,6 +105,7 @@ async function share() {
 </template>
 
 <style scoped>
+.locked-panel { display: flex; flex-direction: column; gap: 10px; margin-top: 40px; }
 .head { display: flex; flex-direction: column; gap: 8px; }
 .kicker { margin: 0; font-size: 12px; font-weight: 700; }
 .title { font-size: 30px; }

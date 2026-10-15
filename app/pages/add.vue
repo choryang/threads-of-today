@@ -207,7 +207,7 @@ function start() {
 
     <header class="head">
       <h1 class="display title">오늘 손에 닿은 물건은?</h1>
-      <NuxtLink to="/mystery" class="mystery-link">오늘의 미스터리 물건 맞히기</NuxtLink>
+      <NuxtLink v-if="game.opens('mystery')" to="/mystery" class="mystery-link">오늘의 미스터리 물건 맞히기</NuxtLink>
     </header>
 
     <section class="grid" aria-label="물건 고르기">
