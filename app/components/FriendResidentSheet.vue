@@ -4,7 +4,7 @@ import { PEOPLE } from '../../shared/data/people'
 import { PLACES } from '../../shared/data/places'
 import { WORKPLACES } from '../../shared/data/village'
 import { seoulDateKey } from '../../shared/logic'
-import { hintProductOf, type Flower } from '../../shared/visit'
+import { hintProductOf, setRewardOf, type Flower } from '../../shared/visit'
 
 /**
  * 친구 마을의 주민 카드. 고마워요를 누르면 그 주민 옆에 꽃이 핀다(같은 마을에 하루 한 송이).
@@ -20,6 +20,8 @@ const person = computed(() => PEOPLE[props.personId]!)
 const met = computed(() => game.owns(props.personId))
 const where = computed(() => `${PLACES[person.value.placeId]?.country || '바다'} · ${WORKPLACES[person.value.workplace]}`)
 const hint = computed(() => (met.value ? null : hintProductOf(props.personId)))
+/** 힌트 물건이 없는 세트 보상 사람 */
+const rewardSet = computed(() => (met.value || hint.value ? null : setRewardOf(props.personId)))
 const message = ref('')
 const busy = ref(false)
 const left = ref(false)
@@ -82,6 +84,10 @@ function startHint() {
         <p>이 분은 {{ hint.name }} 속에 있어요</p>
         <button class="start" @click="startHint">{{ hint.name }} 여정 시작하기</button>
       </div>
+      <div v-else-if="rewardSet" class="hint">
+        <p>세트를 모으면 만날 수 있어요</p>
+        <span class="set-name">{{ rewardSet.name }}</span>
+      </div>
       <p v-else-if="met" class="met">나도 만난 적 있는 분이에요</p>
 
       <p v-if="message" class="message" role="status">{{ message }}</p>
@@ -111,6 +117,7 @@ function startHint() {
 .job { font-size: 14px; color: #4a4a55; }
 .hint { display: flex; flex-direction: column; gap: 8px; padding: 14px 16px; border-radius: 16px; background: #fff; }
 .hint p { margin: 0; font-size: 15px; font-weight: 700; }
+.set-name { font-size: 13px; color: #4a4a55; }
 .start { min-height: 48px; border-radius: 14px; border: 2px solid #1a1a22; background: none; color: #1a1a22; font-size: 15px; font-weight: 700; cursor: pointer; }
 .met { margin: 0; font-size: 13px; color: #4a4a55; }
 .message { margin: 0; font-size: 13px; color: #4a4a55; word-break: keep-all; }

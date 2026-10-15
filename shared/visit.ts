@@ -2,13 +2,13 @@
  * 마을에 놀러 가서 꽃 남기기 (순수 함수). 저장은 server/utils/village.ts, 링크는 shared/share.ts의 village 종류.
  * 남는 글은 모두 정해진 문구다: 꽃에는 방문자 닉네임·주민 id·날짜만 있고 자유 입력 글은 없다.
  */
-import { MATERIAL_LIST, PRODUCTS } from './data/materials'
+import { MATERIAL_LIST, PRODUCTS, SETS } from './data/materials'
 import { PEOPLE } from './data/people'
 import { PLACES } from './data/places'
 import { CLOSINGS, IMPORT_OFFICE, closingKind } from './data/shops'
 import type { ZoneId } from './data/village'
 import { materialsOfPerson } from './friendship'
-import type { Product } from './types'
+import type { CardSet, Product } from './types'
 
 export interface Flower {
   /** 꽃을 남긴 사람 (다른 사람에게 보이는 건 닉네임뿐) */
@@ -93,4 +93,9 @@ export function hintProductOf(personId: string): Product | null {
     const c = CLOSINGS[closingKind(p.name, p.materialIds)]
     return [...c.shop, ...c.office].includes(personId) || (personId === IMPORT_OFFICE && imported(p))
   }) ?? null
+}
+
+/** 세트 보상으로만 만나는 사람이면 그 세트 (힌트 물건이 없을 때 "세트를 모으면 만날 수 있어요") */
+export function setRewardOf(personId: string): CardSet | null {
+  return SETS.find((s) => s.rewardId === personId) ?? null
 }

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { PEOPLE_LIST } from '../shared/data/people'
 import { seoulDateKey } from '../shared/logic'
-import { FLOWER_COLORS, canLeaveFlower, dateLabel, flowerColor, flowerLabel, hintProductOf, newFlowerNotice, type Flower } from '../shared/visit'
+import { FLOWER_COLORS, canLeaveFlower, dateLabel, flowerColor, flowerLabel, hintProductOf, newFlowerNotice, setRewardOf, type Flower } from '../shared/visit'
 
 const f = (nickname: string, personId: string, at: number, date = '2026-10-15'): Flower => ({ nickname, personId, date, at })
 
@@ -42,4 +42,12 @@ test('힌트 물건: 그 사람이 나오는 여정의 물건 (재료가 앞에 
   // 세트 보상(전설) 사람은 여정에 나오지 않아 힌트가 없다
   const none = PEOPLE_LIST.filter((p) => !hintProductOf(p.id))
   assert.ok(none.every((p) => p.kind === 'set'), none.map((p) => p.id).join(', '))
+})
+
+test('힌트 물건이 없는 사람은 모두 세트 보상: 친구 마을에서 "세트를 모으면 만날 수 있어요"', () => {
+  const noHint = PEOPLE_LIST.filter((p) => !hintProductOf(p.id)).map((p) => p.id)
+  assert.deepEqual(noHint.sort(), ['harbor-pilot', 'mine-rescue', 'safety-inspector', 'seed-vault', 'table-setter'])
+  for (const id of noHint) assert.ok(setRewardOf(id), id)
+  assert.equal(setRewardOf('harbor-pilot')?.name, '바다를 건넌 사람들')
+  assert.equal(setRewardOf('coffee-picker'), null)
 })
