@@ -8,7 +8,7 @@
 - Nuxt 4 (Vue 3.5, TypeScript), `ssr: false` SPA + Nitro 서버 API. 배포는 Vercel.
 - 진행 상황 원본은 브라우저 localStorage(`my-day-people:v1`). 앱을 열 때·여정을 마칠 때만 Upstash와 합친다(익명 id + 복구 코드, 로그인 없음).
 - `npm run dev` / `npm run build` / `npm run typecheck` / `npm run check:data`(데이터 무결성 + 스모크 테스트) / `npm test`(node:test, 매칭 사례)
-- 환경 변수: `NUXT_ANTHROPIC_API_KEY`, `NUXT_ANTHROPIC_MODEL`(기본 `claude-haiku-5-5`), `KV_REST_API_URL`/`KV_REST_API_TOKEN`(Upstash), `NUXT_AI_DAILY_LIMIT`, `NUXT_IP_SALT`. 자세한 건 README
+- 환경 변수: `NUXT_ANTHROPIC_API_KEY`, `NUXT_ANTHROPIC_MODEL`(기본 `claude-haiku-5-5`), `KV_REST_API_URL`/`KV_REST_API_TOKEN`(Upstash), `NUXT_AI_DAILY_LIMIT`, `NUXT_IP_SALT`, `CRON_SECRET`, `MEET_SNAPSHOT_MINUTES`(기본 30). 자세한 건 README
 
 ## 구조
 
@@ -47,7 +47,7 @@ shared/                 앱과 서버가 상대 경로로 함께 import (Nuxt �
                         링크를 만든 기기의 관리 키 해시만 저장. 복구 코드·사용자 id는 토큰·저장 값·응답·로그 어디에도 넣지 않는다
   visit.ts              마을에 놀러 가서 꽃 남기기: 꽃(닉네임·주민·날짜) 색(구역별)·하루 한 송이·새 꽃 알림 문구, 못 만난 주민의 힌트 물건(없으면 세트 보상: setRewardOf)
   intro.ts              사람 카드 소개: 정해진 문구 4개(맛있어서는 먹는 대표 물건만), 소개 화면의 사람 크기 사실(workFactHuman), 보낸 사람 알림 문구
-  today.ts              모두의 오늘: 숫자 포맷, "오늘 1,203명이 이 분을 만났어요"·여정 끝 합 문구, 사람마다 하루 한 번만 보내기, 스냅샷(10분)·스냅샷 뒤 내 몫 더하기
+  today.ts              모두의 오늘: 숫자 포맷, "오늘 1,203명이 이 분을 만났어요"·여정 끝 합 문구, 사람마다 하루 한 번만 보내기, 스냅샷(MEET_SNAPSHOT_MINUTES, 기본 30분)·스냅샷 뒤 내 몫 더하기
   cleanup.ts            날짜 키 청소 규칙: 기간 없이 두는 meet:*·thanks:day:* 중 어제보다 이전 것
   character-svg.ts      캐릭터 SVG 조립(순수 함수)과 피부색. 앱(app/utils/character.ts)과 OG 스크립트가 같이 쓴다
   village.ts            마을 자리 배정(먼저 만난 사람부터 hash(id) 자리, 모자라면 빈 땅), 빈 집터, 주민 나라 수
@@ -68,7 +68,7 @@ server/
   routes/v/[token].get.ts  /v/{token}: 마을 초대 OG(공통 이미지 og/village.png). /d·/v·/p는 utils/share-page.ts의 defineShareRoute 하나로
   utils/village.ts      마을 꽃 저장(village-flowers:{주인 해시} 최근 200개·60일, village-flower-day 하루 한 송이)
   api/meet/             모두의 오늘 보내기: POST(만난 사람들, PFADD meet:{사람}:{YYYYMMDD}, EXPIRE 없음). utils/meet.ts
-  api/today-snapshot.get.ts 모두의 오늘 읽기: 사람 전체 수를 한 번에 센 스냅샷 한 키(meet-snapshot, 10분 지나면 다시 셈). CDN s-maxage=600
+  api/today-snapshot.get.ts 모두의 오늘 읽기: 사람 전체 수를 한 번에 센 스냅샷 한 키(meet-snapshot, MEET_SNAPSHOT_MINUTES 기본 30분 지나면 다시 셈). CDN s-maxage도 같은 값
   api/cron/cleanup.get.ts Vercel Cron(서울 새벽 4시, nuxt.config의 nitro.vercel.config.crons). CRON_SECRET Bearer 검사 후 이틀 지난 날짜 키 SCAN·DEL
   api/thanks/           다른 사람들의 고마움: POST(고마워요 1번 세기, 같은 기기·같은 날·같은 사람은 한 번) · GET ?ids=(오늘 수·누적 수)
   plugins/kv.ts         useStorage('kv'): Upstash(env 있을 때) / 개발 .data/kv 파일 / 그 밖 메모리

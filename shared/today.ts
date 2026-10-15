@@ -50,16 +50,26 @@ export interface MeetSnapshot {
   counts: Record<string, number>
 }
 
-/** 스냅샷을 다시 세는 간격 (서버 저장값·CDN 캐시·이 기기 모두 같다) */
-export const SNAPSHOT_MAX_AGE_MS = 10 * 60 * 1000
+/** 스냅샷을 다시 세는 간격 기본값(분). 서버는 MEET_SNAPSHOT_MINUTES로 바꾼다 */
+export const SNAPSHOT_DEFAULT_MINUTES = 30
 
-/** 다시 세야 하는지: 없거나, 날짜가 바뀌었거나, 10분이 지났으면 */
-export function snapshotStale(s: MeetSnapshot | null | undefined, now: number, seoulDate: string): boolean {
-  return !s || s.date !== seoulDate || now - s.at >= SNAPSHOT_MAX_AGE_MS
+/**
+ * MEET_SNAPSHOT_MINUTES 환경 변수 값 → 분. 비었거나 숫자가 아니면 기본 30분, 1분~하루(1,440분) 안으로 자른다.
+ * 서버 저장값·CDN 캐시(s-maxage)·기기의 다시 묻기 간격이 모두 이 값을 따른다(기기는 응답의 maxAgeSeconds로 받는다).
+ */
+export function snapshotMinutes(raw: string | undefined): number {
+  const n = Math.round(Number(raw))
+  if (!raw?.trim() || !Number.isFinite(n)) return SNAPSHOT_DEFAULT_MINUTES
+  return Math.min(1440, Math.max(1, n))
+}
+
+/** 다시 세야 하는지: 없거나, 날짜가 바뀌었거나, 간격(기본 30분)이 지났으면 */
+export function snapshotStale(s: MeetSnapshot | null | undefined, now: number, seoulDate: string, maxAgeMs = SNAPSHOT_DEFAULT_MINUTES * 60_000): boolean {
+  return !s || s.date !== seoulDate || now - s.at >= maxAgeMs
 }
 
 /**
- * 화면에 보일 오늘 수. 스냅샷은 최대 10분 늦으니, 내가 스냅샷 뒤에 보냈으면 나를 1 더한다.
+ * 화면에 보일 오늘 수. 스냅샷은 재계산 간격만큼 늦을 수 있으니, 내가 스냅샷 뒤에 보냈으면 나를 1 더한다.
  * 어제 스냅샷이면 오늘 수는 0으로 본다. 스냅샷도 없고 나도 안 보냈으면 undefined(아무 말 안 함).
  */
 export function meetCountFor(snapshot: MeetSnapshot | null, personId: string, seoulDate: string, mySentAt?: number): number | undefined {

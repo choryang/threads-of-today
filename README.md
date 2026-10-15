@@ -37,6 +37,7 @@ npm run cache:export   # AI 캐시를 조회 수 순으로 data/review/cache.csv
    | `NUXT_AI_DAILY_LIMIT` | 선택 | IP별 하루 AI 호출 한도. 기본 20 |
    | `NUXT_IP_SALT` | 권장 | 요청 제한 키에 쓰는 IP 해시의 소금값. 아무 긴 문자열 |
    | `CRON_SECRET` | 권장 | Vercel Cron(`/api/cron/cleanup`, 매일 서울 새벽 4시)이 보내는 Bearer 토큰. 없으면 청소가 늘 거절되어 이틀 지난 `meet:*`·`thanks:day:*` 키가 쌓인다. 16자 이상 무작위 문자열 |
+   | `MEET_SNAPSHOT_MINUTES` | 선택 | 모두의 오늘 숫자를 다시 세는 간격(분). 기본 30, 1~1440. CDN 캐시(`s-maxage`)와 기기의 다시 묻기 간격도 이 값을 따른다. 짧을수록 숫자가 빨리 바뀌지만 다시 셀 때마다 Upstash 명령이 약 227개 든다 |
 5. Deploy. 로컬에서 운영 저장소에 붙여 보려면 `vercel env pull .env`로 변수를 받아 온다.
 
 요청 하나에 출력 토큰은 최대 500개로 제한돼 있다.
@@ -271,7 +272,7 @@ tests/            node:test 단위 테스트
   - [ ] 공유 이미지(html-to-image)에서 캐릭터 피부색이 화면과 같게 나오는지
 - 배포 전 체크리스트:
   - [ ] **Upstash 종량제(Pay as you go) 전환과 월 예산 상한.** 무료 요금제 한도를 넘으면 명령이 거절되어 동기화·고마워요·모두의 오늘이 멈춘다.
-        사용자 1,000명/일이면 하루 약 13만 명령(월 약 400만)으로 예상한다. Upstash 콘솔 → 데이터베이스 → Usage/Plan에서 종량제로 바꾸고,
+        사용자 1,000명/일이면 하루 약 11만 명령(월 약 330만, 스냅샷 30분 기준)으로 예상한다. Upstash 콘솔 → 데이터베이스 → Usage/Plan에서 종량제로 바꾸고,
         Budget(월 예산 상한)을 정해 둔다. 상한에 닿으면 무료 한도처럼 요청이 막히니 Usage를 처음 몇 주는 직접 본다
   - [ ] **`CRON_SECRET` 환경 변수.** Production에 16자 이상 무작위 문자열로 넣고 다시 배포한다. 없으면 `/api/cron/cleanup`이 늘 401을 돌려줘
         이틀 지난 `meet:*`·`thanks:day:*` 키가 쌓인다(이 키들은 EXPIRE 없이 청소에 맡긴다).

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { dateOfKey, daysBefore, expiredDatedKey } from '../shared/cleanup'
-import { compactDate, formatCount, journeyMeetLine, meetCountFor, snapshotStale, todayMeetLine, unsentToday } from '../shared/today'
+import { compactDate, formatCount, journeyMeetLine, meetCountFor, snapshotMinutes, snapshotStale, todayMeetLine, unsentToday } from '../shared/today'
 
 test('숫자 포맷: 천 단위 쉼표', () => {
   assert.equal(formatCount(0), '0')
@@ -28,13 +28,25 @@ test('사람마다 서울 날짜로 하루 한 번만 보낸다', () => {
   assert.deepEqual(unsentToday(['a'], { date: '2026-10-14', ids: ['a'] }, '2026-10-15'), ['a'])
 })
 
-test('스냅샷: 없거나 날짜가 바뀌었거나 10분이 지났을 때만 다시 센다', () => {
+test('스냅샷: 없거나 날짜가 바뀌었거나 간격(기본 30분)이 지났을 때만 다시 센다', () => {
   const t = Date.UTC(2026, 9, 15, 3, 0)
   const snap = { date: '2026-10-15', at: t, counts: { a: 3 } }
   assert.ok(snapshotStale(null, t, '2026-10-15'))
-  assert.ok(!snapshotStale(snap, t + 9 * 60_000, '2026-10-15'))
-  assert.ok(snapshotStale(snap, t + 10 * 60_000, '2026-10-15'))
+  assert.ok(!snapshotStale(snap, t + 29 * 60_000, '2026-10-15'))
+  assert.ok(snapshotStale(snap, t + 30 * 60_000, '2026-10-15'))
+  assert.ok(snapshotStale(snap, t + 10 * 60_000, '2026-10-15', 10 * 60_000))
   assert.ok(snapshotStale(snap, t + 60_000, '2026-10-16'))
+})
+
+test('MEET_SNAPSHOT_MINUTES: 기본 30분, 숫자가 아니면 기본값, 1분~하루로 자른다', () => {
+  assert.equal(snapshotMinutes(undefined), 30)
+  assert.equal(snapshotMinutes(''), 30)
+  assert.equal(snapshotMinutes('abc'), 30)
+  assert.equal(snapshotMinutes('10'), 10)
+  assert.equal(snapshotMinutes(' 15 '), 15)
+  assert.equal(snapshotMinutes('0'), 1)
+  assert.equal(snapshotMinutes('-5'), 1)
+  assert.equal(snapshotMinutes('99999'), 1440)
 })
 
 test('화면의 오늘 수: 스냅샷 뒤에 내가 보냈으면 나를 더하고, 어제 스냅샷은 0으로 본다', () => {

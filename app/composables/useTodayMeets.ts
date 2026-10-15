@@ -1,11 +1,11 @@
 import { reactive, ref } from 'vue'
 import { seoulDateKey } from '../../shared/logic'
-import { SNAPSHOT_MAX_AGE_MS, meetCountFor, unsentToday, type MeetSnapshot, type SentToday } from '../../shared/today'
+import { SNAPSHOT_DEFAULT_MINUTES, meetCountFor, unsentToday, type MeetSnapshot, type SentToday } from '../../shared/today'
 import { useSync } from './useSync'
 
 /**
  * 모두의 오늘. 보내기(server/api/meet): 사람을 만나면 모아 두었다가 한 번에 보내고, 사람마다 하루(서울 날짜) 한 번만 보낸다.
- * 읽기(server/api/today-snapshot): 모든 사람의 수가 든 스냅샷 하나만 읽고 10분 동안 다시 묻지 않는다.
+ * 읽기(server/api/today-snapshot): 모든 사람의 수가 든 스냅샷 하나만 읽고 서버가 알려 준 간격(기본 30분) 동안 다시 묻지 않는다.
  * 스냅샷 뒤에 내가 만난 사람은 나를 1 더해 보여 준다(meetCountFor). 서버를 쓸 수 없으면 조용히 비워 둔다.
  */
 const SENT_KEY = 'my-day-people:meet-sent'
@@ -16,6 +16,8 @@ const snapshot = ref<MeetSnapshot | null>(null)
 const sentAt = reactive<Record<string, number>>({})
 let sentLoadedFor = ''
 let fetchedAt = 0
+/** 다시 묻는 간격 (응답의 maxAgeSeconds) */
+let maxAgeMs = SNAPSHOT_DEFAULT_MINUTES * 60_000
 let queue: string[] = []
 let timer: ReturnType<typeof setTimeout> | undefined
 
@@ -77,14 +79,15 @@ export function useTodayMeets() {
     return personId in sentAt || queue.includes(personId)
   }
 
-  /** 스냅샷을 받는다 (10분 안에 받은 적이 있으면 그대로) */
+  /** 스냅샷을 받는다 (간격 안에 받은 적이 있으면 그대로) */
   async function load() {
     const now = Date.now()
-    if (now - fetchedAt < SNAPSHOT_MAX_AGE_MS) return
+    if (now - fetchedAt < maxAgeMs) return
     fetchedAt = now
     try {
-      const res = await $fetch<{ ok: boolean; snapshot?: MeetSnapshot }>('/api/today-snapshot')
+      const res = await $fetch<{ ok: boolean; snapshot?: MeetSnapshot; maxAgeSeconds?: number }>('/api/today-snapshot')
       if (res.ok && res.snapshot) snapshot.value = res.snapshot
+      if (res.maxAgeSeconds && res.maxAgeSeconds > 0) maxAgeMs = res.maxAgeSeconds * 1000
     } catch {
       fetchedAt = 0 // 수를 보여 주지 않고, 다음에 다시 묻는다
     }
