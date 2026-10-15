@@ -190,20 +190,67 @@ export function contrast(a: string, b: string): number {
 // ── 두 사람의 하루 ──
 
 export interface Meeting {
-  /** 두 사람의 물건에서 겹치는 사람 (먼저 고른 사람의 순서) */
+  /** 두 사람의 물건에서 겹치는 사람 (먼저 고른 사람의 순서). 화면에는 모두 보여 준다 */
   shared: string[]
-  /** 그 사람들 중 하루가 만나는 사람: 운송·항만 사람(마을 항구 구역)이 있으면 그 사람, 없으면 첫 번째 */
+  /** 하루가 만나는 사람: 국내 마지막 구간 사람을 뺀 겹친 사람 중 한국에서 가장 먼 곳의 사람. 후보가 없으면 null */
   hub: string | null
-  /** 만나는 곳 (그 사람의 장소 이름) */
+  /** 만나는 곳 (그 사람의 장소 이름). hub가 없으면 '' → "같은 손을 거쳐 왔어요" */
   place: string
 }
 
+/** 국내 마지막 구간: 우리 동네 구역(가게·택배·배달·사무실)과 물류센터·배차 담당. 만나는 곳 후보에서 뺀다 */
+const LAST_MILE = new Set(['warehouse', 'dispatcher'])
+export const isLastMile = (personId: string) => PEOPLE[personId]?.zone === 'town' || LAST_MILE.has(personId)
+
+/** 한국에서 잰 거리의 기준점 (우리 동네) */
+const HOME = PLACES['kr-town']!
+
+/** 이 사람이 있는 곳까지 한국에서 잰 대권거리. 바다 위처럼 좌표가 없으면 null */
+function kmFromKorea(personId: string): number | null {
+  const place = PLACES[PEOPLE[personId]?.placeId ?? '']
+  if (place?.lat === undefined || place.lng === undefined) return null
+  return greatCircleKm({ lat: HOME.lat!, lng: HOME.lng! }, { lat: place.lat, lng: place.lng })
+}
+
+/**
+ * 포장재로만 지나간 사람: 고른 물건에서 첫 재료가 아닌 plastic·pulp(판정의 포장재 규칙과 같다)로만 닿은 사람.
+ * 이런 사람이 만나는 곳이 되면 거의 모든 짝이 플라스틱 원료가 나는 먼 유전에서 만나게 돼서 후보에서 뺀다
+ */
+function substantivePeople(productIds: string[]): Set<string> {
+  const out = new Set<string>()
+  for (const id of productIds) {
+    ;(productOf(id)?.materialIds ?? []).forEach((m, i) => {
+      if (i > 0 && PACKAGING[m] !== undefined) return
+      for (const p of stagesOf(m)) out.add(p)
+    })
+  }
+  return out
+}
+
+/**
+ * 두 사람의 하루가 만나는 곳.
+ *  1. 겹친 사람 중 국내 마지막 구간 사람, 두 사람 모두에게 포장재로만 지나간 사람은 장소 후보에서 뺀다
+ *     (겹친 사람 목록에는 남긴다)
+ *  2. 남은 사람 중 한국에서 가장 먼 곳(대권거리)의 사람. 같으면 먼저 고른 사람의 순서로 앞의 사람
+ *     좌표가 있는 후보가 없으면(바다 위뿐) 첫 후보의 장소 이름을 그대로 쓴다
+ *  3. 후보가 없으면 hub null, place '' ("두 사람의 하루는 같은 손을 거쳐 왔어요")
+ */
 export function meetingOf(a: string[], b: string[]): Meeting {
   const theirs = new Set(dayNumbers(b).people)
   const shared = dayNumbers(a).people.filter((p) => theirs.has(p))
-  const hub = shared.find((p) => PEOPLE[p]?.zone === 'port') ?? shared[0] ?? null
-  const place = hub ? placeName(hub) : ''
-  return { shared, hub, place }
+  const main = new Set([...substantivePeople(a), ...substantivePeople(b)])
+  const candidates = shared.filter((p) => !isLastMile(p) && main.has(p))
+  let hub: string | null = null
+  let far = -1
+  for (const p of candidates) {
+    const km = kmFromKorea(p)
+    if (km !== null && km > far) {
+      far = km
+      hub = p
+    }
+  }
+  hub ??= candidates[0] ?? null
+  return { shared, hub, place: hub ? placeName(hub) : '' }
 }
 
 /** 장소 이름 (나라가 이름에 없으면 앞에 붙인다. 바다 위는 그대로) */

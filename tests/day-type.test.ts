@@ -3,7 +3,7 @@ import { test } from 'node:test'
 import { MATERIALS, PRODUCTS } from '../shared/data/materials'
 import { PEOPLE } from '../shared/data/people'
 import {
-  CLASS_OF, DAY_TYPES, TEST_ITEMS, TYPE_ORDER, contrast, dayNumbers, dayScores, dayTypeOf, distanceLabel, isValidPick, meetingOf,
+  CLASS_OF, DAY_TYPES, TEST_ITEMS, TYPE_ORDER, contrast, dayNumbers, dayScores, dayTypeOf, distanceLabel, isLastMile, isValidPick, meetingOf,
 } from '../shared/day-type'
 
 // docs/day-types.md 7번 예시
@@ -70,20 +70,30 @@ test('거리 문구', () => {
   assert.equal(distanceLabel(40075 * 2.6), '지구 2.5바퀴')
 })
 
-test('두 사람의 하루: 겹치는 사람과 만나는 곳 (운송·항만 사람의 장소, 없으면 첫 번째)', () => {
+test('두 사람의 하루: 국내 마지막 구간을 뺀 겹친 사람 중 한국에서 가장 먼 곳, 없으면 같은 손', () => {
   const m = meetingOf(['americano', 'banana', 'tshirt'], ['choco-bar', 'tuna-can', 'apple'])
-  assert.ok(m.shared.length > 0)
-  assert.equal(PEOPLE[m.hub!]!.zone, 'port')
+  assert.ok(m.shared.includes('warehouse')) // 겹친 사람 목록에는 남는다
+  assert.ok(m.hub && !isLastMile(m.hub))
   assert.ok(m.place)
-  // 겹친 사람 중 (먼저 고른 사람의 순서로) 첫 운송·항만 사람
-  assert.equal(m.hub, m.shared.find((p) => PEOPLE[p]!.zone === 'port'))
-  // 운송·항만 사람이 없으면 첫 번째로 겹친 사람 (지금 데이터에 그런 짝이 있으면 확인)
   for (const x of TEST_ITEMS) {
     for (const y of TEST_ITEMS) {
       const mm = meetingOf([x], [y])
-      if (mm.shared.length && !mm.shared.some((p) => PEOPLE[p]!.zone === 'port')) assert.equal(mm.hub, mm.shared[0])
-      if (!mm.shared.length) assert.deepEqual([mm.hub, mm.place], [null, ''])
+      if (!mm.hub) assert.equal(mm.place, '')
+      else assert.ok(mm.shared.includes(mm.hub) && !isLastMile(mm.hub))
     }
   }
-  assert.deepEqual(meetingOf(['americano', 'kimchi', 'apple'], ['americano', 'kimchi', 'apple']).shared.length, dayNumbers(['americano', 'kimchi', 'apple']).people.length)
+  // 포장재(첫 재료가 아닌 플라스틱)로만 겹친 유전·정유 사람은 만나는 곳이 되지 않는다
+  for (const [x, y] of [[['kimchi', 'apple', 'samgak'], ['samgyeopsal', 'banana-milk', 'burger']], [['ramen', 'tofu', 'tshirt'], ['salmon-sushi', 'smartphone', 'tuna-can']]]) {
+    const mm = meetingOf(x!, y!)
+    assert.ok(mm.shared.includes('oil-worker'))
+    assert.ok(!['oil-worker', 'tanker-crew', 'ulsan-refinery', 'yeosu-chem', 'injection'].includes(mm.hub ?? ''))
+    assert.notEqual(mm.place, '사우디아라비아 유전')
+  }
+  // 우리 땅 물건끼리는 남는 사람이 국내뿐이라도 후보가 있으면 그 사람, 겹친 사람이 물류센터·가게뿐이면 같은 손
+  const same = meetingOf(['samgyeopsal'], ['notebook'])
+  assert.deepEqual(same.shared, ['warehouse'])
+  assert.equal(same.hub, null)
+  assert.equal(same.place, '')
+  // 같은 물건이면 겹친 사람은 그 물건의 사람 모두
+  assert.equal(meetingOf(['americano', 'kimchi', 'apple'], ['americano', 'kimchi', 'apple']).shared.length, dayNumbers(['americano', 'kimchi', 'apple']).people.length)
 })

@@ -33,7 +33,10 @@ const replies = ref<Array<DayReply & { place: string; typeName: string }>>([])
 onMounted(async () => {
   const mine = await share.myReplies()
   if (!mine.items) return
-  replies.value = mine.replies.slice().reverse().map((r) => ({ ...r, typeName: DAY_TYPES[r.type].name, place: meetingOf(mine.items!, r.items).place }))
+  replies.value = mine.replies.slice().reverse().map((r) => {
+    const m = meetingOf(mine.items!, r.items)
+    return { ...r, typeName: DAY_TYPES[r.type].name, place: m.place ? `${m.place}에서 만나요` : m.shared.length ? '같은 손을 거쳐 왔어요' : '' }
+  })
 })
 
 function seeResult() {
@@ -51,7 +54,7 @@ function seeResult() {
     <section v-if="replies.length && !from" class="replies" aria-label="친구가 보여 준 하루">
       <p class="r-title">친구가 보여 준 하루</p>
       <p v-for="(r, i) in replies" :key="i" class="r-row">
-        <strong>{{ r.nickname }}</strong> · {{ r.typeName }}<template v-if="r.place"> · {{ r.place }}에서 만나요</template>
+        <strong>{{ r.nickname }}</strong> · {{ r.typeName }}<template v-if="r.place"> · {{ r.place }}</template>
       </p>
     </section>
 

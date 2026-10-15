@@ -108,7 +108,7 @@ async function showBack() {
   if (!shown.value) message.value = '지금은 보여 줄 수 없어요. 잠시 후 다시 눌러 주세요.'
 }
 async function saveTogether() {
-  if (!friend.value || !items.value || !meeting.value?.hub || busy.value) return
+  if (!friend.value || !items.value || !meeting.value?.shared.length || busy.value) return
   busy.value = true
   try {
     const c = document.createElement('canvas')
@@ -116,7 +116,8 @@ async function saveTogether() {
       left: { label: `${friend.value.nickname}의 하루`, type: DAY_TYPES[friend.value.type] },
       right: { label: `${game.nickname.value}의 하루`, type: result.value!.type },
       place: meeting.value.place,
-      hub: meeting.value.hub,
+      // 만나는 곳이 없으면(같은 손) 첫 번째로 겹친 사람을 그린다
+      hub: meeting.value.hub ?? meeting.value.shared[0]!,
       shared: meeting.value.shared.map((id) => PEOPLE[id]?.job ?? ''),
     })
     await savePng(c, 'our-days.png')
@@ -132,8 +133,9 @@ async function saveTogether() {
 
     <section v-if="friend && meeting" class="together" aria-labelledby="together-title">
       <p class="t-kicker">{{ friend.nickname }}님의 하루 · {{ friendTypeName }}</p>
-      <template v-if="meeting.hub">
-        <h2 id="together-title" class="display t-title">두 사람의 하루는<br>{{ meeting.place }}에서 만나요</h2>
+      <template v-if="meeting.shared.length">
+        <h2 v-if="meeting.hub" id="together-title" class="display t-title">두 사람의 하루는<br>{{ meeting.place }}에서 만나요</h2>
+        <h2 v-else id="together-title" class="display t-title">두 사람의 하루는<br>같은 손을 거쳐 왔어요</h2>
         <p class="t-sub">{{ hubJob }}{{ hubJob ? ' · ' : '' }}같이 닿은 사람 {{ meeting.shared.length }}명</p>
         <div class="faces">
           <Character v-for="id in meeting.shared.slice(0, 10)" :key="id" :person-id="id" :size="44" />

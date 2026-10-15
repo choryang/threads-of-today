@@ -199,7 +199,7 @@ export async function drawDayCard(canvas: HTMLCanvasElement, input: DayCardInput
 export interface MatchCardInput {
   left: { label: string; type: DayType }
   right: { label: string; type: DayType }
-  /** 두 사람의 하루가 만나는 곳 */
+  /** 두 사람의 하루가 만나는 곳. ''이면 "같은 손을 거쳐 왔어요" */
   place: string
   /** 그 자리의 사람 (가운데 그림) */
   hub: string
@@ -276,7 +276,7 @@ export async function drawMatchCard(canvas: HTMLCanvasElement, input: MatchCardI
   ctx.textAlign = 'center'
   ctx.fillText('두 사람의 하루는', CARD_W / 2, y)
   y += 78
-  for (const line of wrapText(ctx, `${input.place}에서 만나요`, w)) {
+  for (const line of wrapText(ctx, input.place ? `${input.place}에서 만나요` : '같은 손을 거쳐 왔어요', w)) {
     ctx.fillText(line, CARD_W / 2, y)
     y += 78
   }
