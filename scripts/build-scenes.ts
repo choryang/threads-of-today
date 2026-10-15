@@ -1,6 +1,6 @@
 /**
  * 장면 그림 줄이기: art/scenes/{id}.(png|jpg|jpeg|webp) → public/scenes/{id}.webp, 가로 1200px 이하(작으면 키우지 않음).
- * npm run scenes            art/scenes 안의 그림 모두
+ * npm run scenes            art/scenes 안의 그림 모두 (예전 그림 *.old.png는 빼고)
  * npm run scenes -- a.png   파일을 직접 (이름이 장면 id가 된다)
  * shared/data/scenes.ts에 없는 id는 경고만 한다(먼저 그림을 넣고 목록에 더해도 되게).
  */
@@ -19,7 +19,10 @@ const args = process.argv.slice(2)
 const files = args.length
   ? args.map((a) => resolve(a))
   : existsSync(SRC_DIR)
-    ? readdirSync(SRC_DIR).filter((f) => EXT.has(extname(f).toLowerCase())).map((f) => join(SRC_DIR, f))
+    ? readdirSync(SRC_DIR)
+        // --redo로 남긴 예전 그림(<id>.old.png)은 건너뛴다 (scripts/gen-scenes.ts)
+        .filter((f) => EXT.has(extname(f).toLowerCase()) && !f.toLowerCase().endsWith('.old.png'))
+        .map((f) => join(SRC_DIR, f))
     : []
 
 if (!files.length) {

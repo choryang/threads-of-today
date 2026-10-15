@@ -13,3 +13,7 @@ dist
 
 # 검토용 산출물(사전 CSV·배치 기록·캐시 내보내기). 캐시에는 사용자가 입력한 문장이 들어 있어 커밋하지 않는다
 data/review/
+
+# 장면 그림: 생성할 때 붙이는 참고 그림과 --redo로 남긴 예전 그림 (scripts/gen-scenes.ts)
+art/style-ref.png
+*.old.png
