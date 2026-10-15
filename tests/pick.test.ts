@@ -12,52 +12,68 @@ function idStartingWith(personId: string, item = AMERICANO): string {
   }
   throw new Error(`${personId}로 시작하는 여정을 못 찾음`)
 }
-const tagged = (personId: string, mood: string) =>
-  KEY_STORIES[personId]!.episodes!.map((e, i) => (e.moods.includes(mood as never) ? i : -1)).filter((i) => i >= 0)
+const seen = (personId: string, ...episodes: number[]): Met[] => episodes.map((episode) => ({ personId, episode }))
+const tagsOf = (personId: string, i: number) => KEY_STORIES[personId]!.episodes![i]!.moods
+const ID = idStartingWith('coffee-picker')
 
-test('커피 + 억울: 시다마 출발이면 알마즈의 억울한 편', () => {
-  const id = idStartingWith('coffee-picker')
-  const pick = pickPerson({ ...AMERICANO, journeyId: id, mood: 'wronged', history: [] })!
+test('경로: 첫 재료의 출발지부터, 끝에 가게 사람', () => {
+  const route = pickRoute(AMERICANO.materialIds, ID, AMERICANO.itemName)
+  assert.equal(route[0], 'coffee-picker')
+  assert.equal(route.at(-1), 'barista')
+})
+
+test('커피 + 억울: 알마즈의 다음 편이 억울한 편이면 알마즈', () => {
+  // 알마즈 1·2편을 봤으면 다음 편은 3편(억울)
+  assert.ok(tagsOf('coffee-picker', 2).includes('wronged'))
+  const pick = pickPerson({ ...AMERICANO, journeyId: ID, mood: 'wronged', history: seen('coffee-picker', 0, 1) })!
   assert.equal(pick.personId, 'coffee-picker')
+  assert.equal(pick.episode, 2)
   assert.equal(pick.how, 'mood')
-  assert.equal(pick.episode, tagged('coffee-picker', 'wronged')[0])
-  assert.equal(pick.route[0], 'coffee-picker')
-  // 거쳐 온 손: 커피 경로 + 플라스틱 경로 + 가게 사람까지
   assert.ok(pick.hands.length > pick.route.length)
-  // 가게 사람도 경로에 있다
-  assert.equal(pick.route.at(-1), 'barista')
 })
 
-test('같은 마음 편이 여럿이면 덜 만난 사람, 그다음 출발지에 가까운 사람', () => {
-  const id = idStartingWith('coffee-picker')
-  // 알마즈를 이미 한 번 만났으면 억울한 편이 있는 바리스타(덜 만남)를 먼저
-  const history: Met[] = [{ personId: 'coffee-picker', episode: 0 }]
-  const pick = pickPerson({ ...AMERICANO, journeyId: id, mood: 'wronged', history })!
-  assert.equal(pick.personId, 'barista')
-  assert.equal(pick.episode, tagged('barista', 'wronged')[0])
+test('순서를 건너뛰지 않는다: 억울한 편이 뒤에 있어도 다음 편(가장 앞의 안 본 편)만 본다', () => {
+  // 처음 만나는 사람: 알마즈의 3편이 억울한 편이지만 1편을 건너뛰지 않는다
+  const first = pickPerson({ ...AMERICANO, journeyId: ID, mood: 'wronged', history: [] })!
+  assert.equal(first.episode, 0)
+  assert.ok(!(first.personId === 'coffee-picker' && first.episode === 2))
+  // 어떤 마음이든, 어떤 기록이든 고른 편은 그 사람의 가장 앞의 안 본 편
+  const history = [...seen('coffee-picker', 0), ...seen('barista', 0, 1), ...seen('sea-crew', 0)]
+  for (const mood of ['glad', 'excited', 'proud', 'plain', 'wronged', 'anxious', 'lonely', 'tired'] as const) {
+    const pick = pickPerson({ ...AMERICANO, journeyId: ID, mood, history })!
+    const mine = new Set(history.filter((h) => h.personId === pick.personId).map((h) => h.episode))
+    const next = KEY_STORIES[pick.personId]!.episodes!.findIndex((_, i) => !mine.has(i))
+    assert.equal(pick.episode, next, `${mood}: ${pick.personId}`)
+  }
 })
 
-test('다 본 사람은 고르지 않는다: 알마즈 편을 다 봤으면 다른 사람의 억울한 편', () => {
-  const id = idStartingWith('coffee-picker')
-  const all = KEY_STORIES['coffee-picker']!.episodes!.map((_, i) => ({ personId: 'coffee-picker', episode: i }))
-  const pick = pickPerson({ ...AMERICANO, journeyId: id, mood: 'wronged', history: all })!
-  assert.notEqual(pick.personId, 'coffee-picker')
-  assert.equal(pick.how, 'mood')
-  // 본 편은 다시 나오지 않는다
-  const again = pickPerson({ ...AMERICANO, journeyId: id, mood: 'wronged', history: [...all, { personId: pick.personId, episode: pick.episode }] })!
-  assert.ok(!(again.personId === pick.personId && again.episode === pick.episode))
+test('다음 편이 같은 마음인 사람이 여럿이면 덜 만난 사람, 그다음 출발지에 가까운 사람', () => {
+  // 처음엔 모두 첫 편이 '그냥 그랬어요': 출발지에 가까운 알마즈
+  const a = pickPerson({ ...AMERICANO, journeyId: ID, mood: 'plain', history: [] })!
+  assert.equal(a.personId, 'coffee-picker')
+  // 알마즈를 한 번 만났으면 (다음 편이 같은 마음인) 덜 만난 사람 중 출발지에 가까운 사람
+  const b = pickPerson({ ...AMERICANO, journeyId: ID, mood: 'plain', history: seen('coffee-picker', 0) })!
+  assert.notEqual(b.personId, 'coffee-picker')
+  assert.equal(b.episode, 0)
+  assert.ok(tagsOf(b.personId, 0).includes('plain'))
 })
 
-test('같은 마음 편이 없으면 같은 칸, 그래도 없으면 아무나의 다음 편', () => {
-  const id = idStartingWith('coffee-picker')
-  // 알마즈·바리스타의 억울한 편을 다 봤으면 같은 칸(불안)의 편
-  const seenWronged: Met[] = [
-    ...tagged('coffee-picker', 'wronged').map((i) => ({ personId: 'coffee-picker', episode: i })),
-    ...tagged('barista', 'wronged').map((i) => ({ personId: 'barista', episode: i })),
-  ]
-  const cell = pickPerson({ ...AMERICANO, journeyId: id, mood: 'wronged', history: seenWronged })!
+test('다음 편에 같은 마음이 없으면 같은 칸, 그래도 없으면 아무나의 다음 편', () => {
+  // 알마즈 1편을 봤으면 다음 편(2편)은 불안: 억울과 같은 칸
+  assert.ok(tagsOf('coffee-picker', 1).includes('anxious'))
+  const cell = pickPerson({ ...AMERICANO, journeyId: ID, mood: 'wronged', history: seen('coffee-picker', 0) })!
   assert.equal(cell.how, 'cell')
-  assert.ok(KEY_STORIES[cell.personId]!.episodes![cell.episode!]!.moods.some((m) => m === 'wronged' || m === 'anxious'))
+  assert.equal(cell.personId, 'coffee-picker')
+  assert.equal(cell.episode, 1)
+  // 아무도 다음 편이 억울·불안이 아니면 아무나의 다음 편
+  const any = pickPerson({ ...AMERICANO, journeyId: ID, mood: 'wronged', history: [] })!
+  if (any.how === 'next') assert.equal(any.personId, 'coffee-picker')
+})
+
+test('다 본 사람은 고르지 않는다', () => {
+  const all = KEY_STORIES['coffee-picker']!.episodes!.map((_, i) => i)
+  const pick = pickPerson({ ...AMERICANO, journeyId: ID, mood: 'wronged', history: seen('coffee-picker', ...all) })!
+  assert.notEqual(pick.personId, 'coffee-picker')
 })
 
 test('경로에 이야기가 있는 사람이 없는 물건: 시작한 손을 카드 문구로 (마음 제목 없음)', () => {

@@ -7,9 +7,10 @@ import { storyEpisodeList } from './key-story'
  * 한 사람 고르기 (docs/redesign/README.md "한 사람 고르기").
  * 1. 물건 → 재료 → 첫 재료의 경로 사람들(출발지 변형 포함, 여정 id 시드). 끝에 그 물건을 건네준 가게·사무실 사람도 경로로 친다
  *    (지금 timeline 규칙: 가게 사람은 여정 끝에 붙는다. 마트 계산원·택배 기사·바리스타의 이야기가 여기서 나온다).
- * 2. 그 경로에서 이야기가 있는 사람 중, 아직 안 본 편 가운데 오늘의 마음 태그가 붙은 편이 있는 사람.
- *    여럿이면 덜 만난 사람, 그다음 출발지에 가까운 사람. 그 사람의 편 중에서는 앞 편부터.
- * 3. 없으면 같은 칸(에너지·편안함이 같은 쪽)의 마음 태그 편 → 그래도 없으면 그 경로에서 이야기가 있는 아무나의 다음 편(안 본 편 중 맨 앞).
+ * 이야기는 연속극이라 편 순서를 건너뛰지 않는다: 사람마다 '다음 편'(아직 안 본 편 중 가장 앞 편) 하나만 후보로 본다.
+ * 마음 태그는 오늘 누구를 만날지 고르는 데만 쓴다.
+ * 2. 경로 위 사람들의 다음 편 중 오늘의 마음 태그가 붙은 사람. 여럿이면 덜 만난 사람, 그다음 출발지에 가까운 사람.
+ * 3. 없으면 다음 편에 같은 칸(에너지·편안함이 같은 쪽)의 마음 태그가 붙은 사람 → 그래도 없으면 아무나의 다음 편.
  * 4. 경로에 (남은 편이 있는) 이야기 사람이 없으면 핵심 인물 규칙의 시작한 손을 카드 문구로. 제목에 마음을 지어 붙이지 않는다.
  * 본 편은 하루 기록(만난 사람·본 편 번호)에서 센다. 편 번호·편 수는 화면에 보이지 않는다.
  */
@@ -68,12 +69,12 @@ export function pickPerson(input: PickInput): Pick | null {
     met.set(h.personId, (met.get(h.personId) ?? 0) + 1)
     if (h.episode !== null) seen.set(h.personId, (seen.get(h.personId) ?? new Set()).add(h.episode))
   }
-  /** 사람마다 아직 안 본 편 (번호와 태그) */
+  /** 사람마다 다음 편 하나 (아직 안 본 편 중 가장 앞 편). 다 본 사람은 후보가 아니다 */
   const candidates = route.flatMap((personId, order) => {
-    const unseen = storyEpisodeList(personId)
+    const next = storyEpisodeList(personId)
       .map((e, i) => ({ i, moods: e.moods }))
-      .filter((e) => !seen.get(personId)?.has(e.i))
-    return unseen.length ? [{ personId, order, unseen }] : []
+      .find((e) => !seen.get(personId)?.has(e.i))
+    return next ? [{ personId, order, next }] : []
   })
   const byPreference = (a: { personId: string; order: number }, b: { personId: string; order: number }) =>
     (met.get(a.personId) ?? 0) - (met.get(b.personId) ?? 0) || a.order - b.order
@@ -84,11 +85,8 @@ export function pickPerson(input: PickInput): Pick | null {
     { how: 'next', match: () => true },
   ]
   for (const { how, match } of tries) {
-    const found = candidates
-      .map((c) => ({ ...c, episode: c.unseen.find((e) => match(e.moods))?.i }))
-      .filter((c): c is typeof c & { episode: number } => c.episode !== undefined)
-      .sort(byPreference)[0]
-    if (found) return { personId: found.personId, episode: found.episode, how, route, hands }
+    const found = candidates.filter((c) => match(c.next.moods)).sort(byPreference)[0]
+    if (found) return { personId: found.personId, episode: found.next.i, how, route, hands }
   }
 
   // 이야기 사람이 없다: 시작한 손을 카드 문구로
