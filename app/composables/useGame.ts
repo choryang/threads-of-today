@@ -13,7 +13,7 @@ import { REVERSE_SUFFIX, buildTimeline, journeyOrderSuffix, quizFor, secondJourn
 import { addJourneyToThreads, backfillThreads } from '../../shared/threads'
 import { everyoneThanked, sceneKey, thanksReply, unseenScenes, type ThanksScene } from '../../shared/thanks'
 import { emptySave, type DayLog, type Journey, type JourneySource, type MysteryLog, type Save } from '../../shared/progress'
-import { isOpen, pendingNotices, silentSeen, unlockStats, type FeatureId, type UnlockStepId } from '../../shared/unlocks'
+import { isOpen, nextUnlock, openSteps, pendingNotices, silentUnlocks, unlockStats, type FeatureId, type UnlockStepId } from '../../shared/unlocks'
 
 export type { DayLog, Journey, JourneySource, MysteryLog, Save } from '../../shared/progress'
 
@@ -45,7 +45,7 @@ function getState(): Save {
   if (state) return state
   const loaded = load()
   // 열림 알림 기록이 없으면(새 사용자 또는 이 기능 전의 기록) 이미 넘은 단계는 조용히 연다
-  if (!loaded.unlockSeen) loaded.unlockSeen = silentSeen(loaded)
+  if (!loaded.unlockSeen) Object.assign(loaded, quietUnlocks(loaded))
   // 첫 방문에는 기본 닉네임을 준다. updatedAt 0이라 다른 기기에서 직접 정한 닉네임이 있으면 그쪽이 이긴다
   if (!loaded.nickname) loaded.nickname = { value: randomNickname(), updatedAt: 0 }
   state = reactive(loaded) as Save
@@ -62,8 +62,24 @@ function getState(): Save {
       },
       { deep: true },
     )
+    // 기능 열림: 오늘 새로 열 단계가 생기면 연 날짜(서울)를 적는다. 하루에 하나씩이라 다음 단계는 내일 적힌다
+    watch(
+      () => nextUnlock(unlockStats(state!), state!.unlockedOn ?? {}, seoulDateKey()),
+      (id) => {
+        if (!id) return
+        if (!state!.unlockedOn) state!.unlockedOn = {}
+        state!.unlockedOn[id] = seoulDateKey()
+      },
+      { immediate: true },
+    )
   })
   return state
+}
+
+/** 알림 기록이 없는 진행 상황: 이미 시작한 사용자는 넘은 단계를 오늘 한꺼번에 조용히 연다 (shared/unlocks.ts) */
+function quietUnlocks(save: Save): Pick<Save, 'unlockSeen' | 'unlockedOn'> {
+  const q = silentUnlocks(save, seoulDateKey())
+  return { unlockSeen: q.unlockSeen, unlockedOn: { ...q.unlockedOn, ...save.unlockedOn } }
 }
 
 /** 이 여정에 연결 카드의 원래 사람(선원·항구 등)이 나왔는지 */
@@ -88,7 +104,10 @@ export function replaceSave(next: Save) {
   s.visitedVillages = next.visitedVillages ?? []
   s.bestSeen = next.bestSeen ?? []
   // 예전 기기에서 받은 기록이면 알림 기록이 없다: 지금 기록 기준으로 조용히 연다
-  s.unlockSeen = next.unlockSeen ?? silentSeen(next)
+  if (next.unlockSeen) {
+    s.unlockSeen = next.unlockSeen
+    s.unlockedOn = next.unlockedOn ?? {}
+  } else Object.assign(s, quietUnlocks(next))
   if (next.village) s.village = next.village
   if (next.nickname) s.nickname = next.nickname
 }
@@ -373,12 +392,13 @@ export function useGame() {
     return true
   }
 
-  // ── 기능 열림 (shared/unlocks.ts의 표만 본다) ──
+  // ── 기능 열림 (shared/unlocks.ts의 표만 본다. 하루에 하나씩, 연 날짜는 getState의 감시가 적는다) ──
   const unlocks = computed(() => unlockStats(s))
+  const openNow = computed(() => openSteps(unlocks.value, s.unlockedOn ?? {}, seoulDateKey()))
   /** 이 기능을 보여 줄지. 링크로 들어온 화면(/d, /p, /v)은 이 함수를 쓰지 않는다 */
-  const opens = (feature: FeatureId) => isOpen(feature, unlocks.value)
-  /** 새로 열렸는데 아직 안 본 알림 하나 (표 순서로 하나씩) */
-  const unlockNotice = computed(() => pendingNotices(unlocks.value, s.unlockSeen ?? [])[0] ?? null)
+  const opens = (feature: FeatureId) => isOpen(feature, openNow.value)
+  /** 열렸는데 아직 안 본 알림 하나 (표 순서로 하나씩) */
+  const unlockNotice = computed(() => pendingNotices(openNow.value, s.unlockSeen ?? [])[0] ?? null)
   function markUnlockSeen(id: UnlockStepId) {
     if (!s.unlockSeen) s.unlockSeen = []
     if (!s.unlockSeen.includes(id)) s.unlockSeen.push(id)

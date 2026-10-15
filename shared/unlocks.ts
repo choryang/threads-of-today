@@ -2,9 +2,11 @@
  * 기능을 여는 순서 (docs/screen-cleanup.md "기능을 여는 순서" 표 그대로). 화면은 이 표만 보고 보여 줄지 정한다.
  *
  * - 조건은 마친 여정 수와 첫 단짝(친해진 정도 100%) 둘뿐이고, 모두 순수 함수로 판정한다.
+ * - 열림은 하루(서울 날짜)에 하나씩만: 조건을 넘은 단계가 여러 개면 오늘은 표에서 가장 앞 단계 하나만 열고,
+ *   나머지는 다음 날부터 하루에 하나씩 연다. 연 날짜는 Save.unlockedOn에 적는다(동기화하면 이른 날짜).
  * - 새로 열린 단계는 마을 위에 알림을 한 번만 띄운다. 본 알림은 Save.unlockSeen(동기화 합집합)에 단계 id로 적는다.
  * - 링크로 들어온 화면(/d, /p, /v)은 조건과 상관없이 보여 준다. 열림 조건은 내가 보내는 쪽에만 걸린다.
- * - 이 표가 들어오기 전부터 하던 사용자는 이미 넘은 단계를 알림 없이 조용히 연다(silentSeen).
+ * - 이 표가 들어오기 전부터 하던 사용자는 이미 넘은 단계를 알림 없이 한꺼번에 조용히 연다(silentUnlocks).
  * 여정 수 기준은 써 보면서 조정한다.
  */
 import { PEOPLE_LIST } from './data/people'
@@ -70,6 +72,9 @@ export interface UnlockSource {
   people?: Record<string, PersonLog>
 }
 
+/** 단계 id → 연 날짜(서울) */
+export type UnlockedOn = Partial<Record<string, string>>
+
 const villager = new Set(PEOPLE_LIST.filter((p) => p.kind !== 'link').map((p) => p.id))
 
 /**
@@ -87,27 +92,39 @@ export function conditionMet(when: UnlockCondition, s: UnlockStats): boolean {
   return (when.journeys === undefined || s.journeys >= when.journeys) && (!when.bestFriend || s.bestFriend)
 }
 
-/** 지금 열린 단계 id (표 순서) */
-export function openSteps(s: UnlockStats): UnlockStepId[] {
-  return UNLOCK_STEPS.filter((step) => conditionMet(step.when, s)).map((step) => step.id)
+/**
+ * 오늘 새로 열 단계 하나 (없으면 null). 오늘 이미 하나를 열었으면 null이고, 아니면 조건을 넘었는데 아직 안 연 단계 중
+ * 표에서 가장 앞 단계. 첫날 단계는 늘 열려 있어 세지 않는다
+ */
+export function nextUnlock(s: UnlockStats, unlockedOn: UnlockedOn, today: string): UnlockStepId | null {
+  if (Object.values(unlockedOn).includes(today)) return null
+  return UNLOCK_STEPS.find((step) => step.id !== 'day1' && !unlockedOn[step.id] && conditionMet(step.when, s))?.id ?? null
+}
+
+/** 지금 열린 단계 id (표 순서): 첫날 + 연 날짜가 적힌 단계 + 오늘 새로 열 단계 */
+export function openSteps(s: UnlockStats, unlockedOn: UnlockedOn, today: string): UnlockStepId[] {
+  const next = nextUnlock(s, unlockedOn, today)
+  return UNLOCK_STEPS.filter((step) => step.id === 'day1' || !!unlockedOn[step.id] || step.id === next).map((step) => step.id)
 }
 
 /** 이 기능이 열렸는지. 링크로 들어온 화면은 이 함수를 거치지 않는다 */
-export function isOpen(feature: FeatureId, s: UnlockStats): boolean {
+export function isOpen(feature: FeatureId, open: readonly UnlockStepId[]): boolean {
   const step = UNLOCK_STEPS.find((x) => x.features.includes(feature))
-  return !!step && conditionMet(step.when, s)
+  return !!step && open.includes(step.id)
 }
 
-/** 새로 열렸는데 아직 알림을 보지 않은 단계 (표 순서). 하나씩 차례로 띄운다 */
-export function pendingNotices(s: UnlockStats, seen: readonly string[]): UnlockStep[] {
-  return UNLOCK_STEPS.filter((step) => step.notice && conditionMet(step.when, s) && !seen.includes(step.id))
+/** 열렸는데 아직 알림을 보지 않은 단계 (표 순서) */
+export function pendingNotices(open: readonly UnlockStepId[], seen: readonly string[]): UnlockStep[] {
+  return UNLOCK_STEPS.filter((step) => step.notice && open.includes(step.id) && !seen.includes(step.id))
 }
 
 /**
  * 본 알림 기록이 없는 진행 상황(이 표 이전부터 하던 사용자, 또는 예전 기기에서 받은 기록)을 처음 열 때:
- * 이미 시작한 사용자는 넘은 단계를 모두 본 것으로(알림 없이 조용히), 아무것도 안 한 새 사용자는 빈 목록.
+ * 이미 시작한 사용자는 넘은 단계를 하루 하나 규칙 없이 오늘 한꺼번에, 알림 없이 연다. 아무것도 안 한 새 사용자는 빈 기록.
  */
-export function silentSeen(save: UnlockSource): UnlockStepId[] {
-  if (!Object.keys(save.cards).length) return []
-  return openSteps(unlockStats(save))
+export function silentUnlocks(save: UnlockSource, today: string): { unlockSeen: UnlockStepId[]; unlockedOn: Record<string, string> } {
+  if (!Object.keys(save.cards).length) return { unlockSeen: [], unlockedOn: {} }
+  const s = unlockStats(save)
+  const met = UNLOCK_STEPS.filter((step) => conditionMet(step.when, s)).map((step) => step.id)
+  return { unlockSeen: met, unlockedOn: Object.fromEntries(met.filter((id) => id !== 'day1').map((id) => [id, today])) }
 }

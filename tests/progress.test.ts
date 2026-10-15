@@ -205,3 +205,13 @@ test('본 알림(unlockSeen) 동기화: 합집합, 둘 다 없으면 없는 채�
   assert.deepEqual(sanitizeSave({ unlockSeen: ['journeys-3', 'nope', 3, 'journeys-3'] }, TODAY).unlockSeen, ['journeys-3'])
   assert.equal(sanitizeSave({}, TODAY).unlockSeen, undefined)
 })
+
+test('기능을 연 날짜(unlockedOn) 동기화: 단계마다 이른 날짜, 둘 다 없으면 없는 채로, 모르는 단계·날짜 아닌 값은 버린다', () => {
+  const a: Save = { ...emptySave(), unlockedOn: { 'second-journey': '2026-10-14', 'journeys-3': '2026-10-16' } }
+  const b: Save = { ...emptySave(), unlockedOn: { 'journeys-3': '2026-10-15' } }
+  assert.deepEqual(mergeSaves(a, b, TODAY).unlockedOn, { 'second-journey': '2026-10-14', 'journeys-3': '2026-10-15' })
+  assert.deepEqual(mergeSaves(emptySave(), b, TODAY).unlockedOn, { 'journeys-3': '2026-10-15' })
+  assert.equal('unlockedOn' in mergeSaves(emptySave(), emptySave(), TODAY), false)
+  assert.deepEqual(sanitizeSave({ unlockedOn: { 'journeys-3': '2026-10-15', nope: '2026-10-15', 'journeys-5': 'tomorrow', 'journeys-7': 7 } }, TODAY).unlockedOn, { 'journeys-3': '2026-10-15' })
+  assert.equal(sanitizeSave({}, TODAY).unlockedOn, undefined)
+})

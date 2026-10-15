@@ -17,6 +17,7 @@
  *  - 다녀온 마을(visitedVillages): 토큰으로 합집합, 최근 30곳. 상대에게 알리지 않는다.
  *  - 단짝 연출을 본 주민(bestSeen): 합집합. 한 기기에서 본 연출은 다른 기기에서 다시 띄우지 않는다.
  *  - 본 열림 알림(unlockSeen, shared/unlocks.ts): 합집합. 둘 다 없으면 없는 채로 둔다(기존 사용자를 조용히 여는 표시라서).
+ *  - 기능을 연 날짜(unlockedOn): 단계마다 이른 날짜. 둘 다 없으면 없는 채로.
  */
 import { MATERIALS, SETS } from './data/materials'
 import { PEOPLE, PEOPLE_LIST } from './data/people'
@@ -145,6 +146,8 @@ export interface Save {
    * 그래서 emptySave에도 넣지 않고, 병합할 때 둘 다 없으면 없는 채로 둔다
    */
   unlockSeen?: string[]
+  /** 단계 id → 그 단계를 연 날짜(서울). 하루에 하나씩만 연다 (shared/unlocks.ts) */
+  unlockedOn?: Record<string, string>
   nickname?: Nickname
 }
 
@@ -167,6 +170,12 @@ function isRecent(key: string, todayKey: string, days = KEEP_DAYS): boolean {
 
 const earlier = (a: string | undefined, b: string | undefined) => (!a ? b! : !b ? a : a < b ? a : b)
 const union = (a: string[], b: string[]) => [...new Set([...a, ...b])]
+/** 키마다 이른 날짜 */
+function mergeEarliest(a: Record<string, string>, b: Record<string, string>): Record<string, string> {
+  const out = { ...a }
+  for (const [k, v] of Object.entries(b)) if (!out[k] || v < out[k]!) out[k] = v
+  return out
+}
 
 function mergeThreads(a: Record<string, ThreadStat>, b: Record<string, ThreadStat>): Record<string, ThreadStat> {
   const out: Record<string, ThreadStat> = { ...a }
@@ -287,6 +296,7 @@ export function mergeSaves(a: Save, b: Save, todayKey: string): Save {
     visitedVillages: mergeVisited(a.visitedVillages ?? [], b.visitedVillages ?? []),
     bestSeen: union(a.bestSeen ?? [], b.bestSeen ?? []),
     ...(a.unlockSeen || b.unlockSeen ? { unlockSeen: union(a.unlockSeen ?? [], b.unlockSeen ?? []) } : {}),
+    ...(a.unlockedOn || b.unlockedOn ? { unlockedOn: mergeEarliest(a.unlockedOn ?? {}, b.unlockedOn ?? {}) } : {}),
     ...(mergeVillage(a.village, b.village) ? { village: mergeVillage(a.village, b.village) } : {}),
     days: pickRecent(days, todayKey),
     mystery: pickRecent(mystery, todayKey),
@@ -375,6 +385,10 @@ export function sanitizeSave(raw: unknown, todayKey: string): Save {
       const nickname = normalizeNickname(v.nickname)
       if (nickname && !s.visitedVillages.some((x) => x.token === v.token)) s.visitedVillages.push({ token: v.token, nickname, at: v.at })
     }
+  }
+  if (isObj(raw.unlockedOn)) {
+    s.unlockedOn = {}
+    for (const [k, v] of Object.entries(raw.unlockedOn)) if ((UNLOCK_STEP_IDS as string[]).includes(k) && typeof v === 'string' && DATE.test(v)) s.unlockedOn[k] = v
   }
   if (Array.isArray(raw.unlockSeen)) s.unlockSeen = strList(raw.unlockSeen, UNLOCK_STEP_IDS.length).filter((id) => (UNLOCK_STEP_IDS as string[]).includes(id))
   s.bestSeen = strList(raw.bestSeen, PEOPLE_COUNT).filter((id) => PEOPLE[id] && PEOPLE[id]!.kind !== 'link')
