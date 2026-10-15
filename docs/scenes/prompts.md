@@ -123,7 +123,7 @@ Avoid: photorealistic, 3D render, glossy, neon, oversaturated, visible face, clo
 ```text
 Create a 4:3 landscape illustration.
 
-Scene: Inside a bright neighborhood supermarket in South Korea. A checkout counter with a short conveyor belt and a barcode scanner, two self-checkout kiosks at the side, shelves of colorful packaged goods with blank labels in the background, glass doors to the street letting in daylight. In the middle ground, a young woman cashier in a store apron and cap seen from a three-quarter back view with her face turned away, handing a full shopping bag across the counter to an unseen customer.
+Scene: Inside a bright neighborhood supermarket in South Korea. A checkout counter with a short conveyor belt and a barcode scanner, two self-checkout kiosks at the side, shelves of colorful packaged goods with blank labels in the background, glass doors to the street letting in daylight. In the middle ground, a young woman cashier in a store apron and cap seen from a three-quarter back view with her face turned away, standing alone behind the checkout and packing groceries into a shopping bag at the end of the counter. No customer in the scene and no other hands or arms anywhere in view.
 
 Style: editorial illustration matching the attached reference image, gouache and watercolor texture with visible soft brushstrokes, realistic proportions but gently simplified shapes, muted earthy palette with warm cream highlights, soft natural daylight, calm and quiet mood. One worker in the middle ground absorbed in their work, face not visible, dignified and skilled, ordinary practical work clothes. No other people up close, no readable text, no logos, no flags.
 
