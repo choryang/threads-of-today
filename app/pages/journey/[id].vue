@@ -469,7 +469,9 @@ function followTeaser(p: Product) {
             <svg v-else viewBox="0 0 32 32" width="40" height="40" v-html="productIconSvg(productId)" />
           </span>
           <MeetAgain :key="`again-${journey.step}`" :person-id="current.personId" :journey-id="journey.id" :journey-name="journey.name" />
-          <PersonCard :person-id="current.personId" :is-new="journey.newCards.includes(current.personId)" />
+          <!-- 그곳의 지금: 하늘·시계·'지금은 아마 …' (캐릭터는 하늘에 서 있어 카드에는 그림을 빼고) -->
+          <PlaceSky :person-id="current.personId" />
+          <PersonCard :person-id="current.personId" :is-new="journey.newCards.includes(current.personId)" no-art />
           <div v-if="stop" class="stop panel">
             <p class="stop-q">이 전엔 어디 있었을까요?</p>
             <div class="stop-options">
@@ -500,7 +502,8 @@ function followTeaser(p: Product) {
         <section v-else-if="current.type === 'hidden'" class="stage hidden-meet">
           <p class="kicker gold">숨은 만남</p>
           <MeetAgain :key="`again-${journey.step}`" :person-id="current.personId" :journey-id="journey.id" :journey-name="journey.name" />
-          <PersonCard :person-id="current.personId" :is-new="journey.newCards.includes(current.personId)" />
+          <PlaceSky :person-id="current.personId" />
+          <PersonCard :person-id="current.personId" :is-new="journey.newCards.includes(current.personId)" no-art />
         </section>
 
         <section v-else-if="current.type === 'event'" class="story panel" :class="{ paused: storyPaused }">

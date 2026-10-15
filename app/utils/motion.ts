@@ -4,6 +4,8 @@
  * prefers-reduced-motion 사용자는 main.css가 애니메이션을 모두 끄고, JS 대기는 reducedMotion()으로 건너뛴다.
  */
 export const MOTION = {
+  /** 여정 화면 하늘(그곳의 지금 시각)을 다시 그리는 간격 */
+  skyTickMs: 30_000,
   /** 화면 전환과 카드 등장. 모든 곳 같은 길이·같은 이징 */
   enterMs: 300,
   easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)',

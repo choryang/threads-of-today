@@ -8,7 +8,8 @@ import { thanksReply } from '../../shared/thanks'
 import { todayMeetLine } from '../../shared/today'
 import { badgeOf } from '../utils/labels'
 
-const props = defineProps<{ personId: string; isNew?: boolean; number?: number }>()
+/** noArt: 여정 화면처럼 위에 하늘(PlaceSky)이 캐릭터를 그릴 때는 카드 안 그림을 빼고 '새로'를 머리에 단다 */
+const props = defineProps<{ personId: string; isNew?: boolean; number?: number; noArt?: boolean }>()
 const person = computed(() => PEOPLE[props.personId]!)
 const place = computed(() => PLACES[person.value.placeId]!)
 const placeLabel = computed(() => labelOf(place.value))
@@ -70,9 +71,12 @@ onBeforeUnmount(() => clearTimeout(waveTimer))
   <article class="card" :class="`rarity-${person.rarity}`">
     <header class="top">
       <span class="mono no">{{ number ? `No.${String(number).padStart(3, '0')}` : place.country || '바다' }}</span>
-      <span v-if="showBadge" class="badge">{{ badgeOf(person) }}</span>
+      <span class="top-right">
+        <span v-if="noArt && isNew" class="new inline">새로</span>
+        <span v-if="showBadge" class="badge">{{ badgeOf(person) }}</span>
+      </span>
     </header>
-    <div class="art">
+    <div v-if="!noArt" class="art">
       <Character :person-id="personId" :size="150" bob :wave="waving" />
       <span v-if="isNew" class="new">새로</span>
     </div>
@@ -161,6 +165,8 @@ onBeforeUnmount(() => clearTimeout(waveTimer))
   background: var(--bad);
   color: #fff;
 }
+.top-right { display: inline-flex; align-items: center; gap: 6px; }
+.new.inline { position: static; }
 .body { padding: 14px 18px 20px; display: flex; flex-direction: column; gap: 4px; }
 .who { margin: 0; font-size: 20px; line-height: 1.35; word-break: keep-all; }
 .who .place { font-size: 13px; font-weight: 400; color: #4a4a4a; }

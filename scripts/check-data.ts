@@ -3,6 +3,7 @@ import { existsSync } from 'node:fs'
 import { LINK_RULES, MATERIAL_LIST, PRODUCTS, SETS } from '../shared/data/materials'
 import { PEOPLE, PEOPLE_LIST } from '../shared/data/people'
 import { PLACES } from '../shared/data/places'
+import { DOING, DOING_DEFAULT } from '../shared/data/doing'
 import dictionary from '../shared/data/dictionary.json'
 import { EVENTS, HIDDEN_RULES } from '../shared/data/journey-extras'
 import { SYNONYM_GROUPS } from '../shared/data/synonyms'
@@ -41,6 +42,18 @@ for (const place of Object.values(PLACES)) {
     errors.push(`장소 ${place.id}: 알 수 없는 시간대 ${place.tz}`)
   }
 }
+
+// '지금은 아마 …': 있는 사람만, 해요체로 끝나고 숫자·나라 이름 없이. 여정 화면에 나오는 사람(stage·hidden)은 모두 문구가 있게
+for (const [id, d] of Object.entries(DOING)) {
+  if (!PEOPLE[id]) errors.push(`지금 하는 일 ${id}: 사람 없음`)
+  for (const t of [d.work, d.eve, d.sleep]) {
+    if (t === undefined) continue
+    if (!/요$/.test(t) || /^지금/.test(t)) errors.push(`지금 하는 일 ${id}: "${t}" (해요체로 끝나고 '지금은 아마'는 빼고)`)
+    if (looksFactual(t)) errors.push(`지금 하는 일 ${id}: 사실처럼 보이는 문구 "${t}"`)
+  }
+}
+for (const t of Object.values(DOING_DEFAULT)) if (looksFactual(t)) errors.push(`지금 하는 일 기본 문구: "${t}"`)
+for (const p of PEOPLE_LIST) if ((p.kind === 'stage' || p.kind === 'hidden') && !DOING[p.id]) errors.push(`${p.id}: 지금 하는 일 문구 없음 (shared/data/doing.ts)`)
 
 const personIds = new Set<string>()
 for (const person of PEOPLE_LIST) {
