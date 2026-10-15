@@ -364,7 +364,7 @@ function followTeaser(p: Product) {
         <p class="kicker gold">다시 만났어요</p>
         <p class="lb-title">여정이 서로 겹쳤어요!</p>
         <p v-for="id in linkGained" :key="id" class="lb-met">{{ metAgain(id) }}</p>
-        <p class="small">오늘 지나온 재료들이 같은 사람을 거쳐 왔어요. 에픽 카드를 얻었어요.</p>
+        <p class="small">오늘 지나온 재료들이 같은 사람을 거쳐 왔어요. 두 물건을 모두 거쳐 온 분이에요.</p>
         <div class="grid">
           <MiniCard v-for="id in linkGained" :key="id" :person-id="id" is-new />
         </div>
@@ -393,7 +393,7 @@ function followTeaser(p: Product) {
           <p class="kicker gold">다시 만났어요</p>
           <Character :person-id="reunionPerson" :size="132" wave />
           <p id="reunion-title" class="reunion-title display">{{ metAgain(reunionCard) }}</p>
-          <p class="reunion-text">{{ withJosa(jobOf(reunionPerson), '이', '가') }} 두 물건을 모두 날랐어요. 에픽 카드를 얻었어요.</p>
+          <p class="reunion-text">{{ withJosa(jobOf(reunionPerson), '이', '가') }} 두 물건을 모두 날랐어요. 두 물건을 모두 거쳐 온 분이에요.</p>
           <div class="reunion-card">
             <MiniCard :person-id="reunionCard" is-new />
           </div>
@@ -522,6 +522,7 @@ function followTeaser(p: Product) {
             <p>{{ quiz.explain }}</p>
             <p v-if="quizChoice !== quiz.answer && journey.newCards.includes(quiz.rewardId)" class="small gold">그래도 첫 여정 선물로 이 사람을 만나게 해 드릴게요.</p>
             <div v-if="quizChoice === quiz.answer || journey.newCards.includes(quiz.rewardId)" class="reward">
+              <p class="small gold">아주 드물게 만나는 분이에요</p>
               <MiniCard :person-id="quiz.rewardId" :is-new="journey.newCards.includes(quiz.rewardId)" />
             </div>
           </div>
@@ -656,7 +657,9 @@ function followTeaser(p: Product) {
   min-height: 52px; padding: 0 16px; border-radius: 14px;
   background: var(--ground); border: 1px solid var(--line); font-size: 15px; text-align: left;
 }
-.reward { width: 120px; }
+.reward { display: flex; flex-direction: column; gap: 6px; }
+.reward p { margin: 0; }
+.reward > :last-child { width: 120px; }
 .opt:disabled { cursor: default; }
 .opt.right { background: #1e3a2e; border: 2px solid var(--ok); }
 .opt.wrong { background: #3a1f22; border: 2px solid var(--bad); }
