@@ -159,20 +159,21 @@ onBeforeUnmount(() => insetObserver?.disconnect())
 /** 많이 축소했을 때(배율 0.25 미만): 제목 카드는 한 줄, 오고 있는 물건은 숨기고, 버튼은 작은 알약으로 접는다 (0.3초 전환) */
 const compact = ref(false)
 
-// ── 제목 카드 자세히: 나라 수·단짝 수는 펼쳤을 때만. 이 기기에서만 기억한다(편의 설정이라 진행 상황에 넣지 않는다) ──
-const DETAILS_KEY = 'my-day-people:village-card-details'
-const details = ref(false)
+// ── 제목 카드 펼치기: 기본은 접힌 한 줄('마을 주민 n / 213명'과 진행 막대). 펼치면 다음 주민·다음에 열리는 것·나라·단짝 수.
+// 사용자가 펼치거나 접은 상태는 이 기기에서만 기억한다(편의 설정이라 진행 상황에 넣지 않는다). 기억이 없으면 접힘 ──
+const CARD_KEY = 'my-day-people:village-card-open'
+const expanded = ref(false)
 onMounted(() => {
   try {
-    details.value = window.localStorage.getItem(DETAILS_KEY) === '1'
+    expanded.value = window.localStorage.getItem(CARD_KEY) === '1'
   } catch {
     // 저장소를 못 쓰면 접은 채로
   }
 })
-function toggleDetails() {
-  details.value = !details.value
+function setExpanded(open: boolean) {
+  expanded.value = open
   try {
-    window.localStorage.setItem(DETAILS_KEY, details.value ? '1' : '0')
+    window.localStorage.setItem(CARD_KEY, open ? '1' : '0')
   } catch {
     // 이번 방문 동안만
   }
@@ -314,45 +315,54 @@ onMounted(async () => {
 
     <div class="overlay">
       <div ref="topEl" class="top">
-        <header class="title-card">
-          <div class="title-row fold">
-            <h1 class="display title">내 하루 마을</h1>
-            <div class="title-btns">
-              <button
-                class="icon-btn"
-                :aria-label="details ? '자세히 접기' : '자세히 보기'"
-                :aria-expanded="details"
-                aria-controls="village-card-details"
-                @click="toggleDetails"
-              >
-                <svg class="chevron" :class="{ up: details }" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
-              </button>
-              <button class="icon-btn" aria-label="마을 메뉴" :aria-expanded="menuOpen" @click="menuOpen = true">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
-              </button>
+        <header class="title-card" :class="{ expanded }">
+          <h1 class="sr-only">내 하루 마을</h1>
+          <!-- 접힌 한 줄: 마을 주민 n / 213명(진행 막대), 다음에 열릴 것이 있으면 작은 자물쇠, 펼치기, 메뉴 -->
+          <div class="card-row">
+            <div class="goal">
+              <p class="goal-count">마을 주민 <strong class="mono">{{ layout.residents.length }}</strong> / {{ capacity }}명</p>
+              <div class="goal-bar" role="progressbar" :aria-valuenow="layout.residents.length" aria-valuemin="0" :aria-valuemax="capacity" aria-label="마을 주민">
+                <span :style="{ width: `${residentPct}%` }" />
+              </div>
             </div>
+            <button
+              v-if="game.nextLockedStep.value && !expanded"
+              class="icon-btn lock-btn"
+              :aria-label="`다음에 열리는 것: ${game.nextLockedStep.value.step.notice}. 펼쳐 보기`"
+              @click="setExpanded(true)"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>
+            </button>
+            <button
+              class="icon-btn"
+              :aria-label="expanded ? '마을 카드 접기' : '마을 카드 펼치기'"
+              :aria-expanded="expanded"
+              aria-controls="village-card-more"
+              @click="setExpanded(!expanded)"
+            >
+              <svg class="chevron" :class="{ up: expanded }" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
+            </button>
+            <button class="icon-btn" aria-label="마을 메뉴" :aria-expanded="menuOpen" @click="menuOpen = true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
+            </button>
           </div>
-          <!-- 목표 두 줄: 늘 보인다 -->
-          <div class="goal">
-            <p class="goal-count">마을 주민 <strong class="mono">{{ layout.residents.length }}</strong> / {{ capacity }}명</p>
-            <div class="goal-bar fold" role="progressbar" :aria-valuenow="layout.residents.length" aria-valuemin="0" :aria-valuemax="capacity" aria-label="마을 주민">
-              <span :style="{ width: `${residentPct}%` }" />
-            </div>
+          <!-- 펼쳤을 때만 (많이 축소하면 펼쳐 둔 상태여도 접는다) -->
+          <div v-if="expanded" id="village-card-more" class="card-more fold">
+            <button v-if="next" class="next-resident" @click="goNext">
+              다음 주민은 <strong>{{ next.product.name }}</strong> 속에 있어요
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
+            </button>
+            <p v-else class="sub">마을에 살 수 있는 사람을 모두 만났어요</p>
+            <!-- 다음에 열리는 것: 아직 안 열린 단계 중 가장 앞 단계 하나 (모두 열리면 없음) -->
+            <p v-if="game.nextLockedStep.value" class="next-unlock">
+              <svg class="lock" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>
+              <span>{{ game.nextLockedStep.value.step.notice }}</span>
+              <span class="cond">· {{ shortCondition(game.nextLockedStep.value.state) }}</span>
+            </p>
+            <p v-if="layout.residents.length" class="sub">
+              {{ countries.length }}개 나라에서 왔어요<template v-if="bestFriends.length"> · 단짝 {{ bestFriends.length }}명</template>
+            </p>
           </div>
-          <button v-if="next" class="next-resident fold" @click="goNext">
-            다음 주민은 <strong>{{ next.product.name }}</strong> 속에 있어요
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
-          </button>
-          <p v-else class="sub fold">마을에 살 수 있는 사람을 모두 만났어요</p>
-          <!-- 다음에 열리는 것: 아직 안 열린 단계 중 가장 앞 단계 하나 (모두 열리면 없음, 많이 축소하면 접힘) -->
-          <p v-if="game.nextLockedStep.value" class="next-unlock fold">
-            <svg class="lock" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>
-            <span>{{ game.nextLockedStep.value.step.notice }}</span>
-            <span class="cond">· {{ shortCondition(game.nextLockedStep.value.state) }}</span>
-          </p>
-          <p v-if="details" id="village-card-details" class="sub details fold">
-            {{ countries.length }}개 나라에서 왔어요<template v-if="bestFriends.length"> · 단짝 {{ bestFriends.length }}명</template>
-          </p>
         </header>
         <button v-if="unlockShown" class="notice unlock-notice" role="status" @click="closeUnlockNotice">
           <svg width="26" height="26" viewBox="0 0 24 24" fill="#F2C14E" stroke="#2A2A35" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.5l2.6 6.2 6.7.6-5.1 4.4 1.6 6.6L12 16.8l-5.8 3.5 1.6-6.6-5.1-4.4 6.7-.6z" /></svg>
@@ -448,13 +458,14 @@ onMounted(async () => {
   display: flex; flex-direction: column; gap: 8px; pointer-events: none;
 }
 .title-card { display: flex; flex-direction: column; gap: 3px; padding: 12px 14px 12px 18px; border-radius: 20px; background: rgba(15, 27, 45, 0.9); }
-.title { margin: 0; font-size: 24px; line-height: 1.15; }
-.title-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.title-btns { display: flex; margin: -6px -4px -6px 0; }
 .icon-btn { width: 44px; height: 44px; border: 0; border-radius: 14px; background: none; color: var(--text); display: flex; align-items: center; justify-content: center; cursor: pointer; }
 .chevron { transition: transform var(--motion-enter) var(--motion-ease); }
 .chevron.up { transform: rotate(180deg); }
-.goal { display: flex; flex-direction: column; gap: 5px; margin-top: 2px; }
+.card-row { display: flex; align-items: center; gap: 2px; margin: -6px -6px -6px 0; }
+.card-row .goal { flex: 1; min-width: 0; }
+.card-more { display: flex; flex-direction: column; gap: 3px; margin-top: 4px; }
+.lock-btn { color: var(--accent); }
+.goal { display: flex; flex-direction: column; gap: 5px; }
 .goal-count { margin: 0; font-size: 14px; color: #f3f1ea; }
 .goal-count strong { color: var(--accent); font-size: 17px; font-weight: 500; }
 .goal-bar { height: 8px; border-radius: 4px; background: #2e3d55; overflow: hidden; }
@@ -464,7 +475,7 @@ onMounted(async () => {
   display: inline-flex; align-items: center; gap: 4px; color: #f3f1ea; font-size: 14px; text-align: left; word-break: keep-all;
 }
 .next-resident strong { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
-.details { animation: rise var(--motion-enter) var(--motion-ease); }
+.card-more { animation: rise var(--motion-enter) var(--motion-ease); }
 .sub { margin: 0; font-size: 13px; color: #c9cfd9; word-break: keep-all; }
 .notice {
   display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 8px 14px; border-radius: 16px; border: 0;
@@ -496,12 +507,12 @@ onMounted(async () => {
   transition: max-height var(--motion-enter) var(--motion-ease), opacity var(--motion-enter) var(--motion-ease),
     margin var(--motion-enter) var(--motion-ease);
 }
-.fold { max-height: 80px; }
+.fold { max-height: 180px; }
 .fold-tall { max-height: 420px; }
 .title-card { transition: padding var(--motion-enter) var(--motion-ease); }
 .compact .fold, .compact .fold-tall { max-height: 0; min-height: 0; opacity: 0; margin: 0; pointer-events: none; }
 .compact .title-card { padding: 8px 16px; }
-.compact .goal { margin: 0; }
+
 .compact .add { width: 200px; height: 44px; border-radius: 22px; font-size: 15px; }
 .menu-backdrop { position: fixed; inset: 0; z-index: 40; display: flex; align-items: flex-end; justify-content: center; background: rgba(5, 10, 20, 0.55); }
 .menu {
