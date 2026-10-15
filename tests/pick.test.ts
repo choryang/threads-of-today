@@ -77,13 +77,14 @@ test('다 본 사람은 고르지 않는다', () => {
 })
 
 test('경로에 이야기가 있는 사람이 없는 물건: 시작한 손을 카드 문구로 (마음 제목 없음)', () => {
-  // 삼각김밥: 첫 재료 쌀(국내)과 편의점 사람, 모두 이야기가 아직 없다
-  const item = { materialIds: ['rice', 'laver', 'tuna', 'plastic'], itemName: '참치마요 삼각김밥' }
+  // 반도체로 된 스마트폰: 클린룸 엔지니어 → 후공정 → 항공화물 → 무역 → 휴대폰 매장, 아직 이야기가 없다
+  // (이 사람들 이야기를 쓰면 이야기가 없는 다른 경로로 바꾼다)
+  const item = { materialIds: ['chip'], itemName: '스마트폰' }
   const pick = pickPerson({ ...item, journeyId: '2026-10-15-1-abcd', mood: 'tired', history: [] })!
+  assert.ok(pick.route.every((id) => !KEY_STORIES[id]), pick.route.join(','))
   assert.equal(pick.how, 'none')
   assert.equal(pick.episode, null)
-  assert.equal(pick.personId, 'rice-farmer')
-  assert.ok(pick.route.every((id) => !KEY_STORIES[id]))
+  assert.equal(pick.personId, 'fab-engineer')
 })
 
 test('재료를 모르면 고르지 않는다', () => {
