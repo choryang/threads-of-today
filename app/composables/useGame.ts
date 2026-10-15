@@ -9,6 +9,7 @@ import { addGratitude, addMeeting, friendshipOf, migratePeople, quizOf, UNLOCK }
 import { createIncoming } from '../../shared/incoming'
 import { mysteryHints } from '../../shared/mystery'
 import { normalizeNickname, randomNickname } from '../../shared/nickname'
+import { nextEpisode } from '../../shared/key-story'
 import { KEY_SUFFIX, REVERSE_SUFFIX, buildTimeline, journeySteps, journeyOrderSuffix, quizFor, screenPeople, secondJourneyGift, tailMeeting, timelinePeople } from '../../shared/journey'
 import { addJourneyToThreads, backfillThreads } from '../../shared/threads'
 import { villagers } from '../../shared/village'
@@ -258,10 +259,15 @@ export function useGame() {
     const next = steps[journey.step]
     // 같은 길(pass)의 사람은 앞에서 이미 만났지만, 카드가 빠진 기록이어도 얻게 한다. 묶음 칸은 그 사람들 모두
     const ids = screenPeople(next)
-    // 핵심 자리에서 만난 횟수: 여러 편 있는 이야기는 이 횟수대로 다음 편 (shared/key-story.ts)
+    // 핵심 인물: 아직 안 본 이야기 편이 있으면 다음 편을 이 여정에 적고 본 편 수를 늘린다. 다 봤으면 그대로 (shared/key-story.ts)
     if (next?.type === 'key') {
-      if (!s.keyMeets) s.keyMeets = {}
-      s.keyMeets[next.personId] = (s.keyMeets[next.personId] ?? 0) + 1
+      const seen = s.keyMeets?.[next.personId] ?? 0
+      const episode = nextEpisode(next.personId, seen)
+      if (episode !== null) {
+        if (!s.keyMeets) s.keyMeets = {}
+        s.keyMeets[next.personId] = seen + 1
+        journey.keyEpisodes = { ...journey.keyEpisodes, [next.personId]: episode }
+      }
     }
     const gained = ids.flatMap((id) => collect(id, journey))
     journey.newCards.push(...gained)

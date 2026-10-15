@@ -73,6 +73,8 @@ onBeforeUnmount(() => clearTimeout(timer))
       </div>
 
       <p class="story">{{ person.story }}</p>
+      <!-- 핵심 인물 화면에서 본 이야기만 (안 본 편은 보이지 않는다) -->
+      <SeenStories :person-id="personId" />
       <p v-if="todayLine" class="today-line">{{ todayLine }}</p>
       <FriendshipPanel v-if="showFriendship" :person-id="personId" />
       <button v-if="showIntro" class="intro" @click="introOpen = true">이 분 소개하기</button>

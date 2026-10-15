@@ -18,7 +18,8 @@
  *  - 단짝 연출을 본 주민(bestSeen): 합집합. 한 기기에서 본 연출은 다른 기기에서 다시 띄우지 않는다.
  *  - 본 열림 알림(unlockSeen, shared/unlocks.ts): 합집합. 둘 다 없으면 없는 채로 둔다(기존 사용자를 조용히 여는 표시라서).
  *  - 기능을 연 날짜(unlockedOn): 단계마다 이른 날짜. 둘 다 없으면 없는 채로.
- *  - 핵심 자리에서 만난 횟수(keyMeets, docs/key-people.md): 사람마다 큰 값. 둘 다 없으면 없는 채로.
+ *  - 핵심 인물 이야기를 본 편 수(keyMeets, shared/key-story.ts): 사람마다 큰 값. 둘 다 없으면 없는 채로.
+ *    여정마다 보여 준 편 번호(Journey.keyEpisodes)는 여정과 함께 간다.
  */
 import { MATERIALS, SETS } from './data/materials'
 import { PEOPLE, PEOPLE_LIST } from './data/people'
@@ -45,6 +46,8 @@ export interface Journey {
   done: boolean
   /** 지난 여정의 '다음 여정 추천'을 따라 떠났으면, 그 예고에서 말을 건 사람 id (shared/next.ts) */
   teaser?: string
+  /** 핵심 인물 여정에서 사람마다 이 여정에 보여 준 이야기 편 번호(0부터). 없으면 그 만남엔 새 편이 없었다 (shared/key-story.ts) */
+  keyEpisodes?: Record<string, number>
 }
 
 export interface DayLog {
@@ -149,7 +152,10 @@ export interface Save {
   unlockSeen?: string[]
   /** 단계 id → 그 단계를 연 날짜(서울). 하루에 하나씩만 연다 (shared/unlocks.ts) */
   unlockedOn?: Record<string, string>
-  /** 사람 id → 핵심 자리(시작한 손·건너온 손·건네준 손)에서 만난 횟수. 여러 편 있는 이야기의 다음 편을 고른다 (shared/key-story.ts) */
+  /**
+   * 사람 id → 핵심 자리(시작한 손·건너온 손·건네준 손)에서 만나며 본 이야기 편 수. 다음 편을 고른다 (shared/key-story.ts).
+   * 다 본 뒤의 만남은 세지 않아서, 나중에 편이 더해지면 그 편부터 이어서 나온다
+   */
   keyMeets?: Record<string, number>
   nickname?: Nickname
 }
@@ -326,6 +332,12 @@ const strList = (v: unknown, max: number, len = 40) =>
   Array.isArray(v) ? [...new Set(v.filter((x): x is string => typeof x === 'string').map((x) => x.slice(0, len)))].slice(0, max) : []
 const isObj = (v: unknown): v is Record<string, any> => !!v && typeof v === 'object' && !Array.isArray(v)
 
+function keyEpisodesOf(v: Record<string, unknown>): Record<string, number> {
+  const out: Record<string, number> = {}
+  for (const [k, n] of Object.entries(v).slice(0, 10)) if (PEOPLE[k] && Number.isInteger(n) && (n as number) >= 0 && (n as number) < 1000) out[k] = n as number
+  return out
+}
+
 function sanitizeJourney(v: unknown): Journey | null {
   if (!isObj(v) || typeof v.id !== 'string' || !DATE.test(v.id.slice(0, 10))) return null
   const quiz: Record<string, number> = {}
@@ -343,6 +355,7 @@ function sanitizeJourney(v: unknown): Journey | null {
     newCards: strList(v.newCards, 60).filter((id) => PEOPLE[id]),
     done: v.done === true,
     ...(typeof v.teaser === 'string' && PEOPLE[v.teaser] ? { teaser: v.teaser } : {}),
+    ...(isObj(v.keyEpisodes) ? { keyEpisodes: keyEpisodesOf(v.keyEpisodes) } : {}),
   }
 }
 

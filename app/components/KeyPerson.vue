@@ -2,7 +2,7 @@
 import { computed, onBeforeUnmount, ref } from 'vue'
 import { PEOPLE } from '../../shared/data/people'
 import { PLACES } from '../../shared/data/places'
-import { keyJoy, keyStory } from '../../shared/key-story'
+import { keyJoy, storyEpisodes } from '../../shared/key-story'
 import { placeLabel } from '../../shared/rewind'
 import { thanksReply } from '../../shared/thanks'
 import { MOTION } from '../utils/motion'
@@ -10,13 +10,21 @@ import { MOTION } from '../utils/motion'
 /**
  * 핵심 인물 화면 (docs/key-people.md 화면 2): 위쪽 하늘·장면 그림(PlaceSky, 그곳 시각·지금은 아마…),
  * 이름·일, 이야기, 작은 기쁨, 고마워요. '다음 사람' 버튼은 여정 화면 아래의 큰 버튼.
- * meetCount: 핵심 자리에서 만난 횟수(이번 포함). 여러 편 있는 사람은 그 횟수대로 다음 이야기
+ * episode: 이 여정에서 보여 주는 편 번호(Journey.keyEpisodes). 없으면 이미 다 본 사람이라 이야기 칸 없이 작은 기쁨만.
+ * 이야기가 아직 없는 사람은 카드 문구. 편 번호·남은 편 수·끝났다는 표시는 두지 않는다(shared/key-story.ts)
  */
-const props = defineProps<{ personId: string; meetCount: number; isNew?: boolean }>()
+const props = defineProps<{ personId: string; episode?: number; isNew?: boolean }>()
 
 const person = computed(() => PEOPLE[props.personId]!)
 const place = computed(() => PLACES[person.value.placeId]!)
-const story = computed(() => keyStory(props.personId, props.meetCount))
+const episodes = computed(() => storyEpisodes(props.personId))
+const story = computed(() => {
+  if (!episodes.value.length) return person.value.story
+  return props.episode !== undefined ? episodes.value[props.episode] ?? '' : ''
+})
+/** 2편부터: 바로 앞 편을 접어 둔다 */
+const previous = computed(() => (props.episode ? episodes.value[props.episode - 1] ?? '' : ''))
+const previousOpen = ref(false)
 const joy = computed(() => keyJoy(props.personId))
 
 const game = useGame()
@@ -46,7 +54,16 @@ onBeforeUnmount(() => clearTimeout(waveTimer))
         <span class="job">{{ person.name ? person.job : '' }}<template v-if="person.name"> · </template>{{ placeLabel(place) }}</span>
         <span v-if="isNew" class="new">새로</span>
       </header>
-      <p class="story">{{ story }}</p>
+      <template v-if="story">
+        <div v-if="previous" class="previous">
+          <button class="previous-btn" :aria-expanded="previousOpen" aria-controls="previous-story" @click="previousOpen = !previousOpen">
+            지난 이야기
+            <svg class="chevron" :class="{ up: previousOpen }" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
+          </button>
+          <p v-if="previousOpen" id="previous-story" class="previous-text">{{ previous }}</p>
+        </div>
+        <p class="story">{{ story }}</p>
+      </template>
       <p v-if="joy" class="joy">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></svg>
         <span><span class="joy-label">작은 기쁨</span> {{ joy }}</span>
@@ -76,6 +93,17 @@ onBeforeUnmount(() => clearTimeout(waveTimer))
 .name { font-size: 28px; line-height: 1.2; }
 .job { font-size: 14px; color: #4a4a55; word-break: keep-all; }
 .new { margin-left: auto; padding: 3px 8px; border-radius: 8px; background: var(--bad); color: #fff; font-size: 12px; font-weight: 700; }
+.previous { display: flex; flex-direction: column; gap: 6px; }
+.previous-btn {
+  align-self: flex-start; min-height: 44px; margin: -8px 0 -6px; padding: 0 4px; border: 0; background: none; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 4px; color: #4a4a55; font: inherit; font-size: 13px; font-weight: 700;
+}
+.chevron { transition: transform var(--motion-enter) var(--motion-ease); }
+.chevron.up { transform: rotate(180deg); }
+.previous-text {
+  margin: 0; padding: 10px 12px; border-radius: 12px; background: var(--paper-2);
+  font-size: 14px; line-height: 1.7; color: #4a4a55; word-break: keep-all;
+}
 .story { margin: 0; font-size: 15px; line-height: 1.75; color: #2a2a35; word-break: keep-all; }
 .joy {
   margin: 0; display: flex; gap: 8px; align-items: flex-start; padding: 10px 12px; border-radius: 14px;

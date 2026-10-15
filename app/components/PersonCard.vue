@@ -85,6 +85,8 @@ onBeforeUnmount(() => clearTimeout(waveTimer))
         <template v-if="person.name"><span class="name">{{ person.name }}</span> · </template>{{ person.job }}<span class="place"> · {{ placeLabel }}</span>
       </h3>
       <p class="story">{{ person.story }}</p>
+      <!-- 핵심 인물 화면에서 본 이야기만 (안 본 편은 보이지 않는다) -->
+      <SeenStories v-if="met" :person-id="personId" />
       <div v-if="fact" class="fact">
         <button class="fact-btn" :aria-expanded="showSource" @click="showSource = !showSource">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /></svg>

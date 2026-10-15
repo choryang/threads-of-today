@@ -1,16 +1,28 @@
 import { KEY_STORIES } from './data/stories'
-import { PEOPLE } from './data/people'
 
 /**
- * 핵심 인물 화면의 이야기 (docs/key-people.md). 문구는 shared/data/stories.ts.
- * meetCount: 이 사람을 핵심 자리에서 만난 횟수(이번 만남 포함, 1부터). episodes가 있으면 그 횟수대로 다음 편, 다 보면 처음부터.
- * 이야기가 없는 사람은 카드 문구(Person.story)
+ * 핵심 인물 이야기를 보여 주는 규칙 (docs/key-people.md). 문구는 shared/data/stories.ts.
+ * 사용자가 이야기가 몇 편인지, 더 남았는지 알 수 없게 한다: 편 번호·남은 개수·끝났다는 표시는 화면 어디에도 두지 않는다.
+ * - Save.keyMeets[사람]: 그 사람의 이야기를 몇 편 봤는지. 핵심 자리에서 만날 때 아직 안 본 편이 있으면 다음 편을 보여 주고 1 늘린다.
+ *   다 본 뒤에는 늘리지 않는다. 그래서 나중에 편을 더하면 처음부터 다시 돌지 않고 더한 편부터 이어서 나온다.
+ * - 한 편짜리(story)도 한 편으로 센다. 이야기가 없는 사람은 세지 않는다(나중에 이야기가 생기면 첫 편부터).
  */
-export function keyStory(personId: string, meetCount = 1): string {
+
+/** 이 사람의 이야기 편들 (episodes, 없으면 story 한 편, 둘 다 없으면 빈 목록) */
+export function storyEpisodes(personId: string): string[] {
   const s = KEY_STORIES[personId]
-  const episodes = s?.episodes
-  if (episodes?.length) return episodes[(Math.max(1, meetCount) - 1) % episodes.length]!
-  return s?.story ?? PEOPLE[personId]?.story ?? ''
+  if (s?.episodes?.length) return s.episodes
+  return s?.story ? [s.story] : []
+}
+
+/** 이번에 보여 줄 편 번호(0부터). 이미 다 봤으면 null */
+export function nextEpisode(personId: string, seen: number): number | null {
+  return seen < storyEpisodes(personId).length ? Math.max(0, seen) : null
+}
+
+/** 지금까지 본 편 (사람 카드의 '이야기' 칸). 안 본 편은 넣지 않는다 */
+export function seenEpisodes(personId: string, seen: number): string[] {
+  return storyEpisodes(personId).slice(0, Math.max(0, seen))
 }
 
 /** 그 사람의 작은 기쁨 한 구절. 없으면 undefined */
@@ -20,6 +32,5 @@ export function keyJoy(personId: string): string | undefined {
 
 /** 이 사람에게 쓴 이야기가 있는지 (docs/key-candidates.md 표시) */
 export function hasKeyStory(personId: string): boolean {
-  const s = KEY_STORIES[personId]
-  return !!(s?.story || s?.episodes?.length)
+  return storyEpisodes(personId).length > 0
 }

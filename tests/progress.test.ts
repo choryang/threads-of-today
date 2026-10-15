@@ -231,3 +231,9 @@ test('긴 여정 id(핵심 인물·거꾸로·두 번째 꼬리)도 잘리지 �
   const s = sanitizeSave({ days: { [TODAY]: { journeys: [{ ...journey(id, 1) }] } }, incoming: [{ journeyId: id, departAt: 1, arriveAt: 2, personId: PEOPLE_LIST[0]!.id }] }, TODAY)
   assert.equal(s?.days[TODAY]?.journeys[0]?.id, id)
 })
+
+test('여정마다 보여 준 이야기 편(keyEpisodes)은 여정과 함께 남고, 모르는 사람·이상한 값은 버린다', () => {
+  const id = `${TODAY}-1-abcd-r-k`
+  const s = sanitizeSave({ days: { [TODAY]: { journeys: [{ ...journey(id, 2), keyEpisodes: { 'sea-crew': 3, nobody: 1, barista: -1, 'busan-crane': 1.5 } }] } } }, TODAY)
+  assert.deepEqual(s?.days[TODAY]?.journeys[0]?.keyEpisodes, { 'sea-crew': 3 })
+})

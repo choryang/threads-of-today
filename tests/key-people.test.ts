@@ -16,9 +16,8 @@ import {
   type TimelineItem,
 } from '../shared/journey'
 import { MATERIALS } from '../shared/data/materials'
-import { PEOPLE } from '../shared/data/people'
 import { KEY_STORIES } from '../shared/data/stories'
-import { keyJoy, keyStory } from '../shared/key-story'
+import { keyJoy, nextEpisode, seenEpisodes, storyEpisodes } from '../shared/key-story'
 
 const shopOf = (timeline: TimelineItem[]) => timeline.filter((t) => t.type === 'stage' && t.closing).map((t) => (t as { personId: string }).personId)
 
@@ -119,12 +118,23 @@ test("'-k'가 없는 예전 여정은 타임라인 그대로", () => {
   assert.ok(isSecondJourney('2026-10-15-1-abcd-r-k-second'))
 })
 
-test('이야기: 핵심 자리에서 만난 횟수대로 다음 편, 다 보면 처음부터. 없으면 카드 문구', () => {
+test('이야기: 본 편 수대로 다음 편, 다 보면 없음, 편이 더해지면 이어서. 카드에는 본 편만', () => {
   const eps = KEY_STORIES['sea-crew']!.episodes!
-  assert.equal(keyStory('sea-crew', 1), eps[0])
-  assert.equal(keyStory('sea-crew', 2), eps[1])
-  assert.equal(keyStory('sea-crew', eps.length + 1), eps[0])
-  assert.equal(keyStory('coffee-picker', 5), KEY_STORIES['coffee-picker']!.story)
-  assert.equal(keyStory('rice-mill'), PEOPLE['rice-mill']!.story)
+  assert.deepEqual(storyEpisodes('sea-crew'), eps)
+  assert.equal(nextEpisode('sea-crew', 0), 0)
+  assert.equal(nextEpisode('sea-crew', 1), 1)
+  // 다 본 뒤에는 처음부터 다시 돌지 않는다
+  assert.equal(nextEpisode('sea-crew', eps.length), null)
+  assert.equal(nextEpisode('sea-crew', eps.length + 3), null)
+  // 한 편짜리도 한 편으로 센다
+  assert.deepEqual(storyEpisodes('coffee-picker'), [KEY_STORIES['coffee-picker']!.story])
+  assert.equal(nextEpisode('coffee-picker', 1), null)
+  // 이야기가 없는 사람은 세지 않는다
+  assert.deepEqual(storyEpisodes('rice-mill'), [])
+  assert.equal(nextEpisode('rice-mill', 0), null)
   assert.equal(keyJoy('rice-mill'), undefined)
+  // 카드: 본 편만 순서대로
+  assert.deepEqual(seenEpisodes('sea-crew', 0), [])
+  assert.deepEqual(seenEpisodes('sea-crew', 2), eps.slice(0, 2))
+  assert.deepEqual(seenEpisodes('sea-crew', 99), eps)
 })

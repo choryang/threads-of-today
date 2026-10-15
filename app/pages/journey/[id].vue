@@ -86,10 +86,6 @@ const otherHands = computed(() => {
   const all = new Set(screens.value.flatMap((t) => (t.type === 'group' ? t.personIds : [])))
   return all.size
 })
-/** 이 사람을 핵심 자리에서 만난 횟수 (이번 포함, 그 칸에 들어설 때 센다). 여러 편 있는 이야기의 몇 번째 편인지 */
-function keyMeetCount(personId: string) {
-  return game.state.keyMeets?.[personId] ?? 1
-}
 
 // ── 되감기 변신: 칸마다 물건의 형태 ──
 const forms = computed(() => (journey.value ? formsAlong(timeline.value, journey.value.materialIds, journey.value.id, journey.value.name) : []))
@@ -504,7 +500,7 @@ function followTeaser(p: Product) {
           v-else-if="current.type === 'key'"
           :key="`key-${journey.step}`"
           :person-id="current.personId"
-          :meet-count="keyMeetCount(current.personId)"
+          :episode="journey.keyEpisodes?.[current.personId]"
           :is-new="journey.newCards.includes(current.personId)"
         />
         <KeyGroup v-else-if="current.type === 'group'" :person-ids="current.personIds" :new-ids="journey.newCards" />
