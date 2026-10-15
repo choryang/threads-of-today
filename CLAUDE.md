@@ -1,16 +1,50 @@
 # 내 하루에 닿은 사람들 (my-day-people)
 
-오늘 쓴 물건이 내 손에 오기까지 거쳐 온 사람들을 만나는 수집 게임.
-사용자가 물건(또는 아무 말)을 입력하면 **재료로 분해**하고, 재료마다 직접 작성한 여정을 따라가며 사람 카드를 모은다.
+> 오늘 당신만 그런 게 아니었어요. 지구 반대편에도 당신 같은 하루를 보낸 사람이 있고, 당신은 그 사람과 원래 이어져 있었어요.
+
+하루 한 번 저녁에 1분. 출발점은 **오늘의 나(마음)**이고, 물건은 그 사람과 나를 잇는 증거(실)다.
+마음을 고르고 오늘 손에 닿은 물건을 고르면, 물건을 **재료로 분해**한 경로 위에서 같은 마음의 하루를 보낸 **한 사람**을 만나 그 사람의 이야기를 읽고 한마디를 건넨다.
+기준 문서는 docs/redesign/README.md, 시안은 docs/redesign/mockups. 카드 수집·희귀도·퀴즈·세트·마을·파츠 캐릭터는 화면에서 뺐다(코드는 아직 남아 있다: docs/redesign/unused.md).
 
 ## 스택과 명령
 
 - Nuxt 4 (Vue 3.5, TypeScript), `ssr: false` SPA + Nitro 서버 API. 배포는 Vercel.
-- 진행 상황 원본은 브라우저 localStorage(`my-day-people:v1`). 앱을 열 때·여정을 마칠 때만 Upstash와 합친다(익명 id + 복구 코드, 로그인 없음).
+- 진행 상황 원본은 브라우저 localStorage(`my-day-people:v1`). 앱을 열 때·한마디를 건넬 때 Upstash와 합친다(익명 id + 복구 코드, 로그인 없음).
+  하루의 한 줄과 직접 쓴 한마디는 기기에만(`my-day-people:today-local`).
 - `npm run dev` / `npm run build` / `npm run typecheck` / `npm run check:data`(데이터 무결성 + 스모크 테스트) / `npm test`(node:test, 매칭 사례)
 - 환경 변수: `NUXT_ANTHROPIC_API_KEY`, `NUXT_ANTHROPIC_MODEL`(기본 `claude-haiku-5-5`), `KV_REST_API_URL`/`KV_REST_API_TOKEN`(Upstash), `NUXT_AI_DAILY_LIMIT`, `NUXT_IP_SALT`, `CRON_SECRET`, `MEET_SNAPSHOT_MINUTES`(기본 30). 자세한 건 README
 
-## 구조
+## 구조 (새 기획: 지금 화면)
+
+```
+app/pages/index.vue       오늘 흐름: 1 마음(V2Mood) → 2 물건(V2Item) → 3 같은 순간 다른 시각(V2Thread) → 4 그 사람의 오늘(V2Person) → 5 한마디(V2Reply).
+                          오늘 기록이 있으면 오늘의 결과와 "내일 저녁에 또 만나요". 화면은 app/components/today/*, 상태는 composables/useToday.ts
+app/pages/people.vue      나와 이어진 사람들(V2Map): 서울 기준 방위·대권 거리 별자리 + 날짜 목록. 계산은 shared/connections.ts
+app/pages/day/[date].vue  지난 하루의 4번 화면 · app/pages/t/[token].vue 오늘의 실 공유 링크 → 1번 화면으로
+app/components/BottomNav.vue 아래 메뉴 두 개(오늘·이어진 사람들). 흐름 2~5번에서는 감춘다
+app/middleware/redesign.global.ts 뺀 화면(마을·도감·여정·미스터리·테스트 등) 주소는 첫 화면으로
+app/assets/css/today.css  새 기획 디자인 기준(흰 바탕, Noto Sans KR, 56px 버튼, 강조색 없이 실의 색 = 마음의 색)
+app/composables/useToday.ts 흐름 상태와 저장(Save.todays, 기기에만 남기는 한 줄·직접 쓴 말은 utils/today-local.ts)
+app/composables/useThreadShare.ts 오늘의 실 공유: 링크(/t) + 앱이 그린 V2Quote 카드(utils/share-image.ts drawQuoteCard)를 og:image로 올림
+app/composables/usePlaceNow.ts 그곳 지금 시각 (개발 중 ?clock=05:30·?date=YYYY-MM-DD)
+app/utils/resolve-item.ts 물건 이름 → 재료 (로컬 매칭 → 서버)
+shared/data/moods.ts      마음 8개(보이는 말·칸·색·제목 꼴·기억 문장 꼴·V2Mood 점 자리)
+shared/data/stories.ts    이야기: 편마다 { moods, text } (사용자가 쓴 문구, 고치지 않는다). 태그 검토표 docs/redesign/mood-tags.md (npm run mood-tags)
+shared/data/replies.ts    5번 화면 한마디 보기(좋은 마음이면 다른 보기). 서버에는 번호만
+shared/pick.ts            한 사람 고르기: 첫 재료 경로(+가게 사람)에서 안 본 편 중 오늘의 마음 태그 → 같은 칸 → 아무나의 다음 편 → 없으면 시작한 손을 카드 문구로
+shared/today-text.ts      흐름 화면 문구(날짜, 머리말·제목, 3번 문장, 기억 한 줄, 모두의 오늘)
+shared/today-log.ts       하루 기록에서 지난 만남(본 편)·기억 한 줄
+shared/connections.ts     이어진 사람들 자리(방위각·대권 거리·로그 반지름, 한국 안 사람·바다 위 자리, 오래된 실 흐리게)
+shared/progress.ts        Save.todays[서울 날짜] = { mood, item, personId, episode, reply(번호|'own') }. mergeSaves는 한마디를 건넨 쪽
+shared/share.ts           공유 종류 thread(/t, 30일): 날짜·마음·사람·편·물건만. threadQuote(첫 문장)·threadWho
+shared/local-time.ts      그곳의 시각·서울과의 차이·하늘 시간대(SKY)·지금은 아마(doing.ts·calendar.ts의 주말·공휴일)
+shared/today.ts           모두의 오늘 스냅샷: 사람별 수 + 마음 id별 수(moods), moodCountFor
+server/api/mood.post.ts   실을 묶으면 마음 id만 받아 mood:{마음}:{YYYYMMDD} HyperLogLog에 (스냅샷이 30분마다 센다)
+server/api/share/[token]/image.post.ts 오늘의 실 카드 그림(JPEG) 올리기(링크를 만든 기기만) · server/routes/og/t/[file] 그림 주기 · server/routes/t/[token] OG
+server/routes/d·p·v       예전 공유 링크 → 첫 화면
+```
+
+## 구조 (예전 기획 포함, 아래 중 화면에서 뺀 것은 docs/redesign/unused.md)
 
 ```
 shared/                 앱과 서버가 상대 경로로 함께 import (Nuxt 자동 import 대상 아님)
@@ -139,6 +173,9 @@ tests/                    node:test + tsx 단위 테스트
 ```
 
 ## 꼭 지킬 원칙
+
+0. (새 기획) 하루의 한 줄과 직접 쓴 한마디는 기기에만 둔다. 서버 동기화·로그·공유(링크·카드 그림) 어디에도 보내지 않는다.
+   이야기가 몇 편인지, 더 남았는지는 화면 어디에도 드러내지 않는다. 장식 없이 여백과 글자 크기로, 강조색은 오늘 마음의 색 하나.
 
 1. **사실 정보는 `shared/data`에만.** AI는 "어떤 재료로 나눌지"와 재미 문구(twist, voice)만 만든다. 국가·통계·경로를 AI가 지어내 화면에 내보내지 않는다.
 2. 직접 쓴 여정·이야기·사람 카드는 게임이라 허구가 조금 섞여도 된다. 화면에 "대표 경로 예시" 같은 고지는 붙이지 않는다.

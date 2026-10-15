@@ -21,14 +21,15 @@ export default defineNuxtConfig({
   },
   app: {
     head: {
-      htmlAttrs: { lang: 'ko' },
+      htmlAttrs: { lang: 'ko', class: 'today-ui' },
       title: '내 하루에 닿은 사람들',
       meta: [
         { name: 'viewport', content: 'width=device-width, initial-scale=1, viewport-fit=cover' },
-        { name: 'description', content: '오늘 쓴 물건이 내 손에 오기까지 거쳐 온 사람들을 만나는 수집 게임' },
-        { name: 'theme-color', content: '#0F1B2D' },
+        { name: 'description', content: '오늘 당신만 그런 게 아니었어요. 하루 한 번, 오늘 손에 닿은 물건을 따라 같은 하루를 보낸 한 사람을 만나요' },
+        { name: 'theme-color', content: '#FFFFFF' },
         { property: 'og:title', content: '내 하루에 닿은 사람들' },
-        { property: 'og:description', content: '커피 한 잔, 휴대폰 하나에 몇 나라 사람들이 닿아 있을까?' },
+        { property: 'og:description', content: '오늘 당신만 그런 게 아니었어요. 지구 반대편에도 당신 같은 하루를 보낸 사람이 있어요' },
+        { property: 'og:image', content: '/og/thread.png' },
       ],
       link: [
         { rel: 'preconnect', href: 'https://fonts.googleapis.com' },

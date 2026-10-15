@@ -1,9 +1,5 @@
-import { villageShareTitle, type VillagePayload } from '../../../shared/share'
-import { defineShareRoute } from '../../utils/share-page'
-
-/** 마을 초대 링크: OG 이미지는 공통 한 장 (화면은 app/pages/v/[token].vue) */
-export default defineShareRoute<VillagePayload>('village', (p) => ({
-  title: villageShareTitle(p),
-  description: p.open ? `주민 ${p.residents.length}명이 사는 마을이에요. 주민에게 고마워요를 남겨 보세요` : '지금은 방문을 받지 않는 마을이에요',
-  image: '/og/village.png',
-}))
+/**
+ * 예전 기획의 공유 링크(/d 하루 유형 · /p 사람 카드 소개 · /v 마을 초대)는 첫 화면으로 보낸다 (docs/redesign/README.md "빼는 것").
+ * 예전 화면·OG 코드는 아직 지우지 않았다(docs/redesign/unused.md)
+ */
+export default defineEventHandler((event) => sendRedirect(event, '/', 302))

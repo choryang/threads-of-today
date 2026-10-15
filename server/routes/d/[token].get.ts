@@ -1,10 +1,5 @@
-import { DAY_TYPES } from '../../../shared/day-type'
-import { dayShareTitle, type DayPayload } from '../../../shared/share'
-import { defineShareRoute } from '../../utils/share-page'
-
-/** 나의 하루 유형 공유 링크: OG meta가 들어간 HTML이 SPA를 띄운다 (화면은 app/pages/d/[token].vue) */
-export default defineShareRoute<DayPayload>('day', (p) => ({
-  title: dayShareTitle(p),
-  description: `${DAY_TYPES[p.type].desc}. 당신의 하루는요?`,
-  image: `/og/day-${p.type}.png`,
-}))
+/**
+ * 예전 기획의 공유 링크(/d 하루 유형 · /p 사람 카드 소개 · /v 마을 초대)는 첫 화면으로 보낸다 (docs/redesign/README.md "빼는 것").
+ * 예전 화면·OG 코드는 아직 지우지 않았다(docs/redesign/unused.md)
+ */
+export default defineEventHandler((event) => sendRedirect(event, '/', 302))
