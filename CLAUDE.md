@@ -98,7 +98,7 @@ app/
   utils/character.ts      모자(hat)·소품(prop) 파츠를 조합한 SVG 콩 캐릭터
   utils/product-icon.ts   메인 물건 타일 아이콘. 대표 물건을 추가하면 여기도 그린다(없으면 상자 모양)
 scripts/check-data.ts     데이터 검사. 모든 변경 후 반드시 통과시킬 것
-scripts/build-og-cards.ts OG 이미지를 resvg로(마을 초대 공통 한 장, 사람 카드 소개 사람마다 한 장). 글꼴은 이 컴퓨터의 맑은 고딕 (npm run build:og-cards)
+scripts/build-og-cards.ts OG 이미지를 resvg로(마을 초대 공통 한 장, 사람 카드 소개 사람마다 한 장). 글꼴은 scripts/fonts의 Pretendard OTF(OFL) (npm run build:og-cards)
 scripts/build-og.ts       OG 이미지(하루 유형 9장 1200×630)를 이 컴퓨터의 Chrome·Edge로 찍어 public/og에 (npm run build:og)
 scripts/day-type-dist.ts  하루 유형 분포(3~5개 조합 12,444가지). 한 유형이 25%를 넘으면 실패 (npm run check:day-types)
 scripts/sync-prop-icons.ts 캐릭터 소품 7개를 형태 아이콘(public/forms/prop-*.svg)으로 옮긴다. 소품을 고치면 다시 실행

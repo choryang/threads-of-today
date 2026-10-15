@@ -2,7 +2,8 @@
  * 링크 미리보기(OG) 이미지 1200×630을 resvg로 그린다 (Chrome이 없어도 된다).
  *   public/og/village.png      마을 초대 링크 공통 한 장
  *   public/og/person-{id}.png  사람 카드 소개 (캐릭터 파츠 조합 + 이름 + 하는 일)
- * 글꼴은 이 컴퓨터의 맑은 고딕(굵은 글꼴 파일이 따로 있어 제목이 굵게 나온다, 없으면 Noto Sans KR)을 쓴다. 사람·지도·캐릭터를 바꾸면 다시 돌리고 PNG를 함께 커밋한다.
+ * 글꼴은 scripts/fonts의 Pretendard 고정 굵기 OTF(Regular·Bold, SIL OFL 1.1, LICENSE.txt)만 쓴다. 시스템 글꼴은 읽지 않아
+ * 어느 컴퓨터에서 돌려도 같은 그림이 나온다. 사람·지도·캐릭터를 바꾸면 다시 돌리고 PNG를 함께 커밋한다.
  *   npx tsx scripts/build-og-cards.ts [village|people]   (npm run build:og-cards)
  */
 import { readFileSync, readdirSync, writeFileSync } from 'node:fs'
@@ -18,7 +19,8 @@ export const W = 1200
 export const H = 630
 const OUT = 'public/og'
 const STANDING_VIEWBOX = '36 30 440 597'
-const FONT = "'Malgun Gothic', 'Noto Sans KR', sans-serif"
+const FONT = 'Pretendard'
+const FONT_FILES = ['scripts/fonts/Pretendard-Regular.otf', 'scripts/fonts/Pretendard-Bold.otf']
 const INK = '#F3F1EA'
 const LINE = '#2A2A35'
 
@@ -47,7 +49,7 @@ function flower(cx: number, cy: number, color: string, r = 14): string {
 }
 
 function render(svg: string, file: string) {
-  const png = new Resvg(svg, { fitTo: { mode: 'width', value: W }, font: { loadSystemFonts: true, defaultFontFamily: 'Malgun Gothic' } }).render().asPng()
+  const png = new Resvg(svg, { fitTo: { mode: 'width', value: W }, font: { fontFiles: FONT_FILES, loadSystemFonts: false, defaultFontFamily: FONT } }).render().asPng()
   writeFileSync(join(OUT, file), png)
   return png.length
 }
