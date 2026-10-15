@@ -1,7 +1,10 @@
 /**
  * 지도 확대·축소와 이동 계산 (순수 함수). 화면 좌표 = 지도 좌표 × scale + (x, y).
- * 최소 배율은 섬 전체가 화면에 다 들어오는 크기, 최대는 MAX_SCALE.
- * 지도가 화면보다 크면 지도 밖 빈 화면이 보이지 않게 위치를 제한하고, 작으면 가운데에 둔다(바깥은 바다색으로 칠한다).
+ * 화면 위·아래에는 지도를 가리는 카드가 있다(insets: 위 제목 카드·알림, 아래 오고 있는 물건·버튼·탭, 안전 영역 포함).
+ * 세로는 그 사이 영역(보이는 영역: top ~ vh - bottom)을 기준으로 한다.
+ * 최소 배율은 섬 전체가 보이는 영역에 다 들어오는 크기, 최대는 MAX_SCALE.
+ * 지도가 영역보다 크면 지도 끝을 영역 끝(위 카드 아래, 아래 버튼 위)까지만 끌어올 수 있고, 작으면 영역 가운데에 둔다.
+ * insets가 0이면 화면 전체가 보이는 영역이다.
  */
 export interface View {
   x: number
@@ -16,6 +19,14 @@ export interface Size {
   /** 지도 */
   mw: number
   mh: number
+  /** 위·아래 카드가 가리는 높이 (없으면 0) */
+  top?: number
+  bottom?: number
+}
+
+/** 보이는 영역의 높이 (화면 높이 - 위·아래 카드) */
+export function areaHeight(s: Size): number {
+  return Math.max(1, s.vh - (s.top ?? 0) - (s.bottom ?? 0))
 }
 
 export const MAX_SCALE = 1.4
@@ -26,9 +37,9 @@ export const OVERVIEW_SCALE = 0.3
 /** 멀리서 주민을 누르면 이 배율까지 확대하며 그 자리로 간다 */
 export const FAR_TAP_SCALE = 0.6
 
-/** 섬 전체가 화면에 다 들어오는 가장 작은 배율 */
+/** 섬 전체가 보이는 영역에 다 들어오는 가장 작은 배율 */
 export function minScale(s: Size): number {
-  return Math.min(s.vw / s.mw, s.vh / s.mh)
+  return Math.min(s.vw / s.mw, areaHeight(s) / s.mh)
 }
 
 export function clampScale(scale: number, s: Size): number {
@@ -36,16 +47,16 @@ export function clampScale(scale: number, s: Size): number {
   return Math.min(Math.max(min, MAX_SCALE), Math.max(min, scale))
 }
 
-/** 한 축: 지도가 화면보다 작으면 가운데, 크면 지도 가장자리가 화면 안쪽으로 들어오지 않게 */
-function clampAxis(pos: number, view: number, map: number): number {
-  if (map <= view) return (view - map) / 2
-  return Math.min(0, Math.max(view - map, pos))
+/** 한 축 (영역 start부터 길이 view): 지도가 영역보다 작으면 영역 가운데, 크면 지도 끝이 영역 끝 안쪽으로 들어오지 않게 */
+function clampAxis(pos: number, start: number, view: number, map: number): number {
+  if (map <= view) return start + (view - map) / 2
+  return Math.min(start, Math.max(start + view - map, pos))
 }
 
 /** 배율과 위치를 제한한다 */
 export function clampView(v: View, s: Size): View {
   const scale = clampScale(v.scale, s)
-  return { x: clampAxis(v.x, s.vw, s.mw * scale), y: clampAxis(v.y, s.vh, s.mh * scale), scale }
+  return { x: clampAxis(v.x, 0, s.vw, s.mw * scale), y: clampAxis(v.y, s.top ?? 0, areaHeight(s), s.mh * scale), scale }
 }
 
 /** 화면의 한 점(px, py)을 그대로 둔 채 배율을 바꾼다 (휠은 커서, 두 손가락은 가운데) */
@@ -56,10 +67,30 @@ export function zoomAt(v: View, px: number, py: number, nextScale: number, s: Si
   return clampView({ x: px - mx * scale, y: py - my * scale, scale }, s)
 }
 
-/** 지도의 한 점을 화면 가운데에 둔다 */
+/** 보이는 영역의 가운데 (화면 좌표) */
+export function areaCenter(s: Size): { x: number; y: number } {
+  return { x: s.vw / 2, y: (s.top ?? 0) + areaHeight(s) / 2 }
+}
+
+/** 지도의 한 점을 보이는 영역 가운데에 둔다 */
 export function centerOn(mx: number, my: number, scale: number, s: Size): View {
   const sc = clampScale(scale, s)
-  return clampView({ x: s.vw / 2 - mx * sc, y: s.vh / 2 - my * sc, scale: sc }, s)
+  const c = areaCenter(s)
+  return clampView({ x: c.x - mx * sc, y: c.y - my * sc, scale: sc }, s)
+}
+
+/**
+ * 가리는 높이가 바뀔 때(카드를 펴고 접거나 오고 있는 물건이 생기고 사라질 때): 보이는 영역 가운데에 있던 지도 지점을
+ * 새 영역의 가운데에 그대로 둔다. 배율은 새 최소 배율 아래로 내려가지 않게만 맞추고, 끝까지 축소해 둔 상태였으면
+ * 새 최소 배율로 맞춰 섬 전체가 계속 보이게 한다(예: 끝까지 축소한 채 알림이 떠서 위 카드가 길어질 때)
+ */
+export function withInsets(v: View, s: Size, top: number, bottom: number): { view: View; size: Size } {
+  const c = areaCenter(s)
+  const mx = (c.x - v.x) / v.scale
+  const my = (c.y - v.y) / v.scale
+  const size = { ...s, top, bottom }
+  const atMin = v.scale <= minScale(s) + 1e-9
+  return { view: centerOn(mx, my, atMin ? minScale(size) : v.scale, size), size }
 }
 
 /**
@@ -67,7 +98,7 @@ export function centerOn(mx: number, my: number, scale: number, s: Size): View {
  * 마을로 모실 때 이번에 만난 사람들이 모두 보이게 쓴다
  */
 export function fitBox(x0: number, y0: number, x1: number, y1: number, s: Size, maxScale = 0.6): View {
-  const scale = Math.min(maxScale, s.vw / Math.max(1, x1 - x0), s.vh / Math.max(1, y1 - y0))
+  const scale = Math.min(maxScale, s.vw / Math.max(1, x1 - x0), areaHeight(s) / Math.max(1, y1 - y0))
   return centerOn((x0 + x1) / 2, (y0 + y1) / 2, scale, s)
 }
 

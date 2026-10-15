@@ -130,6 +130,35 @@ function goNext() {
   router.push(`/journey/${journey.id}`)
 }
 
+// ── 지도를 가리는 위·아래 카드 높이: 지도(VillageMap)가 이 사이 영역을 기준으로 최소 배율·위치 제한·가운데를 정한다 ──
+// 위: 제목 카드·알림(안전 영역 포함, .top이 그만큼 내려와 있다), 아래: 오고 있는 물건·버튼, 그 아래의 탭·안전 영역.
+// 카드를 펴고 접거나 오고 있는 물건이 생기고 사라지면 ResizeObserver가 다시 잰다
+const mainEl = ref<HTMLElement | null>(null)
+const topEl = ref<HTMLElement | null>(null)
+const bottomEl = ref<HTMLElement | null>(null)
+/** 카드와 섬 끝 사이 여유 */
+const INSET_GAP = 8
+const insets = ref({ top: 0, bottom: 0 })
+function measureInsets() {
+  const m = mainEl.value?.getBoundingClientRect()
+  const t = topEl.value?.getBoundingClientRect()
+  const b = bottomEl.value?.getBoundingClientRect()
+  if (!m || !t || !b) return
+  const top = Math.round(Math.max(0, t.bottom - m.top + INSET_GAP))
+  const bottom = Math.round(Math.max(0, m.bottom - b.top + INSET_GAP))
+  if (top !== insets.value.top || bottom !== insets.value.bottom) insets.value = { top, bottom }
+}
+let insetObserver: ResizeObserver | undefined
+onMounted(() => {
+  measureInsets()
+  insetObserver = new ResizeObserver(measureInsets)
+  for (const el of [mainEl.value, topEl.value, bottomEl.value]) if (el) insetObserver.observe(el)
+})
+onBeforeUnmount(() => insetObserver?.disconnect())
+
+/** 많이 축소했을 때(배율 0.25 미만): 제목 카드는 한 줄, 오고 있는 물건은 숨기고, 버튼은 작은 알약으로 접는다 (0.3초 전환) */
+const compact = ref(false)
+
 // ── 제목 카드 자세히: 나라 수·단짝 수는 펼쳤을 때만. 이 기기에서만 기억한다(편의 설정이라 진행 상황에 넣지 않는다) ──
 const DETAILS_KEY = 'my-day-people:village-card-details'
 const details = ref(false)
@@ -228,7 +257,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <main class="village">
+  <main ref="mainEl" class="village" :class="{ compact }">
     <VillageMap
       ref="map"
       :residents="layout.residents"
@@ -239,14 +268,16 @@ onMounted(async () => {
       :best-friends="bestFriends"
       :show-workplaces="game.opens('workplace')"
       :flowers="game.opens('flowers') ? flowers : []"
+      :insets="insets"
       @resident="open = $event"
       @flower="showFlower"
+      @far="compact = $event"
     />
 
     <div class="overlay">
-      <div class="top">
+      <div ref="topEl" class="top">
         <header class="title-card">
-          <div class="title-row">
+          <div class="title-row fold">
             <h1 class="display title">내 하루 마을</h1>
             <div class="title-btns">
               <button
@@ -266,16 +297,16 @@ onMounted(async () => {
           <!-- 목표 두 줄: 늘 보인다 -->
           <div class="goal">
             <p class="goal-count">마을 주민 <strong class="mono">{{ layout.residents.length }}</strong> / {{ capacity }}명</p>
-            <div class="goal-bar" role="progressbar" :aria-valuenow="layout.residents.length" aria-valuemin="0" :aria-valuemax="capacity" aria-label="마을 주민">
+            <div class="goal-bar fold" role="progressbar" :aria-valuenow="layout.residents.length" aria-valuemin="0" :aria-valuemax="capacity" aria-label="마을 주민">
               <span :style="{ width: `${residentPct}%` }" />
             </div>
           </div>
-          <button v-if="next" class="next-resident" @click="goNext">
+          <button v-if="next" class="next-resident fold" @click="goNext">
             다음 주민은 <strong>{{ next.product.name }}</strong> 속에 있어요
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
           </button>
-          <p v-else class="sub">마을에 살 수 있는 사람을 모두 만났어요</p>
-          <p v-if="details" id="village-card-details" class="sub details">
+          <p v-else class="sub fold">마을에 살 수 있는 사람을 모두 만났어요</p>
+          <p v-if="details" id="village-card-details" class="sub details fold">
             {{ countries.length }}개 나라에서 왔어요<template v-if="bestFriends.length"> · 단짝 {{ bestFriends.length }}명</template>
           </p>
         </header>
@@ -293,10 +324,12 @@ onMounted(async () => {
         </ul>
       </div>
 
-      <div class="bottom">
+      <div ref="bottomEl" class="bottom">
         <p v-if="cheerLine" class="toast cheer" role="status">{{ cheerLine }}</p>
         <p v-else-if="picked || message" class="toast" role="status">{{ picked || message }}</p>
-        <IncomingCard v-for="inc in waiting" :key="inc.journeyId" :incoming="inc" :now="now" />
+        <div v-if="waiting.length" class="incoming-list fold-tall" :aria-hidden="compact">
+          <IncomingCard v-for="inc in waiting" :key="inc.journeyId" :incoming="inc" :now="now" />
+        </div>
         <NuxtLink to="/add" class="add">오늘 쓴 물건 넣기</NuxtLink>
       </div>
     </div>
@@ -386,10 +419,27 @@ onMounted(async () => {
 .toast { margin: 0; padding: 10px 14px; border-radius: 14px; background: #f3f1ea; color: #1a1a22; font-size: 13px; font-weight: 700; word-break: keep-all; }
 .toast.cheer { padding: 12px 16px; border: 3px solid #2a2a35; background: #f2c14e; font-size: 15px; text-align: center; animation: rise var(--motion-enter) var(--motion-ease); }
 .add {
-  height: 56px; border-radius: 18px; display: flex; align-items: center; justify-content: center;
+  align-self: center; width: 100%; height: 56px; border-radius: 18px; display: flex; align-items: center; justify-content: center;
   background: var(--accent); color: var(--accent-ink); font-size: 17px; font-weight: 700; text-decoration: none;
   box-shadow: 0 4px 0 #2a2a35;
+  transition: width var(--motion-enter) var(--motion-ease), height var(--motion-enter) var(--motion-ease),
+    border-radius var(--motion-enter) var(--motion-ease), font-size var(--motion-enter) var(--motion-ease);
 }
+.incoming-list { display: flex; flex-direction: column; gap: 10px; }
+
+/* 많이 축소했을 때 접기: 제목 카드는 '마을 주민 n / 213명' 한 줄, 오고 있는 물건은 숨김, 버튼은 높이 44px 알약 */
+.fold, .fold-tall {
+  overflow: hidden; opacity: 1;
+  transition: max-height var(--motion-enter) var(--motion-ease), opacity var(--motion-enter) var(--motion-ease),
+    margin var(--motion-enter) var(--motion-ease);
+}
+.fold { max-height: 80px; }
+.fold-tall { max-height: 420px; }
+.title-card { transition: padding var(--motion-enter) var(--motion-ease); }
+.compact .fold, .compact .fold-tall { max-height: 0; min-height: 0; opacity: 0; margin: 0; pointer-events: none; }
+.compact .title-card { padding: 8px 16px; }
+.compact .goal { margin: 0; }
+.compact .add { width: 200px; height: 44px; border-radius: 22px; font-size: 15px; }
 .menu-backdrop { position: fixed; inset: 0; z-index: 40; display: flex; align-items: flex-end; justify-content: center; background: rgba(5, 10, 20, 0.55); }
 .menu {
   position: relative; width: 100%; max-width: 480px; max-height: 80vh; overflow-y: auto; box-sizing: border-box;

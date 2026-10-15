@@ -1,6 +1,6 @@
 import { onBeforeUnmount, onMounted, readonly, ref, type Ref } from 'vue'
 import { MOTION, reducedMotion } from '../utils/motion'
-import { FAR_SCALE, centerOn, clampScale, clampView, zoomAt, type Size, type View } from '../utils/pan-zoom'
+import { FAR_SCALE, centerOn, clampScale, clampView, withInsets, zoomAt, type Size, type View } from '../utils/pan-zoom'
 
 /**
  * 지도 확대·축소와 이동 (라이브러리 없이 포인터 이벤트로). 계산은 utils/pan-zoom.ts의 순수 함수.
@@ -76,7 +76,7 @@ export function usePanZoom(
   function measure(first = false) {
     const r = el.value?.getBoundingClientRect()
     if (!r) return
-    size = { vw: r.width, vh: r.height, mw: map.w, mh: map.h }
+    size = { vw: r.width, vh: r.height, mw: map.w, mh: map.h, top: size.top, bottom: size.bottom }
     if (first) {
       // 처음 한 번은 바로 그린다 (첫 화면이 비지 않게)
       view = start(size)
@@ -162,6 +162,18 @@ export function usePanZoom(
     if (gliding) glideTimer = setTimeout(() => { gliding = false; settleLater(); schedule() }, MOTION.panMs)
   }
 
+  /**
+   * 화면 위·아래 카드가 가리는 높이를 바꾼다. 보이는 영역 가운데의 지도 지점을 그대로 두어 지도가 튀지 않게 한다
+   * (최소 배율·위치 제한·'우리 집으로'의 가운데가 모두 이 영역을 기준으로 바뀐다)
+   */
+  function setInsets(top: number, bottom: number) {
+    if (Math.abs((size.top ?? 0) - top) < 0.5 && Math.abs((size.bottom ?? 0) - bottom) < 0.5) return
+    const next = withInsets(view, size, top, bottom)
+    size = next.size
+    view = next.view
+    schedule()
+  }
+
   /** 마지막 누름에서 8px 이상 끌었는지 (주민 클릭 무시용) */
   const dragged = () => moved > DRAG_SLOP
 
@@ -195,6 +207,7 @@ export function usePanZoom(
     zoomIn,
     zoomOut,
     goTo,
+    setInsets,
     dragged,
     size: () => size,
   }

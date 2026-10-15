@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { PEOPLE } from '../../shared/data/people'
 import { HOME_POINT, MAP_H, MAP_W, RESIDENT_H, RESIDENT_W, WORKPLACES, ZONES } from '../../shared/data/village'
 import type { Placed } from '../../shared/village'
@@ -29,9 +29,11 @@ const props = withDefaults(defineProps<{
   flowers?: Flower[]
   /** 방금 핀 꽃 (피는 연출) */
   bloomAt?: number
+  /** 화면 위·아래 카드가 가리는 높이(px, 안전 영역 포함). 최소 배율·위치 제한·가운데가 이 사이 영역을 기준으로 한다 */
+  insets?: { top: number; bottom: number }
 }>(), { lots: () => [], arriving: () => [], bestFriends: () => [], showWorkplaces: true, flowers: () => [], bloomAt: 0 })
 
-const emit = defineEmits<{ resident: [id: string]; flower: [flower: Flower] }>()
+const emit = defineEmits<{ resident: [id: string]; flower: [flower: Flower]; far: [far: boolean] }>()
 
 const viewport = ref<HTMLElement | null>(null)
 const world = ref<HTMLElement | null>(null)
@@ -95,6 +97,9 @@ function paint(v: View, gliding: boolean, moving: boolean) {
   }
 }
 const pz = usePanZoom(viewport, { w: MAP_W, h: MAP_H }, (s) => centerOn(HOME_POINT.x, HOME_POINT.y, HOME_POINT.scale, s), paint)
+watch(() => props.insets, (i) => { if (i) pz.setInsets(i.top, i.bottom) }, { immediate: true, deep: true })
+/** 멀리 보기(배율 0.25 미만)에 들어가고 나올 때 알린다: 마을 화면이 위·아래 카드를 접고 편다 */
+watch(pz.far, (f) => emit('far', f), { immediate: true })
 
 /** 멀리 보기에서 이름표를 키우는 방향: 구역 가운데보다 아래에 붙은 이름표는 위로, 위에 붙은 이름표는 아래로 (옆 구역 이름표와 겹치지 않게) */
 const labelOrigin = (z: (typeof ZONES)[number]) => (z.label[1] > (z.bounds[1] + z.bounds[3]) / 2 ? '0 100%' : '0 0')

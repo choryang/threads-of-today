@@ -5,7 +5,7 @@ import { HOME_POINT, MAP_H, MAP_W, ZONES, ZONE_BY_ID } from '../shared/data/vill
 import { buildTimeline, tailMeeting } from '../shared/journey'
 import { hintProductOf } from '../shared/visit'
 import { OVERFLOW_GAP, VILLAGE_CAPACITY, emptyLots, nextResident, placeAll, villageLayout, villagers } from '../shared/village'
-import { FAR_SCALE, HIT_BELOW, OVERVIEW_SCALE, fitBox, MAX_SCALE, MIN_HIT_PX, centerOn, clampScale, clampView, hitBox, minScale, zoneLabelScale, zoomAt, type Size } from '../app/utils/pan-zoom'
+import { FAR_SCALE, HIT_BELOW, OVERVIEW_SCALE, areaCenter, areaHeight, fitBox, withInsets, MAX_SCALE, MIN_HIT_PX, centerOn, clampScale, clampView, hitBox, minScale, zoneLabelScale, zoomAt, type Size } from '../app/utils/pan-zoom'
 
 const stage = PEOPLE_LIST.filter((p) => p.kind !== 'link')
 
@@ -195,4 +195,66 @@ test('다음 주민 여정: 고른 사람이 반드시 나오는 여정 id 꼬�
 test('많이 축소하면 미리 그린 PNG만: 끝까지 축소한 배율과 멀리 보기 배율이 모두 그 아래', () => {
   assert.ok(minScale(PHONE) < FAR_SCALE && FAR_SCALE < OVERVIEW_SCALE)
   assert.ok(OVERVIEW_SCALE < 0.6) // 처음 열 때(우리 집 0.6배)는 SVG
+})
+
+test('가리는 높이(insets): 0이면 지금과 같고, 있으면 그 사이 영역을 기준으로 최소 배율·가운데·위치 제한', () => {
+  const zero = { ...PHONE, top: 0, bottom: 0 }
+  for (const v of [{ x: -500, y: 300, scale: 0.1 }, { x: -300, y: -500, scale: 0.6 }, { x: 40, y: -9000, scale: 1.4 }]) {
+    assert.deepEqual(clampView(v, zero), clampView(v, PHONE))
+  }
+  assert.equal(minScale(zero), minScale(PHONE))
+  assert.deepEqual(centerOn(1400, 2100, 0.6, zero), centerOn(1400, 2100, 0.6, PHONE))
+  assert.deepEqual(fitBox(300, 500, 2400, 3800, zero), fitBox(300, 500, 2400, 3800, PHONE))
+
+  // 위 제목 카드 180px, 아래 버튼·탭 200px
+  const s = { ...PHONE, top: 180, bottom: 200 }
+  const area = 844 - 180 - 200
+  assert.equal(areaHeight(s), area)
+  assert.equal(minScale(s), Math.min(390 / MAP_W, area / MAP_H))
+  // 끝까지 축소: 섬이 영역 가운데, 위 끝은 카드 아래, 아래 끝은 버튼 위
+  const far = clampView({ x: 0, y: 0, scale: 0.01 }, s)
+  assert.ok(far.y >= 180 - 1e-9 && far.y + MAP_H * far.scale <= 844 - 200 + 1e-9)
+  assert.ok(Math.abs(far.y - (180 + (area - MAP_H * far.scale) / 2)) < 1e-9)
+  // 확대했을 때: 섬 위 끝은 카드 아래까지, 아래 끝은 버튼 위까지 끌어올 수 있다
+  assert.equal(clampView({ x: -100, y: 9999, scale: 0.6 }, s).y, 180)
+  assert.equal(clampView({ x: -100, y: -99999, scale: 0.6 }, s).y, 844 - 200 - MAP_H * 0.6)
+  // 가운데는 영역 가운데
+  assert.deepEqual(areaCenter(s), { x: 195, y: 180 + area / 2 })
+  const c = centerOn(1400, 2100, 0.6, s)
+  assert.ok(Math.abs(c.y + 2100 * 0.6 - (180 + area / 2)) < 1e-9)
+})
+
+test('가리는 높이가 바뀌면(카드 접기·펴기) 영역 가운데의 지도 지점을 그대로 둔다', () => {
+  const big = { ...PHONE, top: 180, bottom: 200 }
+  const v = centerOn(1400, 2100, 0.6, big)
+  const { view, size } = withInsets(v, big, 70, 120)
+  assert.deepEqual([size.top, size.bottom], [70, 120])
+  const c = areaCenter(size)
+  assert.ok(Math.abs((c.x - view.x) / view.scale - 1400) < 1e-6 && Math.abs((c.y - view.y) / view.scale - 2100) < 1e-6)
+  // 접힌 채 끝까지 축소한 상태에서 펴지면: 새 최소 배율로 맞춰 섬 전체가 새 영역 안에
+  const small = { ...PHONE, top: 70, bottom: 120 }
+  const min = clampView({ x: 0, y: 0, scale: 0.01 }, small)
+  const back = withInsets(min, small, 180, 200)
+  assert.equal(back.view.scale, minScale(back.size))
+  assert.ok(back.view.y >= 180 - 1e-9 && back.view.y + MAP_H * back.view.scale <= 844 - 200 + 1e-9)
+  // 끝까지 축소한 상태가 아니면 배율은 그대로, 위치만 새 영역 기준으로 제한
+  const mid = withInsets({ ...centerOn(1400, 2100, 0.2, small) }, small, 180, 200)
+  assert.equal(mid.view.scale, 0.2)
+  assert.ok(mid.view.y <= 180 + 1e-9 && mid.view.y >= 844 - 200 - MAP_H * 0.2 - 1e-9)
+  // 가리는 높이가 줄어 새 최소 배율이 지금 배율보다 커지면 그 배율로 올라가고, 섬은 새 영역 가운데
+  const tall = { ...PHONE, vw: 2000, top: 300, bottom: 300 }
+  const wide = withInsets(clampView({ x: 0, y: 0, scale: 0.01 }, tall), tall, 20, 20)
+  assert.equal(wide.view.scale, minScale(wide.size))
+  assert.ok(Math.abs(wide.view.y - (20 + (areaHeight(wide.size) - MAP_H * wide.view.scale) / 2)) < 1e-9)
+})
+
+test('끝까지 축소한 채 가리는 높이가 늘면(알림·안전 영역) 새 최소 배율로 맞춰 섬 전체가 계속 보인다', () => {
+  const s = { ...PHONE, vw: 375, vh: 667, top: 73, bottom: 146 }
+  const min = clampView({ x: 0, y: 0, scale: 0.01 }, s)
+  const grown = withInsets(min, s, 104, 180)
+  assert.equal(grown.view.scale, minScale(grown.size))
+  assert.ok(grown.view.y >= 104 - 1e-9 && grown.view.y + MAP_H * grown.view.scale <= 667 - 180 + 1e-9)
+  // 끝까지 축소한 상태가 아니면 배율은 그대로
+  const mid = centerOn(1400, 2100, 0.3, s)
+  assert.equal(withInsets(mid, s, 104, 180).view.scale, 0.3)
 })

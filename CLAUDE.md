@@ -101,7 +101,7 @@ app/
                           도감에는 진행률·세트·카드 목록만 둔다
   utils/share-image.ts    공유 이미지 1080×1350을 캔버스로 그린다(나의 하루 유형·두 사람의 하루). 글씨는 위아래 80px 안쪽
   utils/day-test.ts       테스트 물건 18개의 아이콘(형태 아이콘, 없던 7개는 완성품 아이콘 product-*). tests/forms.test.ts가 파일·index.json을 검사
-  utils/pan-zoom.ts       지도 배율(최소 = 섬 전체가 보이는 크기, 최대 1.4)·위치 제한(작으면 가운데), 한 점 기준 확대, 주민 누르는 영역 hitBox(140×210, 화면 최소 44px),
+  utils/pan-zoom.ts       지도 배율(최소 = 섬 전체가 위·아래 카드 사이 영역에 들어오는 크기, 최대 1.4)·위치 제한(insets 기준, 작으면 영역 가운데), 한 점 기준 확대, 주민 누르는 영역 hitBox(140×210, 화면 최소 44px),
                           멀리 보기 FAR_SCALE 0.25 (usePanZoom.ts·VillageMap이 쓰는 순수 함수)
   utils/motion.ts         모든 시간 값(전환 0.3초·토스트·고마워요 손 흔들기·자동 넘김 3~6초). CSS는 plugins/motion.client.ts가 넣는 --motion-* 변수
   utils/local-match.ts    대표 물건 + 앱용 사전으로 서버 없이 즉시 분해
