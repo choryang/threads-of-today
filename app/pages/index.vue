@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { PEOPLE } from '../../shared/data/people'
 import { HOME_POINT, MAP_H, MAP_W, RESIDENT_H, RESIDENT_W, WORKPLACES, ZONES } from '../../shared/data/village'
 import { UNLOCK } from '../../shared/friendship'
+import { arrivalShort, isArrived, isWaiting } from '../../shared/incoming'
 import { countriesOf, villageLayout, type Placed } from '../../shared/village'
 import { centerOn } from '../utils/pan-zoom'
 
@@ -18,7 +19,18 @@ const viewport = ref<HTMLElement | null>(null)
 const pz = usePanZoom(viewport, { w: MAP_W, h: MAP_H }, (s) => centerOn(HOME_POINT.x, HOME_POINT.y, HOME_POINT.scale, s))
 const transform = computed(() => `translate(${pz.view.value.x}px, ${pz.view.value.y}px) scale(${pz.view.value.scale})`)
 
-const layout = computed(() => villageLayout(game.state.cards, game.state.people ?? {}))
+// ── 오고 있는 물건: 1분마다 진행 막대를 새로 그린다 ──
+const now = ref(Date.now())
+let tick: ReturnType<typeof setInterval> | undefined
+onMounted(() => { tick = setInterval(() => { now.value = Date.now() }, 60_000) })
+onBeforeUnmount(() => clearInterval(tick))
+const waiting = computed(() => (game.state.incoming ?? []).filter(isWaiting))
+const arrivingLabel = (personId: string) => {
+  const inc = waiting.value.find((x) => x.personId === personId)
+  return !inc ? '' : isArrived(inc, now.value) ? '도착했어요' : arrivalShort(inc.arriveAt, now.value)
+}
+
+const layout = computed(() => villageLayout(game.state.cards, game.state.people ?? {}, waiting.value.map((x) => x.personId)))
 const countries = computed(() => countriesOf(layout.value.residents.map((r) => r.id)))
 const percentOf = (id: string) => game.friendship(id).percent
 
@@ -40,6 +52,12 @@ function openResident(id: string) {
 /** ?focus=사람 id: 그 사람 자리로 화면을 옮긴다 (밤사이 도착한 주민을 마을로 모실 때) */
 onMounted(async () => {
   const focus = typeof route.query.focus === 'string' ? route.query.focus : ''
+  // 도착했는데 아직 열지 않은 물건이 있으면 도착 화면부터 (도착 후 처음 열 때)
+  const due = waiting.value.find((x) => isArrived(x, Date.now()))
+  if (!focus && due) {
+    router.replace(`/arrival/${due.journeyId}`)
+    return
+  }
   if (!focus) return
   await nextTick()
   const spot = layout.value.residents.find((r) => r.id === focus)
@@ -67,6 +85,15 @@ const goHome = () => pz.goTo(HOME_POINT.x, HOME_POINT.y, HOME_POINT.scale, true)
 
         <div v-for="lot in layout.lots" :key="`lot-${lot.id}`" class="lot" :style="{ left: `${lot.x - 65}px`, top: `${lot.y - 150}px` }" aria-hidden="true">
           <span class="display">?</span>
+        </div>
+
+        <div
+          v-for="a in layout.arriving"
+          :key="`arriving-${a.id}`"
+          class="arriving"
+          :style="{ left: `${a.x - 65}px`, top: `${a.y - 180}px` }"
+        >
+          <span><template v-for="(word, i) in arrivingLabel(a.id).split(' ')" :key="i"><br v-if="i">{{ word }}</template></span>
         </div>
 
         <div
@@ -114,6 +141,7 @@ const goHome = () => pz.goTo(HOME_POINT.x, HOME_POINT.y, HOME_POINT.scale, true)
       </div>
 
       <div class="bottom">
+        <IncomingCard v-for="inc in waiting" :key="inc.journeyId" :incoming="inc" :now="now" />
         <NuxtLink to="/add" class="add">오늘 쓴 물건 넣기</NuxtLink>
       </div>
     </div>
@@ -154,6 +182,11 @@ const goHome = () => pz.goTo(HOME_POINT.x, HOME_POINT.y, HOME_POINT.scale, true)
   display: flex; align-items: center; justify-content: center; pointer-events: none;
 }
 .lot span { font-size: 54px; color: #6e9b58; }
+.arriving {
+  position: absolute; width: 130px; height: 180px; border: 5px dashed #fff; border-radius: 60px 60px 24px 24px;
+  background: #ffffff33; display: flex; align-items: center; justify-content: center; pointer-events: none;
+}
+.arriving span { text-align: center; font-size: 22px; font-weight: 700; line-height: 1.3; color: #fff; text-shadow: 0 2px 0 #2a2a35; }
 .workplace {
   position: absolute; width: 112px; height: 80px; border: 4px dashed #8b5e3c; border-radius: 16px;
   background: #fff8e8cc; display: flex; align-items: center; justify-content: center; text-align: center;

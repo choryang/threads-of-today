@@ -11,6 +11,8 @@
  *  - 본 감사 장면(seenScenes): 합집합. 한 기기에서 본 장면은 다른 기기에서 다시 띄우지 않는다.
  *  - 사람별 기록(people, 친해진 정도): 목록은 합집합, quizCorrect는 OR (shared/friendship.ts).
  *    어느 쪽에도 기록이 없는 가진 카드는 만남 1곳(legacy)으로 채운다.
+ *  - 오고 있는 물건(incoming): 여정 id로 짝짓는다. 한 기기에서 연 물건(openedAt)은 연 것으로 남는다.
+ *    연 지 30일이 지난 것은 버린다.
  */
 import { MATERIALS, SETS } from './data/materials'
 import { PEOPLE } from './data/people'
@@ -77,6 +79,19 @@ export interface PersonLog {
   metNames?: string[]
 }
 
+/** 오고 있는 물건 (shared/incoming.ts) */
+export interface Incoming {
+  journeyId: string
+  /** 출발 시각(ms) */
+  departAt: number
+  /** 도착 시각(ms): 출발한 다음 날 아침 6시(서울) */
+  arriveAt: number
+  /** 데려올 사람 */
+  personId: string
+  /** 도착 화면을 연 시각. 열린 물건이 다른 기기와 합칠 때 다시 살아나지 않게 지우지 않고 남긴다 */
+  openedAt?: number
+}
+
 export interface Save {
   v: 1
   cards: Record<string, string>
@@ -93,6 +108,7 @@ export interface Save {
   threads: Record<string, ThreadStat>
   /** 사람 id → 친해진 정도 기록 */
   people: Record<string, PersonLog>
+  incoming: Incoming[]
   nickname?: Nickname
 }
 
@@ -101,7 +117,7 @@ const LIMITS = { items: 2000, journeysPerDay: 12, name: 40, voice: 80, guesses: 
 const DATE = /^\d{4}-\d{2}-\d{2}$/
 
 export function emptySave(): Save {
-  return { v: 1, cards: {}, days: {}, streak: { last: '', count: 0 }, mystery: {}, items: {}, thanks: {}, seenScenes: [], threads: {}, people: {} }
+  return { v: 1, cards: {}, days: {}, streak: { last: '', count: 0 }, mystery: {}, items: {}, thanks: {}, seenScenes: [], threads: {}, people: {}, incoming: [] }
 }
 
 /** todayKey를 포함해 최근 days일의 날짜 키인지 */
@@ -130,6 +146,22 @@ function mergePeople(a: Record<string, PersonLog>, b: Record<string, PersonLog>,
   // 예전 버전 기기에서 온 카드: 만난 곳은 모르지만 만난 사람이다
   for (const id of Object.keys(cards)) if (!out[id]) out[id] = { metItems: [legacyMeeting(id)], gratitudeDays: [] }
   return out
+}
+
+const MAX_INCOMING_KEEP = 20
+const DAY_MS = 24 * 60 * 60 * 1000
+
+function mergeIncoming(a: Incoming[], b: Incoming[], todayKey: string): Incoming[] {
+  const byId = new Map<string, Incoming>()
+  for (const x of [...a, ...b]) {
+    const y = byId.get(x.journeyId)
+    const openedAt = y?.openedAt && x.openedAt ? Math.min(y.openedAt, x.openedAt) : (y?.openedAt ?? x.openedAt)
+    byId.set(x.journeyId, { ...(y ?? x), ...(openedAt ? { openedAt } : {}) })
+  }
+  // 연 지 30일이 지난 물건은 버린다 (열지 않은 물건은 그대로 기다린다)
+  const [ty, tm, td] = todayKey.split('-').map(Number)
+  const cutoff = Date.UTC(ty!, tm! - 1, td!) - KEEP_DAYS * DAY_MS
+  return [...byId.values()].filter((x) => !x.openedAt || x.openedAt >= cutoff).sort((p, q) => p.departAt - q.departAt).slice(-MAX_INCOMING_KEEP)
 }
 
 function mergeRecordOfDates(a: Record<string, string>, b: Record<string, string>): Record<string, string> {
@@ -197,6 +229,7 @@ export function mergeSaves(a: Save, b: Save, todayKey: string): Save {
     seenScenes: union(a.seenScenes ?? [], b.seenScenes ?? []),
     threads: mergeThreads(a.threads ?? {}, b.threads ?? {}),
     people: mergePeople(a.people ?? {}, b.people ?? {}, cards),
+    incoming: mergeIncoming(a.incoming ?? [], b.incoming ?? [], todayKey),
     days: pickRecent(days, todayKey),
     mystery: pickRecent(mystery, todayKey),
     streak,
@@ -257,6 +290,18 @@ export function sanitizeSave(raw: unknown, todayKey: string): Save {
         ...(log.quizCorrect === true ? { quizCorrect: true as const } : {}),
         ...(metNames.length ? { metNames } : {}),
       }
+    }
+  }
+  if (Array.isArray(raw.incoming)) {
+    const seen = new Set<string>()
+    for (const x of raw.incoming.slice(0, MAX_INCOMING_KEEP)) {
+      if (!isObj(x) || typeof x.journeyId !== 'string' || !DATE.test(x.journeyId.slice(0, 10)) || seen.has(x.journeyId)) continue
+      if (!PEOPLE[x.personId] || !Number.isFinite(x.departAt) || !Number.isFinite(x.arriveAt) || x.arriveAt < x.departAt) continue
+      seen.add(x.journeyId)
+      s.incoming.push({
+        journeyId: x.journeyId.slice(0, 30), departAt: x.departAt, arriveAt: x.arriveAt, personId: x.personId,
+        ...(Number.isFinite(x.openedAt) ? { openedAt: x.openedAt } : {}),
+      })
     }
   }
   s.seenScenes = strList(raw.seenScenes, SETS.length + 1).filter((id) => id === 'ending' || SETS.some((set) => set.id === id))

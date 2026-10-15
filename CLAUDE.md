@@ -25,11 +25,12 @@ shared/                 앱과 서버가 상대 경로로 함께 import (Nuxt �
   data/mystery.ts       미스터리 힌트 1·2번(대표 물건별 쓰임새 한 줄·분류). 대표 물건을 추가하면 여기도 채운다(check:data)
   data/village.ts       내 하루 마을: 구역 5개(이름표·대략적인 범위·발끝 자리 slots·넘칠 때 빈 땅 overflow), 일터 목록,
                         사람마다 구역·일터(RESIDENCE → Person.zone·workplace), 구역이 애매한 사람. 자리는 지도 생성기 도형으로 계산
+  data/transport.ts     운송 구간 사람(배·비행기·트럭)과 '배'·'바다를 건너는 중' 같은 말
   data/forms.ts         되감기 변신: 재료별 형태 목록(실제 가공 순서, by = 그 형태를 만드는 사람, formIcon = public/forms 아이콘 slug). 재료를 추가하면 여기도 채운다(check:data)
   data/dictionary.json  미리 만든 물건 사전 (scripts/build-dictionary.ts가 생성). 서버에서만 import
   data/dictionary-client.json 앱용 사전(한마디 하나만, scripts/build-client-dictionary.ts). 화면에서 바로 매칭할 때 쓴다
   safety.ts             looksFactual: AI 문구에 숫자·나라 이름이 섞였는지 검사
-  progress.ts           Save 타입, mergeSaves(카드·물건 합집합, 날짜 기록 30일, 사람별 기록 합집합·OR), sanitizeSave(서버 입력 검사)
+  progress.ts           Save 타입, mergeSaves(카드·물건 합집합, 날짜 기록 30일, 사람별 기록 합집합·OR, 오고 있는 물건은 여정 id로·연 기록 유지), sanitizeSave(서버 입력 검사)
   friendship.ts         친해진 정도: 사람별 기록(metItems·gratitudeDays·quizCorrect)에서 퍼센트 계산(저장하지 않음), 열리는 단계,
                         출처 있는 사실(workFact)·퀴즈(한 재료에만 나오는 사람의 일의 크기 퀴즈), 예전 기록 마이그레이션
   nickname.ts           기본 닉네임 조합·normalizeNickname(1~12자)
@@ -39,6 +40,8 @@ shared/                 앱과 서버가 상대 경로로 함께 import (Nuxt �
   journey.ts            buildTimeline(materialIds, journeyId): 여정 id 시드로 출발지·이야기·숨은 만남·퀴즈 변형. '-꼬리' 없는 예전 id는 기본 경로
                         id에 '-r'이 붙은 새 여정은 reverseTimeline(내 손 → 원산지). forwardTimeline을 재배치만 해서 판정은 정방향과 같다
   distance.ts           거리 계산기: 장소 좌표로 대권 거리 누적(바다는 건너뜀), 100km 단위 반올림
+  incoming.ts           오고 있는 물건: 운송 구간(data/transport.ts)이 있고 못 만난 평범한 사람이 남으면 생김(최대 3), 다음 날 6시(서울) 도착,
+                        진행 비율, 여정 데이터의 경유지 문구. 데려올 사람은 stage 사람만(희소도를 건드리지 않게)
   village.ts            마을 자리 배정(먼저 만난 사람부터 hash(id) 자리, 모자라면 빈 땅), 빈 집터, 주민 나라 수
   rewind.ts             거꾸로 가는 여정 연출: 칸마다 형태(formsAlong), 문구, '이 전엔 어디 있었을까요?', 되감기 엔딩 순서
   random.ts             hash / mix32 / seeded
@@ -64,8 +67,8 @@ app/
   composables/useSync.ts  서버 동기화·복구 코드로 이어 하기 (plugins/sync.client.ts가 호출)
   components/             ResidentSheet(주민 카드) · FriendshipPanel(친해진 정도) · MeetAgain(또 만났어요)
                           NicknameEditor(도감) · DeviceTransfer(도감 "다른 기기에서 이어 하기") · RecordTabs(기록 탭 안 오늘/나의 실타래 전환)
-                          FormBadge(지금 물건의 형태) · RewindReplay(빨리 감기 엔딩)
-  pages/                  index(내 하루 마을: 지도·주민·주민 카드) · add(오늘 쓴 물건 넣기: 물건 타일 + 직접 쓰기·사진, 미스터리로 가는 길)
+                          FormBadge(지금 물건의 형태) · RewindReplay(빨리 감기 엔딩) · IncomingCard(오고 있는 물건)
+  pages/                  index(내 하루 마을: 지도·주민·주민 카드·오고 있는 물건) · arrival/[id](밤사이 도착했어요) · add(오늘 쓴 물건 넣기: 물건 타일 + 직접 쓰기·사진, 미스터리로 가는 길)
                           journey/[id] · mystery · dex(통계) · result(기록: 오늘 여정·html-to-image 공유) · threads(기록 안 나의 실타래)
                           하단 탭은 3개(마을·도감·기록). 미스터리는 물건 넣기 화면에서 연다
   utils/pan-zoom.ts       지도 배율·위치 제한, 한 점 기준 확대 (usePanZoom.ts가 쓰는 순수 함수)

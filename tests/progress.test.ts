@@ -153,3 +153,13 @@ test('사람별 기록(친해진 정도): 목록은 합집합, quizCorrect는 OR
   assert.deepEqual(m.people[p1!], { metItems: ['2026-10-01-1-a', '2026-10-05-1-b'], gratitudeDays: ['2026-10-02'], quizCorrect: true })
   assert.deepEqual(m.people[p2!], { metItems: [`legacy:${p2}`], gratitudeDays: [] })
 })
+
+test('오고 있는 물건: 여정 id로 합치고, 한 기기에서 연 물건은 연 것으로 남는다', () => {
+  const inc = { journeyId: `${TODAY}-1-abcd-r`, departAt: 1, arriveAt: 2, personId: 'sea-crew' }
+  const a: Save = { ...emptySave(), incoming: [inc] }
+  const b: Save = { ...emptySave(), incoming: [{ ...inc, openedAt: 3 }] }
+  assert.deepEqual(mergeSaves(a, b, '1970-01-02').incoming, [{ ...inc, openedAt: 3 }])
+  const old = { ...emptySave() } as Partial<Save>
+  delete old.incoming
+  assert.deepEqual(mergeSaves(old as Save, a, TODAY).incoming, [inc])
+})

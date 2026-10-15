@@ -6,6 +6,7 @@ import {
   type Decomposed,
 } from '../../shared/logic'
 import { addGratitude, addMeeting, friendshipOf, migratePeople, quizOf, UNLOCK } from '../../shared/friendship'
+import { createIncoming } from '../../shared/incoming'
 import { mysteryHints } from '../../shared/mystery'
 import { normalizeNickname, randomNickname } from '../../shared/nickname'
 import { FIRST_SUFFIX, REVERSE_SUFFIX, buildTimeline, firstJourneyGift, quizFor, timelinePeople } from '../../shared/journey'
@@ -80,6 +81,7 @@ export function replaceSave(next: Save) {
   s.seenScenes = next.seenScenes ?? []
   s.threads = next.threads ?? {}
   s.people = next.people ?? {}
+  s.incoming = next.incoming ?? []
   if (next.nickname) s.nickname = next.nickname
 }
 
@@ -250,8 +252,26 @@ export function useGame() {
     journey.newCards.push(...gained)
     if (!s.threads) s.threads = {}
     addJourneyToThreads(s.threads, journey.materialIds, dayKey)
+    // 운송 구간이 있고 아직 못 만난 사람이 남은 물건이면, 밤사이 한 사람을 더 데려오는 물건이 출발한다
+    if (!s.incoming) s.incoming = []
+    const incoming = createIncoming(journey, new Set(Object.keys(s.cards)), s.incoming, Date.now())
+    if (incoming) s.incoming.push(incoming)
     for (const listener of finishListeners) listener()
     return gained
+  }
+
+  // ── 오고 있는 물건 ──
+  /**
+   * 도착한 물건을 연다: 데려온 사람이 새 주민이 된다(카드 + 그 여정에서 만난 기록). 한 번만.
+   * 돌려준 사람 id로 마을의 그 자리로 화면을 옮긴다
+   */
+  function openArrival(journeyId: string, now = Date.now()): string | null {
+    const inc = s.incoming?.find((x) => x.journeyId === journeyId)
+    if (!inc || inc.openedAt || now < inc.arriveAt) return null
+    const journey = findJourney(journeyId)
+    collect(inc.personId, { id: journeyId, name: journey?.name ?? '' })
+    inc.openedAt = now
+    return inc.personId
   }
 
   // ── 오늘의 미스터리 ──
@@ -357,6 +377,7 @@ export function useGame() {
     revealNext,
     answerQuiz,
     finishJourney,
+    openArrival,
     mysteryAnswer,
     mysteryHintList,
     mystery,

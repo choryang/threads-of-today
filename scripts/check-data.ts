@@ -12,6 +12,7 @@ import { thanksRepliesOf } from '../shared/thanks'
 import { buildTimeline, forwardTimeline, quizzesOf, resolveStages, reverseTimeline, timelinePeople } from '../shared/journey'
 import { FORMS } from '../shared/data/forms'
 import { reverseDistances } from '../shared/distance'
+import { createIncoming } from '../shared/incoming'
 import { looksFactual } from '../shared/safety'
 import { CODE_WORDS } from '../shared/recovery'
 import { NICKNAME_MAX, NICKNAME_PARTS } from '../shared/nickname'
@@ -362,6 +363,21 @@ for (const p of PEOPLE_LIST) {
   if (q && (q.answer < 0 || q.answer >= q.options.length)) errors.push(`${p.id}: 친해진 정도 퀴즈 정답 번호 오류`)
 }
 console.log('친해진 정도: 사실 없음', noFact.length, '명 · 퀴즈 없음', noQuiz.length, '명 (퀴즈가 없으면 90%까지)')
+
+// 오고 있는 물건: 대표 물건마다 여정 40개 중 하나라도 생길 수 있는지 (운송 구간 + 아직 못 만난 평범한 사람)
+const canIncoming: string[] = []
+const noIncoming: string[] = []
+for (const product of PRODUCTS) {
+  let ok = false
+  for (let i = 0; i < 40 && !ok; i++) {
+    const id = `2026-10-15-1-${i.toString(36).padStart(4, '0')}-r`
+    const fwd = forwardTimeline(product.materialIds, id, product.name)
+    const owned = new Set(fwd.flatMap((t) => (t.type === 'stage' || t.type === 'hidden' ? [t.personId] : [])))
+    ok = !!createIncoming({ id, name: product.name, materialIds: product.materialIds }, owned, [], Date.UTC(2026, 9, 15, 3))
+  }
+  ;(ok ? canIncoming : noIncoming).push(product.name)
+}
+console.log('오고 있는 물건: 생길 수 있는 물건', canIncoming.length, '개 · 생길 수 없는 물건', noIncoming.length, '개', noIncoming.join(', '))
 
 const today = mysteryProduct('2026-10-15')
 console.log('오늘 미스터리', today.name, mysteryHints(today, mysteryOptions('2026-10-15').filter((o) => o.id !== today.id)))
