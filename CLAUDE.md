@@ -22,11 +22,14 @@ shared/                 앱과 서버가 상대 경로로 함께 import (Nuxt �
   data/journey-extras.ts 여정 이벤트(EVENTS, '이야기')·숨은 만남 규칙(HIDDEN_RULES)
   data/shops.ts         여정 마지막 장면의 가게·사무실 사람. closingKind(물건 이름, 재료)로 종류를 정한다
   data/thanks.ts        고마워요 답·세트 감사 장면·엔딩 문구
+  data/doing.ts         여정 화면 '지금은 아마 …': 사람마다 일·저녁(일 끝나고 4시간)·잠 문구, 일하는 시간(hours, 기본 7~18시),
+                        평일에만 일하는 사람(days: 'weekdays'). 없으면 일반 문구(check:data)
+  data/calendar.ts      나라 코드·주말 요일·공휴일 찾기. 공휴일은 holidays.json(npm run holidays가 date-holidays로 3년치 생성,
+                        한국어 이름표는 scripts/build-holidays.ts). check:data가 올해·내년이 있는지 본다
   data/mystery.ts       미스터리 힌트 1·2번(대표 물건별 쓰임새 한 줄·분류). 대표 물건을 추가하면 여기도 채운다(check:data)
   data/village.ts       내 하루 마을: 구역 5개(이름표·대략적인 범위·발끝 자리 slots·넘칠 때 빈 땅 overflow), 일터 목록,
                         사람마다 구역·일터(RESIDENCE → Person.zone·workplace), 구역이 애매한 사람. 자리는 지도 생성기 도형으로 계산
   data/transport.ts     운송 구간 사람(배·비행기·트럭)과 '배'·'바다를 건너는 중' 같은 말
-  data/doing.ts         여정 화면 '지금은 아마 …': 사람마다 일(7~18시)·저녁(18~22시)·잠 문구, 없으면 일반 문구(check:data)
   data/scenes.ts        여정 장면 그림 목록(public/scenes/{id}.webp, 대체 글)과 사람 → 장면. 원본은 art/scenes에 두고 npm run scenes
   data/forms.ts         되감기 변신: 재료별 형태 목록(실제 가공 순서, by = 그 형태를 만드는 사람, formIcon = public/forms 아이콘 slug). 재료를 추가하면 여기도 채운다(check:data)
   data/dictionary.json  미리 만든 물건 사전 (scripts/build-dictionary.ts가 생성). 서버에서만 import

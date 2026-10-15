@@ -2,7 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, useId, watch } from 'vue'
 import { PEOPLE } from '../../shared/data/people'
 import { PLACES } from '../../shared/data/places'
-import { SEOUL_TZ, SKY, clockAt, clockLabel, doingLine, orbAt, parseClock, seoulDiffText, shiftToLocal, skyPhase } from '../../shared/local-time'
+import { SEOUL_TZ, SKY, clockAt, clockLabel, dayInfo, doingLine, holidayLine, orbAt, parseClock, seoulDiffText, shiftToLocal, shiftToLocalDate, skyPhase } from '../../shared/local-time'
 import { placeLabel } from '../../shared/rewind'
 import { sceneOf, sceneSrc } from '../../shared/data/scenes'
 import { MOTION } from '../utils/motion'
@@ -12,7 +12,7 @@ import { MOTION } from '../utils/motion'
  * 아래에 '지금은 아마 …' 한 줄. 30초마다 다시 그린다.
  * 그 사람의 장면 그림(shared/data/scenes.ts)이 있으면 깔고 시간대 색을 덧씌운다. 없거나 못 읽으면 단색 하늘과 땅.
  * 색과 시간대는 shared/local-time.ts의 SKY(문서 '여정 장면 스타일 가이드'의 시간대 표).
- * 개발 중에는 주소에 ?clock=05:30처럼 붙이면 그곳 시각을 바꿔 볼 수 있다
+ * 개발 중에는 주소에 ?clock=05:30처럼 붙이면 그곳 시각을, ?date=2026-09-27을 붙이면 그곳 날짜를 바꿔 볼 수 있다
  */
 const props = defineProps<{ personId: string }>()
 
@@ -22,6 +22,7 @@ const atSea = computed(() => place.value.continent === 'sea')
 
 const route = useRoute()
 const devClock = computed(() => (import.meta.dev ? parseClock(String(route.query.clock ?? '')) : undefined))
+const devDate = computed(() => (import.meta.dev ? String(route.query.date ?? '') : ''))
 
 const tick = ref(Date.now())
 let timer: ReturnType<typeof setInterval> | undefined
@@ -30,7 +31,8 @@ onBeforeUnmount(() => clearInterval(timer))
 
 const now = computed(() => {
   const d = new Date(tick.value)
-  return devClock.value ? shiftToLocal(d, place.value.tz, devClock.value) : d
+  const dated = devDate.value ? shiftToLocalDate(d, place.value.tz, devDate.value) : d
+  return devClock.value ? shiftToLocal(dated, place.value.tz, devClock.value) : dated
 })
 const local = computed(() => clockAt(place.value.tz, now.value))
 const seoul = computed(() => clockAt(SEOUL_TZ, now.value))
@@ -38,7 +40,9 @@ const phase = computed(() => skyPhase(local.value.h))
 const look = computed(() => SKY[phase.value])
 const orb = computed(() => orbAt(local.value))
 const diff = computed(() => seoulDiffText(place.value.tz, now.value))
-const doing = computed(() => doingLine(props.personId, local.value.h))
+/** 그곳의 오늘: 공휴일이면 시계 상자에 한 줄, 평일에만 일하는 사람은 쉬는 문구 (shared/data/calendar.ts) */
+const day = computed(() => dayInfo(place.value.country, place.value.tz, now.value))
+const doing = computed(() => doingLine(props.personId, local.value.h, day.value))
 
 /** 별 자리 (가로 %, 위에서 px). 저녁 첫 별은 맨 앞 하나 */
 const STARS: [number, number][] = [[85, 60], [10, 70], [31, 40], [59, 90], [72, 150]]
@@ -96,6 +100,7 @@ const filterId = `sticker-${useId()}`
         <span class="where">지금 {{ placeLabel(place) }}</span>
         <span class="time">{{ clockLabel(local) }}</span>
         <span class="seoul">서울은 {{ clockLabel(seoul) }} ({{ diff }})</span>
+        <span v-if="day.holiday" class="holiday">{{ holidayLine(day.holiday) }}</span>
       </p>
     </div>
     <p class="doing">
@@ -139,6 +144,7 @@ const filterId = `sticker-${useId()}`
 }
 .where, .seoul { font-size: 12px; color: #4a4a55; word-break: keep-all; }
 .seoul { font-size: 11px; }
+.holiday { margin-top: 2px; font-size: 12px; font-weight: 700; color: #b5452f; word-break: keep-all; }
 .time { font-family: var(--font-display); font-size: 24px; line-height: 1.1; }
 .doing {
   position: relative; z-index: 1; margin: -26px 20px 0; padding: 10px 14px;

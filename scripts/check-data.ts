@@ -3,7 +3,8 @@ import { existsSync } from 'node:fs'
 import { LINK_RULES, MATERIAL_LIST, PRODUCTS, SETS } from '../shared/data/materials'
 import { PEOPLE, PEOPLE_LIST } from '../shared/data/people'
 import { PLACES } from '../shared/data/places'
-import { DOING, DOING_DEFAULT } from '../shared/data/doing'
+import { DEFAULT_HOURS, DOING, DOING_DEFAULT } from '../shared/data/doing'
+import { COUNTRY_CODE, HOLIDAY_YEARS, holidayCountries } from '../shared/data/calendar'
 import { PERSON_SCENE, SCENES } from '../shared/data/scenes'
 import dictionary from '../shared/data/dictionary.json'
 import { EVENTS, HIDDEN_RULES } from '../shared/data/journey-extras'
@@ -54,6 +55,21 @@ for (const [id, d] of Object.entries(DOING)) {
   }
 }
 for (const t of Object.values(DOING_DEFAULT)) if (looksFactual(t)) errors.push(`지금 하는 일 기본 문구: "${t}"`)
+// 일하는 시간: 0~23시, 시작과 끝이 다르게. 기본(7~18시)과 다르면 저녁·잠 문구도 그 시간에 맞게 따로 쓴다
+for (const [id, d] of Object.entries(DOING)) {
+  if (!d.hours) continue
+  const [a, b] = d.hours
+  if (![a, b].every((h) => Number.isInteger(h) && h >= 0 && h < 24) || a === b) errors.push(`지금 하는 일 ${id}: 일하는 시간 ${a}~${b} 오류`)
+  if ((a !== DEFAULT_HOURS[0] || b !== DEFAULT_HOURS[1]) && (!d.eve || !d.sleep)) errors.push(`지금 하는 일 ${id}: 일하는 시간이 기본과 다르면 eve·sleep 문구도 써 주세요`)
+}
+
+// 나라별 달력: 장소의 나라마다 코드와 공휴일 데이터가 있고, 올해·내년이 들어 있는지 (없으면 npm run holidays)
+const thisYear = new Date().getFullYear()
+for (const place of Object.values(PLACES)) {
+  if (place.country && !COUNTRY_CODE[place.country]) errors.push(`장소 ${place.id}: 나라 ${place.country}의 코드가 shared/data/calendar.ts에 없음`)
+}
+for (const code of new Set(Object.values(COUNTRY_CODE))) if (!holidayCountries().includes(code)) errors.push(`공휴일: ${code} 데이터 없음 (npm run holidays)`)
+for (const y of [thisYear, thisYear + 1]) if (!HOLIDAY_YEARS.includes(y)) errors.push(`공휴일: ${y}년 데이터 없음 (npm run holidays)`)
 for (const p of PEOPLE_LIST) if ((p.kind === 'stage' || p.kind === 'hidden') && !DOING[p.id]) errors.push(`${p.id}: 지금 하는 일 문구 없음 (shared/data/doing.ts)`)
 
 // 장면 그림: 사람·장면이 있는지. 그림 파일이 아직 없는 장면은 단색 하늘로 보이니 알려만 준다
