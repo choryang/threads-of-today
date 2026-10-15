@@ -89,11 +89,11 @@ for (const scene of Object.values(SCENES)) {
 // 가게·사무실 사람도 같다: 그 사람이 건네는 물건 모두에 들어 있지 않은 재료 이름이면 실패
 // (예: 바리스타는 녹차라떼·에이드도 건네니 '커피'는 커피가 없는 여정에서도 나온다).
 // seasons(글 쓰는 사람용 메모)가 있으면 한 시즌 5편: seasons.length × 5 = episodes.length
-// 연재(seasons가 있는 사람, docs/stories)는 한 화 600자 이내. 긴 소설 글에는 종이·상자·의자 같은 흔한 낱말이 자연스럽게 나와서
+// 연재(seasons가 있는 사람, docs/stories)는 한 화 320자 이내(저녁 1분에 읽는 길이). 긴 소설 글에는 종이·상자·의자 같은 흔한 낱말이 자연스럽게 나와서
 // 재료 이름 검사는 별칭 없이 재료의 대표 이름(커피·플라스틱 등)만 본다. 종이·유리는 장면 속 소품(쪽지·영수증·유리문)이라
 // 물건의 재료로 읽히지 않아 연재에서는 보지 않는다
 const STORY_MAX = 200
-const SERIAL_MAX = 600
+const SERIAL_MAX = 320
 const EPISODES_PER_SEASON = 5
 const PROSE_EVERYDAY = new Set(['pulp', 'glass'])
 const materialWords = (id: string, serial = false) => {
