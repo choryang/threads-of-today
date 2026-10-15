@@ -191,7 +191,6 @@ export const RESIDENCE: Record<string, [ZoneId, WorkplaceId]> = {
   'tea-roaster': ['farm', 'tea-field'],
   'tea-taster': ['farm', 'tea-field'],
   'tomato-farmer': ['farm', 'vegetable-field'],
-  'ulleung-squid-fisher': ['farm', 'fishing-boat'],
   'us-buckwheat-farmer': ['farm', 'field'],
   'us-fries-plant': ['farm', 'fish-farm'],
   'vn-coffee-farmer': ['farm', 'coffee-farm'],
@@ -281,6 +280,9 @@ export const RESIDENCE: Record<string, [ZoneId, WorkplaceId]> = {
   'washing-station': ['factory', 'food-factory'],
   'yeosu-chem': ['factory', 'heavy-factory'],
   // 항구
+  'distant-squid-fisher': ['port', 'fishing-boat'],
+  'tuna-fisher': ['port', 'fishing-boat'],
+  'ulleung-squid-fisher': ['port', 'fishing-boat'],
   'abidjan-docker': ['port', 'dock'],
   'air-cargo': ['port', 'airport'],
   'apple-quarantine': ['port', 'inspection'],
@@ -293,7 +295,6 @@ export const RESIDENCE: Record<string, [ZoneId, WorkplaceId]> = {
   'customs-officer': ['port', 'inspection'],
   'davao-port': ['port', 'dock'],
   'dispatcher': ['port', 'office'],
-  'distant-squid-fisher': ['port', 'ship'],
   'djibouti-docker': ['port', 'dock'],
   'fishery-observer': ['port', 'ship'],
   'gh-takoradi-docker': ['port', 'dock'],
@@ -324,7 +325,6 @@ export const RESIDENCE: Record<string, [ZoneId, WorkplaceId]> = {
   'ship-cook': ['port', 'ship'],
   'tanker-crew': ['port', 'ship'],
   'tauranga-port': ['port', 'dock'],
-  'tuna-fisher': ['port', 'ship'],
   'valencia-port': ['port', 'dock'],
   'vn-coffee-port': ['port', 'dock'],
   'vn-port': ['port', 'dock'],
@@ -352,9 +352,9 @@ export const RESIDENCE: Record<string, [ZoneId, WorkplaceId]> = {
 
 /** 구역을 정하기 애매했던 사람과 이유 (보고용) */
 export const AMBIGUOUS_ZONE: Record<string, string> = {
-  'tuna-fisher': '원양어선: 고기를 잡는 일(농장 구역)과 배(항구) 사이',
-  'distant-squid-fisher': '원양어선: 고기를 잡는 일(농장 구역)과 배(항구) 사이',
-  'ulleung-squid-fisher': '어민: 잡는 일이라 농장 구역에 두었지만 바닷가',
+  'tuna-fisher': '원양어선: 잡는 일(농장)과 배(항구) 사이. 배가 머무는 항구로',
+  'distant-squid-fisher': '원양어선: 잡는 일(농장)과 배(항구) 사이. 배가 머무는 항구로',
+  'ulleung-squid-fisher': '어민: 잡는 일(농장)과 배(항구) 사이. 배가 머무는 항구로',
   'squid-dryer': '오징어 말리기: 가공(공장)이지만 어촌 일이라 농장 구역',
   'laver-farmer': '김 양식: 양식장이라 농장 구역, 바다 일',
   'salmon-farmer': '양식장: 농장 구역, 바다 일',
