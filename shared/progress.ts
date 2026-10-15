@@ -120,6 +120,7 @@ export interface Save {
   v: 1
   cards: Record<string, string>
   days: Record<string, DayLog>
+  /** 연속 기록. 더 이상 쓰지도 올리지도 않는다(잃는 장치를 두지 않는다). 예전 기기와 동기화가 깨지지 않게 값과 병합·검사 규칙만 남긴다 */
   streak: { last: string; count: number }
   mystery: Record<string, MysteryLog>
   /** 분해해 본 물건 이름 → 처음 분해한 날 */

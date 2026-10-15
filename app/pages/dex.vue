@@ -64,7 +64,6 @@ const metLabel = computed(() => `${withJosa(game.nickname.value, '이', '가')} 
       <div class="bar" aria-hidden="true"><span :style="{ width: `${percent}%` }" /></div>
       <div class="stats panel" aria-label="내 기록">
         <div><strong class="mono">{{ game.ownedCount.value }}<small>/{{ total }}</small></strong><span>모은 카드</span></div>
-        <div><strong class="mono">{{ game.streak.value }}일</strong><span>연속 기록</span></div>
         <div><strong class="mono">{{ game.remaining.value }}/{{ DAILY_LIMIT }}</strong><span>남은 여정</span></div>
       </div>
       <NicknameEditor />

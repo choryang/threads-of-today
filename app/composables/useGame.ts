@@ -2,7 +2,7 @@ import { computed, effectScope, reactive, ref, watch } from 'vue'
 import { LINK_RULES, SETS } from '../../shared/data/materials'
 import { PEOPLE } from '../../shared/data/people'
 import {
-  DAILY_LIMIT, completedSets, dateKey, findLinkCards, mysteryOptions, mysteryProduct, previousDateKey, seoulDateKey,
+  DAILY_LIMIT, completedSets, dateKey, findLinkCards, mysteryOptions, mysteryProduct, seoulDateKey,
   type Decomposed,
 } from '../../shared/logic'
 import { addGratitude, addMeeting, friendshipOf, migratePeople, quizOf, UNLOCK } from '../../shared/friendship'
@@ -127,10 +127,6 @@ export function useGame() {
   const regularCount = computed(() => today.value.journeys.filter((j) => j.source !== 'mystery').length)
   const remaining = computed(() => Math.max(0, DAILY_LIMIT - regularCount.value))
   const ownedCount = computed(() => Object.keys(s.cards).length)
-  const streak = computed(() => {
-    if (s.streak.last === todayKey || s.streak.last === previousDateKey(todayKey)) return s.streak.count
-    return 0
-  })
 
   function ensureToday(): DayLog {
     if (!s.days[todayKey]) s.days[todayKey] = { journeys: [], linkCards: [] }
@@ -199,11 +195,6 @@ export function useGame() {
       ...(opts.teaser && PEOPLE[opts.teaser] ? { teaser: opts.teaser } : {}),
     }
     day.journeys.push(journey)
-    // 연속 기록은 여정을 떠날 때 올라간다 (밤에 떠나 다음 날 도착해도 떠난 날 기준)
-    if (s.streak.last !== todayKey) {
-      s.streak.count = s.streak.last === previousDateKey(todayKey) ? s.streak.count + 1 : 1
-      s.streak.last = todayKey
-    }
     if (!s.items[item.name]) s.items[item.name] = todayKey
     const saved = day.journeys[day.journeys.length - 1]!
     // 첫 번째 사람은 여정을 시작하자마자 만난다
@@ -388,7 +379,6 @@ export function useGame() {
     firstVisit,
     itemCount,
     knowsItem,
-    streak,
     owns,
     startJourney,
     findJourney,
