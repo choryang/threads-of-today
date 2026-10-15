@@ -5,6 +5,8 @@ import type { MoodId } from '../../shared/data/moods'
 import { resolveItem } from '../utils/resolve-item'
 import { togetherLine } from '../../shared/today-text'
 import type { Reply } from '../composables/useToday'
+import type { JobId } from '../../shared/data/jobs'
+import { MOTION, reducedMotion } from '../utils/motion'
 
 /**
  * 첫 화면: 오늘 흐름 (docs/redesign/README.md, 시안 V2Mood → V2Item → V2Thread → V2Person → V2Reply).
@@ -32,12 +34,19 @@ const together = computed(() => {
   const n = meets.moodCount(d.mood)
   return n ? togetherLine(d.mood, n) : ''
 })
+// 하는 일 묻기: 3일째, 실을 묶은 뒤(매듭이 다 묶이고) 한 번만. 닫기·"말하지 않을래요"는 declined
+const askingJob = ref(false)
 function reply(r: Reply) {
   today.giveReply(r)
   if (d.mood) {
     void meets.tieMood(d.mood)
     void meets.load()
   }
+  if (today.askJobToday()) setTimeout(() => { askingJob.value = true }, reducedMotion() ? 0 : MOTION.knotDrawMs + MOTION.enterMs * 2)
+}
+function chooseJob(value: JobId | 'declined') {
+  today.setJob(value)
+  askingJob.value = false
 }
 
 const busy = ref(false)
@@ -145,6 +154,7 @@ const tightTop = computed(() => d.step === 'item' || d.step === 'person' || d.st
       </div>
     </TodayPersonScreen>
     <TodayShareSheet v-if="sharing && record" :date="d.date" :record="record" @close="sharing = false" />
+    <TodayJobSheet v-if="askingJob" @choose="chooseJob" @close="chooseJob('declined')" />
   </main>
 </template>
 

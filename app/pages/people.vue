@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
+import { jobLabel, type JobId } from '../../shared/data/jobs'
 import { PEOPLE } from '../../shared/data/people'
 import { PLACES } from '../../shared/data/places'
 import { CENTER, RINGS, radiusOf, strandCount, strandsOf } from '../../shared/connections'
@@ -25,6 +26,14 @@ const nameOf = (id: string) => PEOPLE[id]?.name ?? PEOPLE[id]?.job ?? ''
 const placeOf = (id: string) => {
   const place = PLACES[PEOPLE[id]?.placeId ?? '']
   return place ? placeLabel(place) : ''
+}
+// 하는 일: 맨 아래 작은 글씨. 바꾸기 시트를 닫으면 그대로 둔다
+const today = useToday()
+const job = computed(() => game.state.job?.value)
+const jobOpen = ref(false)
+function setJob(value: JobId | 'declined') {
+  today.setJob(value)
+  jobOpen.value = false
 }
 const rings = RINGS.map((km) => ({ km, r: radiusOf(km) }))
 const label = computed(() =>
@@ -65,6 +74,13 @@ const label = computed(() =>
       <p>오늘 하루를 고르면, 같은 하루를 보낸 사람과 첫 실이 이어져요.</p>
       <NuxtLink to="/" class="t-btn">오늘 하루 고르기</NuxtLink>
     </div>
+
+    <!-- 하는 일 바꾸기 (README "하는 일 묻기") -->
+    <p class="job">
+      <template v-if="job && job !== 'declined'">하는 일: {{ jobLabel(job) }} · <button @click="jobOpen = true">바꾸기</button></template>
+      <button v-else @click="jobOpen = true">하는 일 알려 주기</button>
+    </p>
+    <TodayJobSheet v-if="jobOpen" :current="job && job !== 'declined' ? job : undefined" @choose="setJob" @close="jobOpen = false" />
   </main>
 </template>
 
@@ -81,5 +97,7 @@ const label = computed(() =>
 .place { font-size: 13px; color: var(--t-sub); }
 .date { font-size: 13px; color: var(--t-sub); flex-shrink: 0; }
 .empty { margin-top: 20px; display: flex; flex-direction: column; gap: 16px; }
+.job { margin: 24px 0 0; font-size: 13px; color: var(--t-faint); text-align: center; }
+.job button { min-height: 44px; padding: 0 4px; border: 0; background: none; color: var(--t-sub); font: inherit; font-size: 13px; text-decoration: underline; cursor: pointer; }
 .empty p { margin: 0; font-size: 15px; line-height: 1.7; color: var(--t-sub); word-break: keep-all; }
 </style>

@@ -21,10 +21,12 @@
  *  - 핵심 인물 이야기를 본 편 수(keyMeets, shared/key-story.ts): 사람마다 큰 값. 둘 다 없으면 없는 채로.
  *  - 오늘 흐름의 하루 기록(todays, docs/redesign/README.md "저장"): 날짜마다 하나. 같은 날 둘 다 있으면 한마디를 건넨 쪽,
  *    둘 다 건넸거나 둘 다 안 건넸으면 a. 둘 다 없으면 없는 채로. 한 줄·직접 쓴 말은 기기에만 있어 여기에 없다.
+ *  - 하는 일(job): 고른 일이 declined보다 우선, 둘 다 일이면 나중에 고른 것.
  *    여정마다 보여 준 편 번호(Journey.keyEpisodes)는 여정과 함께 간다.
  */
 import { MATERIALS, SETS } from './data/materials'
 import { isMoodId, type MoodId } from './data/moods'
+import { mergeJob, sanitizeJob, type JobChoice } from './job'
 import { PEOPLE, PEOPLE_LIST } from './data/people'
 import { LOG_CAP, legacyMeeting, mergePersonLog } from './friendship'
 import { isManageKey, isToken } from './share'
@@ -178,6 +180,8 @@ export interface Save {
   keyMeets?: Record<string, number>
   /** 서울 날짜 → 오늘 흐름의 하루 기록 */
   todays?: Record<string, TodayRecord>
+  /** 하는 일 (일 id 또는 'declined'). 3일째에 한 번 묻는다 (shared/job.ts) */
+  job?: JobChoice
   nickname?: Nickname
 }
 
@@ -351,6 +355,7 @@ export function mergeSaves(a: Save, b: Save, todayKey: string): Save {
     ...(a.unlockedOn || b.unlockedOn ? { unlockedOn: mergeEarliest(a.unlockedOn ?? {}, b.unlockedOn ?? {}) } : {}),
     ...(a.keyMeets || b.keyMeets ? { keyMeets: mergeLargest(a.keyMeets ?? {}, b.keyMeets ?? {}) } : {}),
     ...(a.todays || b.todays ? { todays: mergeTodays(a.todays ?? {}, b.todays ?? {}) } : {}),
+    ...(mergeJob(a.job, b.job) ? { job: mergeJob(a.job, b.job) } : {}),
     ...(mergeVillage(a.village, b.village) ? { village: mergeVillage(a.village, b.village) } : {}),
     days: pickRecent(days, todayKey),
     mystery: pickRecent(mystery, todayKey),
@@ -461,6 +466,8 @@ export function sanitizeSave(raw: unknown, todayKey: string): Save {
     s.unlockedOn = {}
     for (const [k, v] of Object.entries(raw.unlockedOn)) if ((UNLOCK_STEP_IDS as string[]).includes(k) && typeof v === 'string' && DATE.test(v)) s.unlockedOn[k] = v
   }
+  const job = sanitizeJob(raw.job)
+  if (job) s.job = job
   if (isObj(raw.todays)) {
     s.todays = {}
     for (const [date, r] of Object.entries(raw.todays).slice(-MAX_TODAYS)) {

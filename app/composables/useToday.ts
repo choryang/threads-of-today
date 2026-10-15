@@ -6,6 +6,8 @@ import { pickPerson, type Pick } from '../../shared/pick'
 import type { TodayRecord } from '../../shared/progress'
 import { historyOf, memoryFor } from '../../shared/today-log'
 import { localDay, setLocalDay } from '../utils/today-local'
+import type { JobId } from '../../shared/data/jobs'
+import { shouldAskJob } from '../../shared/job'
 
 /**
  * 오늘 흐름 (docs/redesign/README.md): 마음 → 물건 → 실 → 그 사람의 오늘 → 한마디. 화면 다섯 개가 같은 상태를 나눠 쓴다.
@@ -114,8 +116,17 @@ export function useToday() {
     if (reply.kind === 'own') setLocalDay(draft.date, { own: reply.text })
     void sync()
   }
+  /** 하는 일: 고른 일 또는 'declined'(말하지 않을래요·닫기). 정하면 다시 묻지 않는다 */
+  function setJob(value: JobId | 'declined') {
+    game.state.job = { value, at: Date.now() }
+    void sync()
+  }
+  /** 오늘 하는 일을 물을지 (3일째, 한마디를 건넨 뒤, 아직 정하지 않았을 때) */
+  function askJobToday(): boolean {
+    return shouldAskJob(todays(), game.state.job, draft.date)
+  }
   function reset() {
     Object.assign(draft, { step: 'mood', date: seoulDateKey(), mood: undefined, note: '', item: undefined, pick: undefined, reply: undefined, memory: undefined })
   }
-  return { draft, open, chooseMood, setNote, chooseItem, go, giveReply, reset }
+  return { draft, open, chooseMood, setNote, chooseItem, go, giveReply, setJob, askJobToday, reset }
 }
