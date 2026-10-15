@@ -4,7 +4,7 @@ import { PEOPLE_LIST } from '../shared/data/people'
 import { emptySave, type Save } from '../shared/progress'
 import {
   UNLOCK_STEPS, conditionMet, isOpen, listCondition, lockedNotice, nextLocked, nextUnlock, openSteps, pendingNotices, shortCondition, silentUnlocks,
-  stepState, unlockStats,
+  pillText, stepState, unlockStats,
   type UnlockStats, type UnlockStepId, type UnlockedOn,
 } from '../shared/unlocks'
 
@@ -143,4 +143,11 @@ test('잠긴 단계의 남은 조건: 여정 수 부족 / 조건은 채웠지만
   assert.equal(nextLocked(stats(30, true), all, TODAY), null)
   // 모든 단계에 메뉴 이름이 있다 (첫날 빼고)
   assert.ok(UNLOCK_STEPS.filter((x) => x.id !== 'day1').every((x) => x.label))
+})
+
+test('접힌 제목 카드의 알약: 무엇이 열리는지 알 수 있게 짧게', () => {
+  assert.equal(pillText({ kind: 'journeys', need: 2, have: 1, left: 1 }), '새 기능 · 여정 1번 더')
+  assert.equal(pillText({ kind: 'waiting', days: 1 }), '새 기능 · 내일')
+  assert.equal(pillText({ kind: 'waiting', days: 3 }), '새 기능 · 3일 뒤')
+  assert.equal(pillText({ kind: 'best-friend' }), '새 기능 · 단짝이 생기면')
 })

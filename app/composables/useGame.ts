@@ -11,6 +11,7 @@ import { mysteryHints } from '../../shared/mystery'
 import { normalizeNickname, randomNickname } from '../../shared/nickname'
 import { REVERSE_SUFFIX, buildTimeline, journeyOrderSuffix, quizFor, secondJourneyGift, tailMeeting, timelinePeople } from '../../shared/journey'
 import { addJourneyToThreads, backfillThreads } from '../../shared/threads'
+import { villagers } from '../../shared/village'
 import { everyoneThanked, sceneKey, thanksReply, unseenScenes, type ThanksScene } from '../../shared/thanks'
 import { emptySave, type DayLog, type Journey, type JourneySource, type MysteryLog, type Save } from '../../shared/progress'
 import { isOpen, nextLocked, nextUnlock, openSteps, pendingNotices, silentUnlocks, stepState, unlockStats, type FeatureId, type UnlockStepId } from '../../shared/unlocks'
@@ -149,6 +150,8 @@ export function useGame() {
 
   const today = computed<DayLog>(() => s.days[todayKey] ?? { journeys: [], linkCards: [] })
   const ownedCount = computed(() => Object.keys(s.cards).length)
+  /** 만난 사람 수 = 마을 주민 수 (연결 카드는 이미 만난 사람을 '또 만난' 카드라 사람 수에 넣지 않는다). 마을·도감이 같은 숫자를 쓴다 */
+  const residentCount = computed(() => villagers(s.cards).length)
 
   function ensureToday(): DayLog {
     if (!s.days[todayKey]) s.days[todayKey] = { journeys: [], linkCards: [] }
@@ -420,6 +423,7 @@ export function useGame() {
     todayKey,
     today,
     ownedCount,
+    residentCount,
     firstVisit,
     itemCount,
     knowsItem,

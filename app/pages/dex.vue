@@ -22,8 +22,6 @@ const filters: Array<{ id: Filter; label: string }> = [
 const list = computed(() =>
   PEOPLE_LIST.filter((p) => filter.value === 'all' || (filter.value === 'hidden' ? p.kind === 'hidden' : p.rarity === filter.value)),
 )
-const total = PEOPLE_LIST.length
-const percent = computed(() => Math.round((game.ownedCount.value / total) * 100))
 const sets = computed(() => game.setProgress())
 const numberOf = (id: string) => PEOPLE_LIST.findIndex((p) => p.id === id) + 1
 const labelOf = (p: Person) => (p.name ? `${p.name} · ${p.job}` : p.job)
@@ -57,8 +55,7 @@ const metLabel = computed(() => `${withJosa(game.nickname.value, '이', '가')} 
   <main class="page">
     <header class="head">
       <h1 class="display title">{{ game.nickname.value }}의 사람 도감</h1>
-      <p class="muted small">{{ metLabel }} <span class="mono">{{ game.ownedCount.value }}/{{ total }}</span>명</p>
-      <div class="bar" aria-hidden="true"><span :style="{ width: `${percent}%` }" /></div>
+      <p class="muted small">{{ metLabel }} <span class="mono">{{ game.residentCount.value }}</span>명</p>
     </header>
 
     <!-- 세트는 여정 10번 뒤에 열린다 (shared/unlocks.ts) -->
@@ -143,8 +140,6 @@ const metLabel = computed(() => `${withJosa(game.nickname.value, '이', '가')} 
 .small { margin: 0; font-size: 13px; }
 .people-note { margin: 0; font-size: 12px; line-height: 1.5; color: var(--muted); text-align: center; word-break: keep-all; }
 .h2 { margin: 0 0 10px; font-size: 15px; }
-.bar { height: 8px; border-radius: 4px; background: var(--line); overflow: hidden; }
-.bar span { display: block; height: 100%; background: var(--accent); }
 
 .sets { display: flex; flex-direction: column; gap: 8px; }
 .set { display: flex; flex-direction: column; gap: 6px; }

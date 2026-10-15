@@ -7,8 +7,8 @@ import { dayStats, seoulDateKey, withJosa } from '../../shared/logic'
 import { arrivalShort, cargoName, incomingChipText, isArrived, isWaiting, transportOf } from '../../shared/incoming'
 import { forwardTimeline } from '../../shared/journey'
 import { villageShareTitle } from '../../shared/share'
-import { UNLOCK_STEPS, listCondition, lockedNotice, shortCondition, stepOf, type UnlockStep, type UnlockStepId } from '../../shared/unlocks'
-import { VILLAGE_CAPACITY, countriesOf, nextResident, villageLayout, type Placed } from '../../shared/village'
+import { UNLOCK_STEPS, listCondition, lockedNotice, pillText, shortCondition, stepOf, type UnlockStep, type UnlockStepId } from '../../shared/unlocks'
+import { countriesOf, nextResident, villageLayout, type Placed } from '../../shared/village'
 import { flowerLabel, newFlowerNotice, type Flower } from '../../shared/visit'
 import { MOTION } from '../utils/motion'
 import { TRANSPORT_ICON } from '../utils/vehicle-icon'
@@ -150,8 +150,6 @@ async function loadVillageSocial() {
 }
 
 // ── 마을 목표 두 줄 (docs/screen-cleanup.md): 마을 주민 n / 살 수 있는 사람 수, 다음 주민 힌트 ──
-const capacity = VILLAGE_CAPACITY
-const residentPct = computed(() => Math.round((layout.value.residents.length / capacity) * 100))
 const { status } = useSync()
 /** 오늘(서울)과 사용자 id로 하루 동안 같은 사람. id가 아직 없으면(첫 동기화 전) 닉네임으로 */
 const next = computed(() => nextResident(Object.keys(game.state.cards), seoulDateKey(), status.profile?.id ?? game.nickname.value))
@@ -193,7 +191,7 @@ onBeforeUnmount(() => insetObserver?.disconnect())
 /** 많이 축소했을 때(배율 0.25 미만): 제목 카드는 한 줄, 오고 있는 물건은 숨기고, 버튼은 작은 알약으로 접는다 (0.3초 전환) */
 const compact = ref(false)
 
-// ── 제목 카드 펼치기: 기본은 접힌 한 줄('마을 주민 n / 213명'과 진행 막대). 펼치면 다음 주민·다음에 열리는 것·나라·단짝 수.
+// ── 제목 카드 펼치기: 기본은 접힌 한 줄('마을 주민 n명'). 펼치면 다음 주민·다음에 열리는 것·나라·단짝 수.
 // 사용자가 펼치거나 접은 상태는 이 기기에서만 기억한다(편의 설정이라 진행 상황에 넣지 않는다). 기억이 없으면 접힘 ──
 const CARD_KEY = 'my-day-people:village-card-open'
 const expanded = ref(false)
@@ -204,6 +202,27 @@ onMounted(() => {
     // 저장소를 못 쓰면 접은 채로
   }
 })
+/**
+ * 많이 축소하면(compact) 펼쳐 둔 카드도 한 줄로 접어 지도를 덜 가린다. 그때 펼치기를 누르면 그 자리에서 다시 보인다(peek).
+ * 다시 확대하면 peek은 풀리고 기억해 둔 상태를 따른다
+ */
+const peek = ref(false)
+watch(compact, (c) => { if (c) peek.value = false })
+const showMore = computed(() => expanded.value && (!compact.value || peek.value))
+function toggleCard() {
+  if (compact.value) {
+    // 축소 중: 접혀 보이면 펼쳐 보이고, 펼쳐 보이면 접는다
+    if (showMore.value) {
+      peek.value = false
+      setExpanded(false)
+    } else {
+      peek.value = true
+      setExpanded(true)
+    }
+    return
+  }
+  setExpanded(!expanded.value)
+}
 function setExpanded(open: boolean) {
   expanded.value = open
   try {
@@ -360,39 +379,40 @@ onMounted(async () => {
 
     <div class="overlay">
       <div ref="topEl" class="top">
-        <header class="title-card" :class="{ expanded }">
+        <header class="title-card" :class="{ expanded: showMore }">
           <h1 class="sr-only">내 하루 마을</h1>
-          <!-- 접힌 한 줄: 마을 주민 n / 213명(진행 막대), 다음에 열릴 것이 있으면 작은 자물쇠, 펼치기, 메뉴 -->
+          <!-- 접힌 한 줄: 마을 주민 n명(전체 수·진행 막대는 보이지 않는다), 새 기능 알약, 펼치기, 메뉴 -->
           <div class="card-row">
             <div class="goal">
-              <p class="goal-count">마을 주민 <strong class="mono">{{ layout.residents.length }}</strong> / {{ capacity }}명</p>
-              <div class="goal-bar" role="progressbar" :aria-valuenow="layout.residents.length" aria-valuemin="0" :aria-valuemax="capacity" aria-label="마을 주민">
-                <span :style="{ width: `${residentPct}%` }" />
-              </div>
+              <p class="goal-count">마을 주민 <strong class="mono">{{ layout.residents.length }}</strong>명</p>
             </div>
+            <!-- 다음에 열릴 것이 있으면, 무엇인지 알 수 있는 알약 버튼 (누르면 펼쳐진다) -->
             <button
-              v-if="game.nextLockedStep.value && !expanded"
-              class="icon-btn lock-btn"
-              :aria-label="`다음에 열리는 것: ${game.nextLockedStep.value.step.notice}. 펼쳐 보기`"
-              @click="setExpanded(true)"
+              v-if="game.nextLockedStep.value && !showMore"
+              class="unlock-pill"
+              :aria-label="`다음에 열리는 것: ${game.nextLockedStep.value.step.notice}, ${shortCondition(game.nextLockedStep.value.state)}. 펼쳐 보기`"
+              @click="toggleCard"
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>
+              <span class="pill-face">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>
+                <span class="pill-text">{{ pillText(game.nextLockedStep.value.state) }}</span>
+              </span>
             </button>
             <button
               class="icon-btn"
-              :aria-label="expanded ? '마을 카드 접기' : '마을 카드 펼치기'"
-              :aria-expanded="expanded"
+              :aria-label="showMore ? '마을 카드 접기' : '마을 카드 펼치기'"
+              :aria-expanded="showMore"
               aria-controls="village-card-more"
-              @click="setExpanded(!expanded)"
+              @click="toggleCard"
             >
-              <svg class="chevron" :class="{ up: expanded }" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
+              <svg class="chevron" :class="{ up: showMore }" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
             </button>
             <button class="icon-btn" aria-label="마을 메뉴" :aria-expanded="menuOpen" @click="menuOpen = true">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
             </button>
           </div>
-          <!-- 펼쳤을 때만 (많이 축소하면 펼쳐 둔 상태여도 접는다) -->
-          <div v-if="expanded" id="village-card-more" class="card-more fold">
+          <!-- 펼쳤을 때만 -->
+          <div v-if="showMore" id="village-card-more" class="card-more">
             <button v-if="next" class="next-resident" @click="goNext">
               다음 주민은 <strong>{{ next.product.name }}</strong> 속에 있어요
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
@@ -523,12 +543,17 @@ onMounted(async () => {
 .card-row { display: flex; align-items: center; gap: 2px; margin: -6px -6px -6px 0; }
 .card-row .goal { flex: 1; min-width: 0; }
 .card-more { display: flex; flex-direction: column; gap: 3px; margin-top: 4px; }
-.lock-btn { color: var(--accent); }
+/* 새 기능 알약: 누르는 영역 44px, 보이는 알약 32px (노란 바탕이라 누를 수 있는 버튼으로 보인다) */
+.unlock-pill { flex-shrink: 1; min-width: 0; min-height: 44px; padding: 0 2px; border: 0; background: none; cursor: pointer; display: flex; align-items: center; }
+.pill-face {
+  min-width: 0; height: 32px; padding: 0 10px; border-radius: 16px; display: inline-flex; align-items: center; gap: 4px;
+  background: var(--accent); color: #1a1a22; font-size: 12px; font-weight: 700; white-space: nowrap; box-shadow: 0 2px 0 #2a2a35;
+}
+.pill-face svg { flex-shrink: 0; }
+.pill-text { overflow: hidden; text-overflow: ellipsis; }
 .goal { display: flex; flex-direction: column; gap: 5px; }
 .goal-count { margin: 0; font-size: 14px; color: #f3f1ea; }
 .goal-count strong { color: var(--accent); font-size: 17px; font-weight: 500; }
-.goal-bar { height: 8px; border-radius: 4px; background: #2e3d55; overflow: hidden; }
-.goal-bar span { display: block; height: 100%; border-radius: 4px; background: var(--accent); }
 .next-resident {
   align-self: flex-start; min-height: 44px; margin-top: 2px; padding: 0; border: 0; background: none; cursor: pointer;
   display: inline-flex; align-items: center; gap: 4px; color: #f3f1ea; font-size: 14px; text-align: left; word-break: keep-all;
@@ -566,15 +591,8 @@ onMounted(async () => {
 .chip-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .incoming-sheet { gap: 10px; }
 
-/* 많이 축소했을 때 접기: 제목 카드는 '마을 주민 n / 213명' 한 줄, 오고 있는 물건은 숨김, 버튼은 높이 44px 알약 */
-.fold {
-  overflow: hidden; opacity: 1;
-  transition: max-height var(--motion-enter) var(--motion-ease), opacity var(--motion-enter) var(--motion-ease),
-    margin var(--motion-enter) var(--motion-ease);
-}
-.fold { max-height: 180px; }
+/* 많이 축소했을 때: 펼쳐 둔 제목 카드도 한 줄(펼치기를 누르면 그 자리에서 다시 보인다), 버튼은 높이 44px 알약 */
 .title-card { transition: padding var(--motion-enter) var(--motion-ease); }
-.compact .fold { max-height: 0; min-height: 0; opacity: 0; margin: 0; pointer-events: none; }
 .compact .title-card { padding: 8px 16px; }
 
 .compact .add { width: 200px; height: 44px; border-radius: 22px; font-size: 15px; }

@@ -191,3 +191,10 @@ export function lockedNotice(state: Exclude<UnlockState, { kind: 'open' }>): str
 
 /** 기능이 들어 있는 단계 */
 export const stepOf = (feature: FeatureId): UnlockStep => UNLOCK_STEPS.find((x) => x.features.includes(feature))!
+
+/** 접힌 제목 카드의 알약 버튼: "새 기능 · 여정 1번 더" / "새 기능 · 내일" / "새 기능 · 단짝이 생기면" (짧게) */
+export function pillText(state: Exclude<UnlockState, { kind: 'open' }>): string {
+  if (state.kind === 'journeys') return `새 기능 · 여정 ${state.left}번 더`
+  if (state.kind === 'waiting') return state.days <= 1 ? '새 기능 · 내일' : `새 기능 · ${state.days}일 뒤`
+  return '새 기능 · 단짝이 생기면'
+}
