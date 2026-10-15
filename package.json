@@ -18,6 +18,7 @@
     "cache:export": "tsx scripts/export-cache.ts",
     "stats": "tsx scripts/user-stats.ts",
     "scenes": "tsx scripts/build-scenes.ts",
+    "scenes:gen": "tsx scripts/gen-scenes.ts",
     "holidays": "tsx scripts/build-holidays.ts",
     "key-candidates": "tsx scripts/key-candidates.ts"
   },
@@ -31,6 +32,7 @@
   },
   "devDependencies": {
     "@anthropic-ai/sdk": "^0.133.0",
+    "@google/genai": "^2.30.0",
     "@resvg/resvg-js": "^2.6.2",
     "@types/node": "^22.20.5",
     "date-holidays": "^3.37.0",
