@@ -12,7 +12,10 @@ export interface KeyStory {
   story?: string
   episodes?: string[]
   joy?: string
-  /** 5편씩 묶은 시즌 이름. episodes[0..4]가 1시즌, [5..9]가 2시즌 */
+  /**
+   * 5편씩 묶은 시즌 이름. episodes[0..4]가 1시즌, [5..9]가 2시즌.
+   * 글 쓰는 사람용 메모라 화면에는 쓰지 않는다. check:data가 seasons.length × 5 = episodes.length인지 본다
+   */
   seasons?: string[]
 }
 

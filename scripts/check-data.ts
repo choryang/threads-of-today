@@ -85,9 +85,11 @@ for (const scene of Object.values(SCENES)) {
 
 // 핵심 인물 이야기 (docs/key-people.md 쓰는 규칙): 있는 사람만, 한 편 200자 이내,
 // 여러 재료(의 경로)에 나오는 사람의 이야기에는 재료 이름을 쓰지 않는다("오늘 당신의 물건").
-// 가게·사무실 사람은 재료 경로에 없어서 경고만: 그 사람이 건네는 물건 모두에 들어 있지 않은 재료 이름이면 알려 준다
-// (예: 바리스타는 녹차라떼·에이드도 건네니 '커피'는 커피가 없는 여정에서도 나온다)
+// 가게·사무실 사람도 같다: 그 사람이 건네는 물건 모두에 들어 있지 않은 재료 이름이면 실패
+// (예: 바리스타는 녹차라떼·에이드도 건네니 '커피'는 커피가 없는 여정에서도 나온다).
+// seasons(글 쓰는 사람용 메모)가 있으면 한 시즌 5편: seasons.length × 5 = episodes.length
 const STORY_MAX = 200
+const EPISODES_PER_SEASON = 5
 const materialWords = (id: string) => {
   const m = MATERIAL_LIST.find((x) => x.id === id)
   return m ? [...new Set([m.name, ...m.aliases])].filter((w) => w.length >= 2) : []
@@ -100,7 +102,7 @@ function forbiddenMaterials(pid: string): string[] {
   const own = routeMaterials(pid)
   return own.length >= 2 ? own : []
 }
-/** 가게·사무실 사람: 건네는 물건 중 일부에만 있는 재료 id (경고) */
+/** 가게·사무실 사람: 건네는 물건 중 일부에만 있는 재료 id */
 function partialMaterials(pid: string): string[] {
   if (!CLOSING_PEOPLE.includes(pid)) return []
   // 가게·사무실 사람: 건네는 물건마다의 재료. 모두에 들어 있지 않은 재료가 금지
@@ -118,6 +120,9 @@ for (const [pid, story] of Object.entries(KEY_STORIES)) {
   }
   const texts = [story.story, ...(story.episodes ?? [])].filter((t): t is string => !!t)
   if (!texts.length) errors.push(`이야기 ${pid}: story나 episodes가 없음`)
+  if (story.seasons && story.seasons.length * EPISODES_PER_SEASON !== (story.episodes?.length ?? 0)) {
+    errors.push(`이야기 ${pid}: 시즌 ${story.seasons.length}개 × ${EPISODES_PER_SEASON}편 = ${story.seasons.length * EPISODES_PER_SEASON}편이어야 하는데 ${story.episodes?.length ?? 0}편`)
+  }
   texts.forEach((t, i) => {
     if (t.length > STORY_MAX) errors.push(`이야기 ${pid} ${i + 1}편: ${t.length}자 (200자 이내)`)
   })
@@ -131,7 +136,7 @@ for (const [pid, story] of Object.entries(KEY_STORIES)) {
   for (const mid of partialMaterials(pid)) {
     for (const w of materialWords(mid)) {
       texts.forEach((t, i) => {
-        if (t.includes(w)) console.log(`경고: 이야기 ${pid} ${i + 1}편의 '${w}'(${mid}): 이 사람이 건네는 물건 중 ${mid}가 없는 것도 있어요`)
+        if (t.includes(w)) errors.push(`이야기 ${pid} ${i + 1}편: 건네는 물건 중 ${mid}가 없는 것도 있는데 재료 이름 '${w}'가 있음`)
       })
     }
   }
