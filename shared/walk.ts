@@ -1,5 +1,9 @@
+import { DOING } from './data/doing'
 import { MATERIALS } from './data/materials'
+import { PEOPLE } from './data/people'
+import { PLACES } from './data/places'
 import { forwardTimeline } from './journey'
+import { clockAt, doingBucket } from './local-time'
 
 /**
  * 실 따라 걷기 (docs/redesign/README.md): 하루 한 편 이야기와 별개로, 언제든 물건의 길을 구경한다.
@@ -43,4 +47,25 @@ export const RECENT_WALKS = 5
 /** 최근 걸어 본 물건: 맨 앞에, 같은 이름은 하나, 5개까지 */
 export function rememberWalk(list: string[], name: string): string[] {
   return [name, ...list.filter((n) => n !== name)].slice(0, RECENT_WALKS)
+}
+
+/** 이 길 위의 사람 (갈래 → 가게, 중복 없이) */
+export function walkPeople(walk: Walk): string[] {
+  return [...new Set([...walk.branches.flatMap((b) => b.stops), ...walk.hand])]
+}
+
+/**
+ * 지금 깨어 있는 사람·자고 있는 사람 수. 그곳 시각으로 doing.ts의 구분(일·저녁은 깨어 있음, 잠은 자고 있음) 그대로.
+ * 주말·공휴일에 쉬는 사람도 일하는 시간이면 깨어 있다
+ */
+export function wakeCounts(personIds: string[], now: Date): { awake: number; asleep: number } {
+  let awake = 0
+  let asleep = 0
+  for (const id of new Set(personIds)) {
+    const place = PLACES[PEOPLE[id]?.placeId ?? '']
+    if (!place) continue
+    if (doingBucket(clockAt(place.tz, now).h, DOING[id]?.hours) === 'sleep') asleep++
+    else awake++
+  }
+  return { awake, asleep }
 }

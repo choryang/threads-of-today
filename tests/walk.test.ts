@@ -4,7 +4,11 @@ import { test } from 'node:test'
 import { strandsOf } from '../shared/connections'
 import { emptySave } from '../shared/progress'
 import { historyOf } from '../shared/today-log'
-import { RECENT_WALKS, rememberWalk, walkJourneyId, walkPath } from '../shared/walk'
+import { DOING } from '../shared/data/doing'
+import { PEOPLE } from '../shared/data/people'
+import { PLACES } from '../shared/data/places'
+import { clockAt, doingBucket } from '../shared/local-time'
+import { RECENT_WALKS, rememberWalk, wakeCounts, walkJourneyId, walkPath, walkPeople } from '../shared/walk'
 
 const AMERICANO = { materialIds: ['coffee', 'plastic'], name: '아이스 아메리카노' }
 
@@ -34,4 +38,19 @@ test('걷기는 아무것도 쌓지 않는다: 만남 기록·이어진 사람�
   // 걷기 화면은 저장값(게임 상태·하루 기록·기기에만 남기는 한 줄)을 건드리지 않는다
   const page = readFileSync(new URL('../app/pages/walk.vue', import.meta.url), 'utf8')
   for (const forbidden of ['useGame', 'useToday', 'game.state', 'todays', 'setLocalDay', 'today-local']) assert.ok(!page.includes(forbidden), forbidden)
+})
+
+test('맨 위 요약: 길 위의 사람을 그곳 시각의 일·저녁·잠으로 나눠 센다', () => {
+  const walk = walkPath(AMERICANO.materialIds, '2026-10-15-1-w00001', AMERICANO.name)
+  const ids = walkPeople(walk)
+  assert.equal(new Set(ids).size, ids.length)
+  for (const at of ['2026-10-16T00:00:00Z', '2026-10-16T09:30:00Z', '2026-10-16T18:00:00Z']) {
+    const now = new Date(at)
+    const { awake, asleep } = wakeCounts(ids, now)
+    assert.equal(awake + asleep, ids.length)
+    const sleeping = ids.filter((id) => doingBucket(clockAt(PLACES[PEOPLE[id]!.placeId]!.tz, now).h, DOING[id]?.hours) === 'sleep').length
+    assert.equal(asleep, sleeping)
+  }
+  // 같은 사람은 한 번만
+  assert.deepEqual(wakeCounts(['barista', 'barista'], new Date('2026-10-16T03:00:00Z')), { awake: 1, asleep: 0 })
 })

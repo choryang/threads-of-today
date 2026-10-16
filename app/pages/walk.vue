@@ -6,12 +6,13 @@ import { sceneOf } from '../../shared/data/scenes'
 import { clockAt, clockLabel, dayInfo, doingLine } from '../../shared/local-time'
 import { seoulDateKey, withJosa } from '../../shared/logic'
 import { placeLabel } from '../../shared/rewind'
-import { rememberWalk, walkJourneyId, walkPath, type Walk } from '../../shared/walk'
+import { rememberWalk, wakeCounts, walkJourneyId, walkPath, walkPeople, type Walk } from '../../shared/walk'
 import { MOTION } from '../utils/motion'
 import { resolveItem } from '../utils/resolve-item'
 
 /**
  * 실 따라 걷기 (docs/redesign/README.md): 물건 입력 → 그 물건이 지나온 길을 세로 실로. 재료가 여럿이면 재료마다 갈래, 끝에 가게 사람.
+ * 맨 위에 지금 이 길 위에서 깨어 있는·자고 있는 사람 수(1분마다).
  * 칸마다 장소 · 지금 그곳 시각(해·달 점) · 일 이름과 이름 · 카드 문구 한 줄 · 지금은 아마 … · (있으면) 작은 장면 그림. 누르면 들여다보기 시트.
  * 아무것도 쌓지 않는다: 하루 기록·만난 사람·이어진 실에 넣지 않고 점수·개수도 없다. 최근 걸어 본 물건 5개만 이 기기에(localStorage)
  */
@@ -97,6 +98,7 @@ function stopOf(personId: string) {
 }
 const branches = computed(() => (walk.value ? walk.value.branches.map((b) => ({ ...b, stops: b.stops.map(stopOf) })) : []))
 const hand = computed(() => (walk.value ? walk.value.hand.map(stopOf) : []))
+const wake = computed(() => (walk.value ? wakeCounts(walkPeople(walk.value), new Date(tick.value)) : { awake: 0, asleep: 0 }))
 </script>
 
 <template>
@@ -133,6 +135,7 @@ const hand = computed(() => (walk.value ? walk.value.hand.map(stopOf) : []))
         <button class="again" @click="newWalk">다른 길로 다시 걷기</button>
       </div>
       <h1 class="t-title">{{ withJosa(item.name, '이', '가') }}{{ '\n' }}지나온 길</h1>
+      <p class="wake">지금 이 길 위에서 깨어 있는 사람 {{ wake.awake }}명, 자고 있는 사람 {{ wake.asleep }}명</p>
 
       <section v-for="b in branches" :key="b.materialId" class="branch">
         <h2 class="branch-title">{{ b.name }}</h2>
@@ -190,6 +193,7 @@ const hand = computed(() => (walk.value ? walk.value.hand.map(stopOf) : []))
 .top { display: flex; align-items: center; justify-content: space-between; }
 .again { min-height: 44px; padding: 0 4px; border: 0; background: none; color: var(--t-sub); font-size: 14px; text-decoration: underline; cursor: pointer; }
 .t-title { margin-top: 12px; }
+.wake { margin: 10px 0 0; font-size: 14px; color: var(--t-sub); word-break: keep-all; }
 .branch { margin-top: 28px; }
 .branch-title { margin: 0 0 8px; font-size: 13px; font-weight: 500; color: var(--t-sub); }
 /* 실: 아주 옅은 회색 한 줄 */
