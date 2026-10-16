@@ -285,6 +285,15 @@ const list: Material[] = [
     id: 'internet', name: '인터넷', aliases: ['인터넷', '와이파이', '데이터'],
     stages: ['datacenter-tech', 'cable-repairer', 'base-station'],
   },
+  // 영화·드라마 (docs/redesign/film-drama-people-review.md). 영화는 극장에서, 드라마는 인터넷 길을 지나 앱으로
+  {
+    id: 'film', name: '영화 만들기', aliases: ['영화 만들기', '영화 제작'],
+    stages: ['screenwriter', 'location-manager', 'set-builder', 'costume-designer', 'boom-operator', 'gaffer', 'film-editor', 'vfx-artist', 'colorist', 'foley-artist', 'sound-mixer', 'film-distributor'],
+  },
+  {
+    id: 'drama', name: '드라마 만들기', aliases: ['드라마 만들기', '드라마 제작'],
+    stages: ['drama-writer', 'scheduler', 'location-manager', 'studio-set-builder', 'cinematographer', 'dit', 'drama-editor', 'vfx-artist', 'music-director', 'sound-mixer', 'encoding-engineer'],
+  },
   // 컴퓨터·주변기기 부품 길 (docs/redesign/computer-people-review.md). 키캡·몸체는 플라스틱 길, 방열판은 알루미늄 길을 같이 쓴다
   {
     id: 'switch', name: '기계식 스위치', aliases: ['기계식 스위치', '키 스위치'],
@@ -698,6 +707,8 @@ export const PRODUCTS: Product[] = [
   { id: 'bicycle', name: '자전거', aliases: ['자전거', '따릉이'], materialIds: ['steel', 'aluminum', 'rubber'] },
   { id: 'app', name: '앱', aliases: ['앱', '어플', '애플리케이션', '메신저', '메신저 앱', '배달앱', '배달 앱', '카톡', '카카오톡'], materialIds: ['app', 'internet'] },
   { id: 'song', name: '노래', aliases: ['노래', '음악', '음원', '케이팝', 'K팝', '플레이리스트', '신곡'], materialIds: ['song', 'internet'] },
+  { id: 'film', name: '영화', aliases: ['영화', '영화관', '극장', '개봉 영화', '영화 한 편'], materialIds: ['film'] },
+  { id: 'drama', name: '드라마', aliases: ['드라마', '시리즈', '넷플릭스', '웹드라마', '미드', '오티티'], materialIds: ['drama', 'internet'] },
   { id: 'keyboard', name: '키보드', aliases: ['키보드', '기계식 키보드', '기계식키보드'], materialIds: ['switch', 'pcb', 'plastic'] },
   { id: 'mouse', name: '마우스', aliases: ['마우스', '무선 마우스', '무선마우스'], materialIds: ['sensor', 'pcb', 'plastic'] },
   { id: 'monitor', name: '모니터', aliases: ['모니터'], materialIds: ['panel', 'pcb', 'plastic'] },

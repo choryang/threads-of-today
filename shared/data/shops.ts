@@ -3,7 +3,7 @@
  * 물건 이름과 재료로 종류를 정하고(closingKind), 여정 끝에 사무실 사람 한 명(있으면)과 가게 사람 한 명을 붙인다.
  * 수입 재료가 지나온 여정이면 사무실 사람 후보에 수입 서류를 챙기는 무역회사 직원이 들어간다.
  */
-export type ClosingKind = 'cafe' | 'delivery' | 'cvs' | 'electronics' | 'clothes' | 'mart' | 'goods' | 'books' | 'computer' | 'app' | 'online'
+export type ClosingKind = 'cafe' | 'delivery' | 'cvs' | 'electronics' | 'clothes' | 'mart' | 'goods' | 'books' | 'computer' | 'app' | 'online' | 'cinema'
 
 export interface Closing {
   /** 마지막에 물건을 건네는 사람 (후보 중 여정 id 시드로 하나) */
@@ -25,7 +25,8 @@ export const CLOSINGS: Record<ClosingKind, Closing> = {
   books: { shop: ['bookseller'], office: [] },
   computer: { shop: ['pc-builder'], office: ['cs-agent'] },
   app: { shop: ['cs-agent'], office: [], noImport: true },
-  /** 건네주는 사람 없이 인터넷으로 바로 닿는 것(노래) */
+  cinema: { shop: ['projectionist'], office: [], noImport: true },
+  /** 건네주는 사람 없이 인터넷으로 바로 닿는 것(노래·드라마) */
   online: { shop: [], office: [] },
 }
 
@@ -43,7 +44,7 @@ const KEYWORDS: Array<[ClosingKind, string[]]> = [
 const ELECTRONICS = ['assembly', 'chip']
 const CLOTHING = ['cotton', 'polyester', 'rubber']
 /** 먹을거리가 아닌 재료. 이것만으로 된 물건은 가게 물건(goods) */
-export const NON_FOOD = ['app', 'song', 'internet', 'switch', 'pcb', 'panel', 'cpu', 'memory', 'sensor', 'publishing', 'cotton', 'polyester', 'plastic', 'rubber', 'cobalt', 'lithium', 'chip', 'assembly', 'aluminum', 'pulp', 'steel', 'glass', 'wood']
+export const NON_FOOD = ['film', 'drama', 'app', 'song', 'internet', 'switch', 'pcb', 'panel', 'cpu', 'memory', 'sensor', 'publishing', 'cotton', 'polyester', 'plastic', 'rubber', 'cobalt', 'lithium', 'chip', 'assembly', 'aluminum', 'pulp', 'steel', 'glass', 'wood']
 
 export function closingKind(itemName: string, materialIds: string[]): ClosingKind {
   const name = itemName.replace(/\s+/g, ' ')
@@ -51,6 +52,8 @@ export function closingKind(itemName: string, materialIds: string[]): ClosingKin
   if (has(KEYWORDS[0]![1])) return 'cafe'
   // 서비스: 앱은 고객센터 상담원, 노래는 건네주는 사람 없이
   if (materialIds.includes('app')) return 'app'
+  if (materialIds.includes('film')) return 'cinema'
+  if (materialIds.includes('drama')) return 'online'
   if (materialIds.includes('song')) return 'online'
   // CPU가 든 물건(데스크톱)은 조립 PC 가게. 휴대폰 매장보다 먼저
   if (materialIds.includes('cpu')) return 'computer'
