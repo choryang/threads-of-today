@@ -37,10 +37,9 @@ const peek = computed(() => peekOf(game.state.todays, props.personId))
       </button>
       <TodaySceneImage class="scene" :person-id="personId" :hour="local.h" />
       <div class="who">
-        <h2 class="name">{{ name }}</h2>
+        <h2 class="name">{{ name }}<span v-if="person.user" class="user-dot" role="img" aria-label="이 앱을 쓰는 사람" title="이 앱을 쓰는 사람" /></h2>
         <span class="job">{{ person.name ? person.job : '' }}</span>
       </div>
-      <p v-if="person.user" class="user-mark">이 앱을 쓰는 사람</p>
       <p v-if="walk" class="intro">{{ person.story }}</p>
       <p class="clock">
         지금 {{ withJosa(placeShort(place), '은', '는') }} <strong>{{ clockLabel(local) }}</strong>
@@ -76,7 +75,7 @@ const peek = computed(() => peekOf(game.state.todays, props.personId))
 .who { margin-top: 8px; display: flex; align-items: baseline; gap: 8px; }
 .name { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.01em; }
 .job { font-size: 14px; color: #6b7079; }
-.user-mark { margin: -4px 0 0; font-size: 13px; color: #6b7079; }
+.user-dot { display: inline-block; width: 8px; height: 8px; margin-left: 8px; border-radius: 4px; background: #14161a; vertical-align: middle; }
 .intro { margin: 0 0 12px; font-size: 15px; line-height: 1.7; color: var(--t-body, #2a2d33); word-break: keep-all; }
 .clock { margin: 0; font-size: 15px; color: #3f434a; word-break: keep-all; }
 .clock strong { font-weight: 700; color: #14161a; }

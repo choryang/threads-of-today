@@ -193,7 +193,7 @@ const wake = computed(() => (walk.value ? wakeCounts(walkPeople(walk.value), new
                 <span class="knot" aria-hidden="true" />
                 <span class="body">
                   <span class="where">{{ s.where }} <span class="time"><span class="orb" :class="{ day: s.day }" aria-hidden="true" />{{ s.time }}</span></span>
-                  <span class="who">{{ s.who }}<span v-if="s.user" class="user-mark">이 앱을 쓰는 사람</span></span>
+                  <span class="who">{{ s.who }}<span v-if="s.user" class="user-dot" role="img" aria-label="이 앱을 쓰는 사람" title="이 앱을 쓰는 사람" /></span>
                   <span class="doing">{{ s.doing }}</span>
                 </span>
                 <TodaySceneImage v-if="s.scene" class="thumb" :person-id="s.personId" :hour="s.hour" decorative />
@@ -223,7 +223,7 @@ const wake = computed(() => (walk.value ? wakeCounts(walkPeople(walk.value), new
                 <span class="knot" aria-hidden="true" />
                 <span class="body">
                   <span class="where">{{ s.where }} <span class="time"><span class="orb" :class="{ day: s.day }" aria-hidden="true" />{{ s.time }}</span></span>
-                  <span class="who">{{ s.who }}<span v-if="s.user" class="user-mark">이 앱을 쓰는 사람</span></span>
+                  <span class="who">{{ s.who }}<span v-if="s.user" class="user-dot" role="img" aria-label="이 앱을 쓰는 사람" title="이 앱을 쓰는 사람" /></span>
                   <span class="doing">{{ s.doing }}</span>
                 </span>
                 <TodaySceneImage v-if="s.scene" class="thumb" :person-id="s.personId" :hour="s.hour" decorative />
@@ -291,7 +291,8 @@ const wake = computed(() => (walk.value ? wakeCounts(walkPeople(walk.value), new
 .orb { width: 7px; height: 7px; border-radius: 4px; background: #5f6b8c; }
 .orb.day { background: #f2b33d; }
 .who { font-size: 16px; font-weight: 700; }
-.user-mark { margin-left: 8px; font-size: 12px; font-weight: 500; color: var(--t-sub); }
+/* 이 앱을 쓰는 진짜 사람: 이름 옆 작은 점 ('나'의 매듭과 같은 색) */
+.user-dot { display: inline-block; width: 7px; height: 7px; margin-left: 6px; border-radius: 4px; background: #14161a; vertical-align: middle; }
 .doing { font-size: 13px; color: var(--t-sub); word-break: keep-all; }
 .fact { padding: 0 0 6px 25px; margin-top: -10px; }
 .fact-btn { min-height: 44px; padding: 0; border: 0; background: none; text-align: left; font: inherit; font-size: 13px; line-height: 1.5; color: var(--t-body); word-break: keep-all; cursor: pointer; display: flex; align-items: center; gap: 6px; }
