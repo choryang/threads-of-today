@@ -6,6 +6,7 @@ import { PEOPLE } from './data/people'
 import { PLACES } from './data/places'
 import { TRANSPORT } from './data/transport'
 import { forwardTimeline } from './journey'
+import { hasKeyStory } from './key-story'
 import { clockAt, doingBucket } from './local-time'
 
 /**
@@ -114,4 +115,22 @@ export function walkLegs(ids: string[]): (LegGap | null)[] {
     a = b
   }
   return gaps
+}
+
+/** 갈래마다 끝 칸에서 내 손 쪽 첫 사람까지 이어 잰 칸 사이 이동 (화면의 갈래 칸 사이와 같다) */
+export function branchLegs(walk: Walk, branch: WalkBranch): (LegGap | null)[] {
+  return walkLegs([...branch.stops, ...walk.hand.slice(0, 1)])
+}
+
+/**
+ * 끝 요약: 나라 수(바다 위는 세지 않는다)·거리(화면의 구간을 한 번씩 더한 것, 반올림 전)·사람 수.
+ * story: 오늘 한 사람을 고르는 길(첫 재료 갈래 + 가게 사람, pickRoute와 같은 범위)에 이야기가 있는 사람이 있는지
+ */
+export function walkSummary(walk: Walk): { countries: number; km: number; people: number; story: boolean } {
+  const people = walkPeople(walk)
+  const countries = new Set(people.map((id) => PLACES[PEOPLE[id]?.placeId ?? '']?.country).filter(Boolean)).size
+  const legs = [...walk.branches.flatMap((b) => branchLegs(walk, b)), ...walkLegs(walk.hand)]
+  const km = legs.reduce((sum, g) => sum + (g?.first ? g.km : 0), 0)
+  const story = [...(walk.branches[0]?.stops ?? []), ...walk.hand].some(hasKeyStory)
+  return { countries, km, people: people.length, story }
 }

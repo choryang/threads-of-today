@@ -10,7 +10,9 @@ import { PLACES } from '../shared/data/places'
 import { clockAt, doingBucket } from '../shared/local-time'
 import { FORMS } from '../shared/data/forms'
 import { roundKm } from '../shared/distance'
-import { RECENT_WALKS, formChanges, rememberWalk, wakeCounts, walkLegs, walkJourneyId, walkPath, walkPeople } from '../shared/walk'
+import { hasKeyStory } from '../shared/key-story'
+import { pickRoute } from '../shared/pick'
+import { RECENT_WALKS, branchLegs, formChanges, rememberWalk, wakeCounts, walkLegs, walkSummary, walkJourneyId, walkPath, walkPeople } from '../shared/walk'
 
 const AMERICANO = { materialIds: ['coffee', 'plastic'], name: '아이스 아메리카노' }
 
@@ -95,4 +97,23 @@ test('칸 사이 이동: 바다 위 칸은 건너뛰어 한 구간, 배가 있�
   // 좌표 있는 다음 칸이 없으면 비워 둔다
   assert.deepEqual(walkLegs(['djibouti-docker', 'sea-crew']), [null])
   assert.deepEqual(walkLegs(['barista']), [])
+})
+
+test('끝 요약: 나라 수·거리·사람 수, 오늘 고를 수 있는 길에 이야기가 있는지', () => {
+  for (let i = 0; i < 20; i++) {
+    const id = `2026-10-15-1-w${i.toString(36).padStart(5, '0')}`
+    const walk = walkPath(AMERICANO.materialIds, id, AMERICANO.name)
+    const sum = walkSummary(walk)
+    const people = walkPeople(walk)
+    assert.equal(sum.people, people.length)
+    assert.ok(sum.countries >= 2, '원산지 나라와 한국')
+    // 바다 위(나라 없음)는 세지 않는다
+    assert.equal(sum.countries, new Set(people.map((p) => PLACES[PEOPLE[p]!.placeId]!.country).filter((c) => c !== '')).size)
+    // 거리는 화면에 적힌 구간을 한 번씩 더한 것
+    const shown = [...walk.branches.flatMap((b) => branchLegs(walk, b)), ...walkLegs(walk.hand)].filter((g) => g?.first)
+    assert.equal(sum.km, shown.reduce((a, g) => a + g!.km, 0))
+    assert.ok(roundKm(sum.km) >= 5000)
+    // 이야기: 오늘 한 사람을 고르는 길과 같은 범위
+    assert.equal(sum.story, pickRoute(AMERICANO.materialIds, id, AMERICANO.name).some(hasKeyStory))
+  }
 })

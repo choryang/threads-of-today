@@ -8,7 +8,7 @@ import { seoulDateKey, withJosa } from '../../shared/logic'
 import { factOf } from '../../shared/friendship'
 import { placeLabel } from '../../shared/rewind'
 import { formatKm, roundKm } from '../../shared/distance'
-import { formChanges, rememberWalk, wakeCounts, walkLegs, walkJourneyId, walkPath, walkPeople, type LegGap, type LegMode, type Walk } from '../../shared/walk'
+import { branchLegs, formChanges, rememberWalk, wakeCounts, walkLegs, walkJourneyId, walkSummary, walkPath, walkPeople, type LegGap, type LegMode, type Walk } from '../../shared/walk'
 import { MOTION } from '../utils/motion'
 import { resolveItem } from '../utils/resolve-item'
 
@@ -19,6 +19,7 @@ import { resolveItem } from '../utils/resolve-item'
  * 칸 사이(그 칸 아래)에 그 사람 손에서 바뀌는 모습 '커피 체리 → 생두'(forms.ts 이름만, 아이콘은 쓰지 않는다)와
  * 일의 크기(workFact)가 있는 사람은 칸 아래 한 줄, 누르면 출처(PersonCard와 같은 규칙).
  * 바다·하늘·땅 구간과 대략 거리(100km 단위, walkLegs). 바다 구간은 실을 점선으로. 갈래 끝 칸 아래는 내 손 쪽 첫 사람까지.
+ * 끝에 'N개 나라, 약 …km, M명의 손'과, 오늘 고를 수 있는 길에 이야기가 있는 사람이 있으면 '오늘 저녁 …'(오늘 이미 만났으면 '내일 저녁').
  * 아무것도 쌓지 않는다: 하루 기록·만난 사람·이어진 실에 넣지 않고 점수·개수도 없다. 최근 걸어 본 물건 5개만 이 기기에(localStorage)
  */
 useHead({ htmlAttrs: { class: 'today-ui' }, title: '실 따라 걷기' })
@@ -127,9 +128,19 @@ function withGaps(stops: string[], gaps: (LegGap | null)[], changes: ({ from: st
 const branches = computed(() =>
   (walk.value ? walk.value.branches.map((b) => ({
     ...b,
-    stops: withGaps(b.stops, walkLegs([...b.stops, ...walk.value!.hand.slice(0, 1)]), formChanges(b.materialId, b.stops)),
+    stops: withGaps(b.stops, branchLegs(walk.value!, b), formChanges(b.materialId, b.stops)),
   })) : []))
 const hand = computed(() => (walk.value ? withGaps(walk.value.hand, walkLegs(walk.value.hand)) : []))
+const metToday = useMetToday()
+const summary = computed(() => {
+  if (!walk.value || !item.value) return null
+  const sum = walkSummary(walk.value)
+  const km = roundKm(sum.km) > 0 ? `약 ${formatKm(sum.km)}km, ` : ''
+  return {
+    line: `이 ${withJosa(item.value.name, '은', '는')} ${sum.countries}개 나라, ${km}${sum.people}명의 손을 거쳐 왔어요.`,
+    story: sum.story ? `${metToday.value ? '내일' : '오늘'} 저녁 '오늘'에서 이 길 위의 누군가를 만날 수 있어요` : '',
+  }
+})
 const wake = computed(() => (walk.value ? wakeCounts(walkPeople(walk.value), new Date(tick.value)) : { awake: 0, asleep: 0 }))
 </script>
 
@@ -227,6 +238,10 @@ const wake = computed(() => (walk.value ? wakeCounts(walkPeople(walk.value), new
           <li class="me"><span class="knot mine" aria-hidden="true" /><span class="body"><span class="who">나</span></span></li>
         </ol>
       </section>
+      <section v-if="summary" class="end">
+        <p class="end-line">{{ summary.line }}</p>
+        <p v-if="summary.story" class="end-story">{{ summary.story }}</p>
+      </section>
     </template>
 
     <TodayPeekSheet v-if="peeking" :person-id="peeking" walk @close="peeking = null" />
@@ -281,5 +296,8 @@ const wake = computed(() => (walk.value ? wakeCounts(walkPeople(walk.value), new
 .fact-source { margin: 0; font-size: 12px; line-height: 1.5; color: var(--t-faint); word-break: keep-all; }
 .fact-source a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 4px; color: var(--t-sub); font-weight: 700; }
 .thumb { width: 52px; height: 52px; border-radius: 12px; flex-shrink: 0; }
+.end { margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--t-line); }
+.end-line { margin: 0; font-size: 16px; font-weight: 700; line-height: 1.6; color: var(--t-text); word-break: keep-all; }
+.end-story { margin: 8px 0 0; font-size: 14px; line-height: 1.6; color: var(--t-sub); word-break: keep-all; }
 .me { display: flex; align-items: center; gap: 14px; padding: 12px 0; }
 </style>
