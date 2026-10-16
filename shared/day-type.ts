@@ -26,7 +26,7 @@ export const MATERIAL_CLASS: Record<MaterialClass, string[]> = {
   tropic: ['coffee', 'cacao', 'banana', 'palm-oil', 'rubber', 'sugar', 'orange'],
   sea: ['tuna', 'squid', 'salmon', 'shrimp', 'laver'],
   under: ['cobalt', 'lithium', 'aluminum', 'steel', 'plastic'],
-  tech: ['chip', 'assembly', 'polyester', 'switch', 'pcb', 'panel', 'cpu', 'memory', 'sensor', 'app', 'song', 'internet', 'film', 'drama'],
+  tech: ['chip', 'assembly', 'polyester', 'switch', 'pcb', 'panel', 'cpu', 'memory', 'sensor', 'app', 'song', 'internet', 'film', 'drama', 'anime-jp', 'anime-kr'],
   plain: ['wheat', 'corn', 'soybean', 'cotton'],
   ranch: ['milk', 'beef', 'pork', 'chicken', 'egg'],
   home: ['rice', 'cabbage', 'chili', 'apple', 'grape', 'tomato', 'potato', 'sweet-potato', 'radish', 'buckwheat', 'barley', 'red-bean', 'tea', 'glass'],

@@ -18,7 +18,7 @@ apple(사과), notebook(공책), tshirt(면 티셔츠), tofu(두부), chopsticks
 | tropic (적도) | coffee, cacao, banana, palm-oil, rubber, sugar, orange |
 | sea (바다) | tuna, squid, salmon, shrimp, laver |
 | under (땅속) | cobalt, lithium, aluminum, steel, plastic |
-| tech (공장 기술, 땅속에 0.8배로 합산) | chip, assembly, polyester, switch, pcb, panel, cpu, memory, sensor, app, song, internet, film, drama |
+| tech (공장 기술, 땅속에 0.8배로 합산) | chip, assembly, polyester, switch, pcb, panel, cpu, memory, sensor, app, song, internet, film, drama, anime-jp, anime-kr |
 | plain (넓은 들판) | wheat, corn, soybean, cotton |
 | ranch (목장) | milk, beef, pork, chicken, egg |
 | home (우리 땅) | rice, cabbage, chili, apple, grape, tomato, potato, sweet-potato, radish, buckwheat, barley, red-bean, tea, glass |

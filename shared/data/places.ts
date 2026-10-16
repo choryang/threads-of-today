@@ -53,6 +53,9 @@ const list: Place[] = [
   { id: 'tw-hsinchu', name: '대만 신주', country: '대만', continent: 'asia', tz: 'Asia/Taipei' , lat: 24.8, lng: 120.97 },
   { id: 'vn-haiphong', name: '베트남 하이퐁', country: '베트남', continent: 'asia', tz: 'Asia/Ho_Chi_Minh' , lat: 20.86, lng: 106.68 },
   { id: 'vn-shtp', name: '호찌민 하이테크파크', country: '베트남', continent: 'asia', tz: 'Asia/Ho_Chi_Minh' , lat: 10.84, lng: 106.8 },
+  // 애니메이션 길 (docs/redesign/anime-people-review.md)
+  { id: 'jp-tokyo', name: '일본 도쿄', country: '일본', continent: 'asia', tz: 'Asia/Tokyo' , lat: 35.68, lng: 139.69 },
+  { id: 'ph-manila', name: '필리핀 마닐라', country: '필리핀', continent: 'asia', tz: 'Asia/Manila' , lat: 14.6, lng: 120.98 },
   // 영화·드라마 길 (docs/redesign/film-drama-people-review.md)
   { id: 'kr-jeonju', name: '전주', country: '대한민국', continent: 'korea', tz: 'Asia/Seoul' , lat: 35.82, lng: 127.15 },
   { id: 'kr-daejeon', name: '대전', country: '대한민국', continent: 'korea', tz: 'Asia/Seoul' , lat: 36.35, lng: 127.38 },

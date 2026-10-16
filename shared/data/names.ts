@@ -71,6 +71,8 @@ export const NAME_GROUPS: NameGroup[] = [
       'content-moderator': '가은', topliner: '유나', lyricist: '동훈', arranger: '수연', 'session-player': '경민',
       'vocal-director': '채원', 'recording-engineer': '재석', 'album-designer': '은비', 'music-distributor': '상우',
       'datacenter-tech': '성우', 'base-station': '준기', lear: '리어', // 첫 사용자 본인이 정한 이름
+      // 애니메이션 길 (순위 출처 없는 평범한 이름)
+      'inbetweener': '시온', 'subtitle-translator': '윤아', 'kids-anime-pd': '태호', 'kids-scriptwriter': '민경', 'character-designer': '주희', 'storyboard-artist': '동진', 'modeler-3d': '다인', 'rigger': '건호', 'animator-3d': '예슬', 'lighting-artist': '지혜원', 'render-wrangler': '시후', 'compositor-kr': '주원', 'dubbing-actor': '소율', 'kids-music': '지호',
       // 영화·드라마 길 (순위 출처 없는 평범한 이름)
       'location-manager': '나연', 'vfx-artist': '민혁', 'sound-mixer': '인호', 'screenwriter': '진수', 'set-builder': '태현', 'costume-designer': '희정', 'boom-operator': '보영', 'gaffer': '정민', 'film-editor': '서희', 'colorist': '도경', 'foley-artist': '준석', 'film-distributor': '다혜', 'projectionist': '세영', 'drama-writer': '규리', 'scheduler': '한별', 'studio-set-builder': '태윤', 'cinematographer': '경태', 'dit': '은솔', 'drama-editor': '재훈', 'music-director': '소영', 'encoding-engineer': '혜린',
     },
@@ -188,6 +190,11 @@ export const NAME_GROUPS: NameGroup[] = [
     names: { 'co-coffee-farmer': '이사벨', 'co-buenaventura-docker': '미겔' },
   },
   {
+    // 일본: 처음 들어온 나라. 순위 출처 없는 평범한 이름 (2026-10 사용자 결정)
+    country: '일본',
+    names: { 'anime-producer': '겐타', 'anime-scriptwriter': '유이', 'storyboard-director': '소타', 'key-animator': '하나', 'animation-director': '다쿠야', 'inbetween-checker': '미오', 'background-artist': '사키', 'compositor-jp': '료', 'voice-actor': '아오이', 'sound-director': '하루토' },
+  },
+  {
     // 대만: 내정부「全國姓名統計分析」(2023년 6월 30일 호적 기준, 2023-10 발간) — 남자 家豪 1위·志明 2위, 여자 淑芬 1위
     //   https://www.ris.gov.tw/info-liferay/app/channel/pressReleaseDetail/23303697 , 신두 보도 https://newtalk.tw/news/view/2023-10-30/894420
     country: '대만',
@@ -233,7 +240,7 @@ export const NAME_GROUPS: NameGroup[] = [
     //   http://web.archive.org/web/20170115211627/http://psa.gov.ph/sites/default/files/Trivia_Leap%20Year.pdf
     //   남자 Joel 5위·Reynaldo 6위·Ronald 8위, 여자 Evelyn 1위·Jocelyn 4위
     country: '필리핀',
-    names: { 'banana-farmer': '조엘', 'banana-packer': '에벌린', 'davao-port': '레이날도', 'banana-scientist': '조슬린' },
+    names: { 'banana-farmer': '조엘', 'banana-packer': '에벌린', 'davao-port': '레이날도', 'banana-scientist': '조슬린', 'ink-painter': '마리셀' /* 순위 출처 없는 평범한 이름 */ },
   },
   {
     // 베트남: 정부 이름 통계가 없어 백과사전·학술 자료로 확인한 흔한 이름(성 없이 이름만)

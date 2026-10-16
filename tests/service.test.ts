@@ -37,3 +37,14 @@ test('영화는 극장 영사 담당이, 드라마는 인터넷을 지나 바로
   const drama = walkPath(['drama'], id(1), '드라마').branches[0]!.stops
   for (const shared of ['location-manager', 'vfx-artist', 'sound-mixer']) assert.ok(film.includes(shared) && drama.includes(shared), shared)
 })
+
+test('애니메이션: 일본 길은 서울·마닐라를 거쳐 도쿄로 돌아오고, 한국 3D 길과 따로 간다', () => {
+  assert.deepEqual(matchLocal('애니')?.materialIds, ['anime-jp', 'internet'])
+  assert.deepEqual(matchLocal('만화영화')?.materialIds, ['anime-kr', 'internet'])
+  const jp = walkPath(['anime-jp', 'internet'], id(1), '애니메이션')
+  assert.deepEqual(jp.hand, [])
+  const stops = jp.branches[0]!.stops
+  assert.ok(stops.indexOf('inbetweener') > stops.indexOf('key-animator'))
+  assert.ok(stops.indexOf('ink-painter') < stops.indexOf('compositor-jp'))
+  assert.equal(walkPath(['anime-kr'], id(1), '어린이 애니메이션').branches[0]!.stops[0], 'kids-anime-pd')
+})

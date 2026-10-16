@@ -285,6 +285,15 @@ const list: Material[] = [
     id: 'internet', name: '인터넷', aliases: ['인터넷', '와이파이', '데이터'],
     stages: ['datacenter-tech', 'cable-repairer', 'base-station'],
   },
+  // 애니메이션 (docs/redesign/anime-people-review.md). 일본 길은 동화를 서울, 채색을 마닐라에 맡겼다가 도쿄로 돌아온다
+  {
+    id: 'anime-jp', name: '일본 애니메이션 만들기', aliases: ['일본 애니메이션 만들기'],
+    stages: ['anime-producer', 'anime-scriptwriter', 'storyboard-director', 'key-animator', 'animation-director', 'inbetweener', 'inbetween-checker', 'ink-painter', 'background-artist', 'compositor-jp', 'voice-actor', 'sound-director', 'subtitle-translator'],
+  },
+  {
+    id: 'anime-kr', name: '3D 애니메이션 만들기', aliases: ['3D 애니메이션 만들기', '3D 애니메이션'],
+    stages: ['kids-anime-pd', 'kids-scriptwriter', 'character-designer', 'storyboard-artist', 'modeler-3d', 'rigger', 'animator-3d', 'lighting-artist', 'render-wrangler', 'compositor-kr', 'dubbing-actor', 'kids-music'],
+  },
   // 영화·드라마 (docs/redesign/film-drama-people-review.md). 영화는 극장에서, 드라마는 인터넷 길을 지나 앱으로
   {
     id: 'film', name: '영화 만들기', aliases: ['영화 만들기', '영화 제작'],
@@ -707,6 +716,8 @@ export const PRODUCTS: Product[] = [
   { id: 'bicycle', name: '자전거', aliases: ['자전거', '따릉이'], materialIds: ['steel', 'aluminum', 'rubber'] },
   { id: 'app', name: '앱', aliases: ['앱', '어플', '애플리케이션', '메신저', '메신저 앱', '배달앱', '배달 앱', '카톡', '카카오톡'], materialIds: ['app', 'internet'] },
   { id: 'song', name: '노래', aliases: ['노래', '음악', '음원', '케이팝', 'K팝', '플레이리스트', '신곡'], materialIds: ['song', 'internet'] },
+  { id: 'anime', name: '애니메이션', aliases: ['애니메이션', '애니', '일본 애니', '일본 애니메이션', '아니메'], materialIds: ['anime-jp', 'internet'] },
+  { id: 'kids-anime', name: '어린이 애니메이션', aliases: ['어린이 애니메이션', '유아 애니', '유아 애니메이션', '만화영화', '어린이 만화'], materialIds: ['anime-kr', 'internet'] },
   { id: 'film', name: '영화', aliases: ['영화', '영화관', '극장', '개봉 영화', '영화 한 편'], materialIds: ['film'] },
   { id: 'drama', name: '드라마', aliases: ['드라마', '시리즈', '넷플릭스', '웹드라마', '미드', '오티티'], materialIds: ['drama', 'internet'] },
   { id: 'keyboard', name: '키보드', aliases: ['키보드', '기계식 키보드', '기계식키보드'], materialIds: ['switch', 'pcb', 'plastic'] },
