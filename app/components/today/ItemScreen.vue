@@ -37,11 +37,11 @@ function submit() {
     <h1 class="t-title">오늘 손에 닿은{{ '\n' }}물건은요?</h1>
 
     <form class="ask" @submit.prevent="submit">
-      <label for="today-item" class="sr-only">물건 이름</label>
+      <label for="today-item" class="sr-only">오늘 쓰고, 듣고, 본 것의 이름</label>
       <input
         id="today-item"
         :value="query"
-        placeholder="아무 물건이나"
+        placeholder="오늘 쓰고, 듣고, 본 것"
         maxlength="60"
         autocomplete="off"
         enterkeyhint="go"

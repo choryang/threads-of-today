@@ -379,6 +379,7 @@ export const RESIDENCE: Record<string, [ZoneId, WorkplaceId]> = {
   'sensor-designer': ['town', 'office'],
   'pc-builder': ['town', 'pc-shop'],
   'app-planner': ['town', 'office'],
+  'lear': ['town', 'office'],
   'ux-researcher': ['town', 'office'],
   'ui-designer': ['town', 'office'],
   'app-developer': ['town', 'office'],
@@ -419,7 +420,7 @@ export const RESIDENCE: Record<string, [ZoneId, WorkplaceId]> = {
   'screenwriter': ['town', 'office'],
   'film-distributor': ['town', 'office'],
   'drama-writer': ['town', 'office'],
-  'scheduler': ['town', 'office'],
+  'scheduler': ['port', 'office'], // 우리 집 구역 자리가 모자라 항구 쪽 사무실에
   'encoding-engineer': ['town', 'office'],
   'projectionist': ['town', 'cinema'],
   'cable-repairer': ['port', 'ship'],

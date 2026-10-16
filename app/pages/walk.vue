@@ -100,6 +100,7 @@ function stopOf(personId: string) {
     who: p.name ? `${p.job} · ${p.name}` : p.job,
     doing: doingLine(personId, c.h, dayInfo(place.country, place.tz, now)),
     scene: !!sceneOf(personId),
+    user: !!p.user,
     fact: factOf(personId),
   }
 }
@@ -154,8 +155,8 @@ const wake = computed(() => (walk.value ? wakeCounts(walkPeople(walk.value), new
       <h1 class="t-title">실 따라 걷기</h1>
       <p class="lead">물건 하나가 지나온 길을 걸어 봐요. 걸을 때마다 다른 길이 나올 수 있어요.</p>
       <form class="ask" @submit.prevent="go(query)">
-        <label for="walk-item" class="sr-only">물건 이름</label>
-        <input id="walk-item" v-model="query" placeholder="아무 물건이나" maxlength="60" autocomplete="off" enterkeyhint="go">
+        <label for="walk-item" class="sr-only">물건이나 노래, 영화 이름</label>
+        <input id="walk-item" v-model="query" placeholder="물건, 노래, 영화… 무엇이든" maxlength="60" autocomplete="off" enterkeyhint="go">
       </form>
       <p v-if="error" class="error" role="alert">{{ error }}</p>
       <template v-if="recent.length">
@@ -192,7 +193,7 @@ const wake = computed(() => (walk.value ? wakeCounts(walkPeople(walk.value), new
                 <span class="knot" aria-hidden="true" />
                 <span class="body">
                   <span class="where">{{ s.where }} <span class="time"><span class="orb" :class="{ day: s.day }" aria-hidden="true" />{{ s.time }}</span></span>
-                  <span class="who">{{ s.who }}</span>
+                  <span class="who">{{ s.who }}<span v-if="s.user" class="user-mark">이 앱을 쓰는 사람</span></span>
                   <span class="doing">{{ s.doing }}</span>
                 </span>
                 <TodaySceneImage v-if="s.scene" class="thumb" :person-id="s.personId" :hour="s.hour" decorative />
@@ -222,7 +223,7 @@ const wake = computed(() => (walk.value ? wakeCounts(walkPeople(walk.value), new
                 <span class="knot" aria-hidden="true" />
                 <span class="body">
                   <span class="where">{{ s.where }} <span class="time"><span class="orb" :class="{ day: s.day }" aria-hidden="true" />{{ s.time }}</span></span>
-                  <span class="who">{{ s.who }}</span>
+                  <span class="who">{{ s.who }}<span v-if="s.user" class="user-mark">이 앱을 쓰는 사람</span></span>
                   <span class="doing">{{ s.doing }}</span>
                 </span>
                 <TodaySceneImage v-if="s.scene" class="thumb" :person-id="s.personId" :hour="s.hour" decorative />
@@ -290,6 +291,7 @@ const wake = computed(() => (walk.value ? wakeCounts(walkPeople(walk.value), new
 .orb { width: 7px; height: 7px; border-radius: 4px; background: #5f6b8c; }
 .orb.day { background: #f2b33d; }
 .who { font-size: 16px; font-weight: 700; }
+.user-mark { margin-left: 8px; font-size: 12px; font-weight: 500; color: var(--t-sub); }
 .doing { font-size: 13px; color: var(--t-sub); word-break: keep-all; }
 .fact { padding: 0 0 6px 25px; margin-top: -10px; }
 .fact-btn { min-height: 44px; padding: 0; border: 0; background: none; text-align: left; font: inherit; font-size: 13px; line-height: 1.5; color: var(--t-body); word-break: keep-all; cursor: pointer; display: flex; align-items: center; gap: 6px; }

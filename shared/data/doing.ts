@@ -259,6 +259,7 @@ export const DOING: Record<string, Doing> = {
   'drama-editor': { work: '이번 회 마지막 장면을 고르고 있을 거예요' },
   'music-director': { work: '인물 테마를 피아노로 쳐 보고 있을 거예요' },
   'encoding-engineer': { work: '압축이 끝난 영상을 돌려 보고 있을 거예요', ...WEEKDAYS },
+  lear: { work: '새 기능을 만들고 고치고 있을 거예요' },
   'app-planner': { work: '회의실에서 다음 기능을 정하고 있을 거예요', ...WEEKDAYS },
   'ux-researcher': { work: '사용자 인터뷰 기록을 정리하고 있을 거예요', ...WEEKDAYS },
   'ui-designer': { work: '버튼 자리를 이리저리 옮겨 보고 있을 거예요', ...WEEKDAYS },

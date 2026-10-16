@@ -438,6 +438,8 @@ const list: Person[] = [
   p('qa-tester', 'QA 테스터', 'vn-hanoi-city', '여러 휴대폰으로 같은 버튼을 수없이 눌러 보며, 고장 난 곳을 찾아 알려 줘요.', 'none', 'phone', 'office', 'focus'),
   p('localizer', '현지화 담당', 'kr-seoul', '앱 속 문장을 다른 나라 말로 옮기고, 화면에서 글자가 잘리지 않는지 확인해요.', 'none', 'clipboard', 'office', 'smile'),
   p('app-reviewer', '앱 마켓 심사원', 'us-sunnyvale', '새로 올라온 앱을 직접 써 보고, 약속한 규칙을 지키는지 확인해 통과시켜요.', 'none', 'magnifier', 'office', 'smile'),
+  // 첫 사용자: 이 앱을 만든 사람이 직접 서는 칸 (본인이 정한 이름·일, 2026-10)
+  p('lear', '서비스 개발자', 'kr', '사람들이 매일 쓰는 서비스를 만들고 고쳐요. 이 앱을 처음 쓴 사람이기도 해요.', 'headset', 'phone', 'office', 'glad'),
   p('content-moderator', '신고 검수원', 'kr-chuncheon', '신고된 글과 사진을 살펴, 누군가를 다치게 하는 것이 없는지 가려내요. 모두가 편히 쓰도록 보이지 않는 곳을 지켜요.', 'headset', 'magnifier', 'office', 'focus'),
   p('track-maker', '트랙메이커', 'no-trondheim', '건반과 컴퓨터로 코드와 박자를 쌓아 노래의 뼈대를 만들어요. 멀리 서울로 보낼 곡을 고르고 있어요.', 'beanie', 'chip', 'office', 'glad'),
   p('topliner', '탑라이너', 'kr-seoul', '비트를 들으며 흥얼흥얼 멜로디를 얹어요. 여러 나라 작곡가와 한 방에 모여 곡을 끝내기도 해요.', 'headset', 'clipboard', 'office', 'glad'),
@@ -551,6 +553,10 @@ for (const person of list) {
   const name = nameOf(person.id)
   if (name) person.name = name
 }
+
+/** 이 앱을 쓰는 진짜 사람 (직접 쓴 인물이 아니다) */
+const USERS = ['lear']
+for (const person of list) if (USERS.includes(person.id)) person.user = true
 
 export const PEOPLE: Record<string, Person> = Object.fromEntries(list.map((x) => [x.id, x]))
 export const PEOPLE_LIST = list

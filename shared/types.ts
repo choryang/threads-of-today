@@ -83,6 +83,8 @@ export interface Person {
   workFactSource?: FactSource
   /** 사람 한 명의 크기(하루·한 시간·한 건)로 된 숫자인지. 사람 카드 소개 화면은 이것만 쓴다 */
   workFactHuman?: true
+  /** 직접 쓴 인물이 아니라 이 앱을 쓰는 진짜 사람 (화면에 '이 앱을 쓰는 사람' 표시, docs/redesign/people-on-path.md) */
+  user?: true
   /** 내 하루 마을에서 사는 구역과 일터 (shared/data/village.ts의 RESIDENCE) */
   zone: ZoneId
   workplace: WorkplaceId

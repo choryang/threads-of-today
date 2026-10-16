@@ -275,7 +275,7 @@ const list: Material[] = [
   // 앱·노래는 만드는 길 + 같이 지나는 인터넷 길 (docs/redesign/app-song-people-review.md). 화면에 회사·서비스 이름은 쓰지 않는다
   {
     id: 'app', name: '앱 만들기', aliases: ['앱 개발', '앱 만들기'],
-    stages: ['app-planner', 'ux-researcher', 'ui-designer', 'app-developer', 'server-developer', 'qa-tester', 'localizer', 'app-reviewer', 'content-moderator'],
+    stages: ['app-planner', 'ux-researcher', 'ui-designer', 'app-developer', 'server-developer', 'lear', 'qa-tester', 'localizer', 'app-reviewer', 'content-moderator'],
   },
   {
     id: 'song', name: '노래 만들기', aliases: ['작곡', '노래 만들기'],

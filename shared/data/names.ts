@@ -70,7 +70,7 @@ export const NAME_GROUPS: NameGroup[] = [
       'app-planner': '승우', 'ux-researcher': '다은', 'ui-designer': '재원', 'server-developer': '민호', localizer: '소희',
       'content-moderator': '가은', topliner: '유나', lyricist: '동훈', arranger: '수연', 'session-player': '경민',
       'vocal-director': '채원', 'recording-engineer': '재석', 'album-designer': '은비', 'music-distributor': '상우',
-      'datacenter-tech': '성우', 'base-station': '준기',
+      'datacenter-tech': '성우', 'base-station': '준기', lear: '리어', // 첫 사용자 본인이 정한 이름
       // 영화·드라마 길 (순위 출처 없는 평범한 이름)
       'location-manager': '나연', 'vfx-artist': '민혁', 'sound-mixer': '인호', 'screenwriter': '진수', 'set-builder': '태현', 'costume-designer': '희정', 'boom-operator': '보영', 'gaffer': '정민', 'film-editor': '서희', 'colorist': '도경', 'foley-artist': '준석', 'film-distributor': '다혜', 'projectionist': '세영', 'drama-writer': '규리', 'scheduler': '한별', 'studio-set-builder': '태윤', 'cinematographer': '경태', 'dit': '은솔', 'drama-editor': '재훈', 'music-director': '소영', 'encoding-engineer': '혜린',
     },
