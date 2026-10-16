@@ -5,6 +5,7 @@ import { PLACES } from '../../shared/data/places'
 import { sceneOf } from '../../shared/data/scenes'
 import { clockAt, clockLabel, dayInfo, doingLine } from '../../shared/local-time'
 import { seoulDateKey, withJosa } from '../../shared/logic'
+import { factOf } from '../../shared/friendship'
 import { placeLabel } from '../../shared/rewind'
 import { formatKm, roundKm } from '../../shared/distance'
 import { formChanges, rememberWalk, wakeCounts, walkLegs, walkJourneyId, walkPath, walkPeople, type LegGap, type LegMode, type Walk } from '../../shared/walk'
@@ -16,6 +17,7 @@ import { resolveItem } from '../utils/resolve-item'
  * 맨 위에 지금 이 길 위에서 깨어 있는·자고 있는 사람 수(1분마다).
  * 칸마다 장소 · 지금 그곳 시각(해·달 점) · 일 이름과 이름 · 카드 문구 한 줄 · 지금은 아마 … · (있으면) 작은 장면 그림. 누르면 들여다보기 시트.
  * 칸 사이(그 칸 아래)에 그 사람 손에서 바뀌는 모습 '커피 체리 → 생두'(forms.ts 이름만, 아이콘은 쓰지 않는다)와
+ * 일의 크기(workFact)가 있는 사람은 칸 아래 한 줄, 누르면 출처(PersonCard와 같은 규칙).
  * 바다·하늘·땅 구간과 대략 거리(100km 단위, walkLegs). 바다 구간은 실을 점선으로. 갈래 끝 칸 아래는 내 손 쪽 첫 사람까지.
  * 아무것도 쌓지 않는다: 하루 기록·만난 사람·이어진 실에 넣지 않고 점수·개수도 없다. 최근 걸어 본 물건 5개만 이 기기에(localStorage)
  */
@@ -97,7 +99,13 @@ function stopOf(personId: string) {
     story: p.story,
     doing: doingLine(personId, c.h, dayInfo(place.country, place.tz, now)),
     scene: !!sceneOf(personId),
+    fact: factOf(personId),
   }
+}
+/** 출처를 펼친 칸 ('갈래-번호') */
+const openSource = ref<string | null>(null)
+function toggleSource(key: string) {
+  openSource.value = openSource.value === key ? null : key
 }
 const MODE_LABEL: Record<LegMode, string> = { sea: '바다', air: '하늘', land: '땅' }
 /** 구간 첫 칸 사이에만 '바다 · 약 7,600km'. 50km보다 짧은 땅 구간은 적지 않는다 */
@@ -176,6 +184,13 @@ const wake = computed(() => (walk.value ? wakeCounts(walkPeople(walk.value), new
                 </span>
                 <TodaySceneImage v-if="s.scene" class="thumb" :person-id="s.personId" :hour="s.hour" decorative />
               </button>
+              <div v-if="s.fact" class="fact">
+                <button class="fact-btn" :aria-expanded="openSource === `${b.materialId}-${i}`" @click="toggleSource(`${b.materialId}-${i}`)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /></svg><span>{{ s.fact.fact }}</span></button>
+                <p v-if="openSource === `${b.materialId}-${i}`" class="fact-source">
+                  출처: {{ s.fact.source.name }} ({{ s.fact.source.year }})
+                  <a :href="s.fact.source.url" target="_blank" rel="noopener noreferrer">자료 보기</a>
+                </p>
+              </div>
             </li>
             <li v-if="s.change || s.leg" class="gap" :class="{ sea: s.seaOut }">
               <span v-if="s.change" class="change">{{ s.change }}</span>
@@ -199,6 +214,13 @@ const wake = computed(() => (walk.value ? wakeCounts(walkPeople(walk.value), new
                 </span>
                 <TodaySceneImage v-if="s.scene" class="thumb" :person-id="s.personId" :hour="s.hour" decorative />
               </button>
+              <div v-if="s.fact" class="fact">
+                <button class="fact-btn" :aria-expanded="openSource === `hand-${i}`" @click="toggleSource(`hand-${i}`)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /></svg><span>{{ s.fact.fact }}</span></button>
+                <p v-if="openSource === `hand-${i}`" class="fact-source">
+                  출처: {{ s.fact.source.name }} ({{ s.fact.source.year }})
+                  <a :href="s.fact.source.url" target="_blank" rel="noopener noreferrer">자료 보기</a>
+                </p>
+              </div>
             </li>
             <li v-if="s.leg" class="gap" :class="{ sea: s.seaOut }"><span class="leg">{{ s.leg }}</span></li>
           </template>
@@ -253,6 +275,11 @@ const wake = computed(() => (walk.value ? wakeCounts(walkPeople(walk.value), new
 .who { font-size: 16px; font-weight: 700; }
 .story { font-size: 14px; color: var(--t-quiet); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .doing { font-size: 13px; color: var(--t-sub); word-break: keep-all; }
+.fact { padding: 0 0 6px 25px; margin-top: -10px; }
+.fact-btn { min-height: 44px; padding: 0; border: 0; background: none; text-align: left; font: inherit; font-size: 13px; line-height: 1.5; color: var(--t-body); word-break: keep-all; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+.fact-btn svg { flex-shrink: 0; color: var(--t-faint); }
+.fact-source { margin: 0; font-size: 12px; line-height: 1.5; color: var(--t-faint); word-break: keep-all; }
+.fact-source a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 4px; color: var(--t-sub); font-weight: 700; }
 .thumb { width: 52px; height: 52px; border-radius: 12px; flex-shrink: 0; }
 .me { display: flex; align-items: center; gap: 14px; padding: 12px 0; }
 </style>
