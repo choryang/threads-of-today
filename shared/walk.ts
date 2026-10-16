@@ -53,6 +53,11 @@ export function rememberWalk(list: string[], name: string): string[] {
   return [name, ...list.filter((n) => n !== name)].slice(0, RECENT_WALKS)
 }
 
+/** 길 위에 '나'(이 앱을 쓰는 진짜 사람으로 표시한 칸)가 있는지 */
+export function selfOnWalk(walk: Walk, selfId: string | null | undefined): boolean {
+  return !!selfId && !!PEOPLE[selfId]?.user && walkPeople(walk).includes(selfId)
+}
+
 /** 이 길 위의 사람 (갈래 → 가게, 중복 없이) */
 export function walkPeople(walk: Walk): string[] {
   return [...new Set([...walk.branches.flatMap((b) => b.stops), ...walk.hand])]

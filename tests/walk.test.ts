@@ -12,7 +12,7 @@ import { FORMS } from '../shared/data/forms'
 import { roundKm } from '../shared/distance'
 import { hasKeyStory } from '../shared/key-story'
 import { pickRoute } from '../shared/pick'
-import { RECENT_WALKS, branchLegs, formChanges, rememberWalk, wakeCounts, walkLegs, walkSummary, walkJourneyId, walkPath, walkPeople } from '../shared/walk'
+import { RECENT_WALKS, branchLegs, formChanges, selfOnWalk, rememberWalk, wakeCounts, walkLegs, walkSummary, walkJourneyId, walkPath, walkPeople } from '../shared/walk'
 
 const AMERICANO = { materialIds: ['coffee', 'plastic'], name: '아이스 아메리카노' }
 
@@ -123,4 +123,13 @@ test('끝 요약: 나라 수·거리·사람 수, 오늘 고를 수 있는 길�
     // 이야기: 오늘 한 사람을 고르는 길과 같은 범위
     assert.equal(sum.story, pickRoute(AMERICANO.materialIds, id, AMERICANO.name).some(hasKeyStory))
   }
+})
+
+test('길 위의 나: 이 앱을 쓰는 사람으로 표시한 칸이 길 위에 있을 때만', () => {
+  const app = walkPath(['app', 'internet'], '2026-10-15-1-w00001', '앱')
+  assert.equal(selfOnWalk(app, 'lear'), true)
+  assert.equal(selfOnWalk(app, null), false)
+  // 직접 쓴 인물은 '나'가 될 수 없다
+  assert.equal(selfOnWalk(app, 'server-developer'), false)
+  assert.equal(selfOnWalk(walkPath(AMERICANO.materialIds, '2026-10-15-1-w00001', AMERICANO.name), 'lear'), false)
 })

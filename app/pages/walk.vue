@@ -8,7 +8,7 @@ import { seoulDateKey, withJosa } from '../../shared/logic'
 import { factOf } from '../../shared/friendship'
 import { placeLabel } from '../../shared/rewind'
 import { formatKm, roundKm } from '../../shared/distance'
-import { branchLegs, formChanges, rememberWalk, wakeCounts, walkLegs, walkJourneyId, walkSummary, walkPath, walkPeople, type LegGap, type LegMode, type Walk } from '../../shared/walk'
+import { branchLegs, formChanges, selfOnWalk, rememberWalk, wakeCounts, walkLegs, walkJourneyId, walkSummary, walkPath, walkPeople, type LegGap, type LegMode, type Walk } from '../../shared/walk'
 import { MOTION } from '../utils/motion'
 import { resolveItem } from '../utils/resolve-item'
 
@@ -19,6 +19,7 @@ import { resolveItem } from '../utils/resolve-item'
  * 칸 사이(그 칸 아래)에 그 사람 손에서 바뀌는 모습 '커피 체리 → 생두'(forms.ts 이름만, 아이콘은 쓰지 않는다)와
  * 일의 크기(workFact)가 있는 사람은 칸 아래 한 줄, 누르면 출처(PersonCard와 같은 규칙).
  * 바다·하늘·땅 구간과 대략 거리(100km 단위, walkLegs). 바다 구간은 실을 점선으로. 갈래 끝 칸 아래는 내 손 쪽 첫 사람까지.
+ * 길 위에 '나'(시트에서 "이건 나예요"로 표시한 칸, useSelf)가 있으면 그 매듭을 '나'처럼 채우고 한 번 반짝이며, 맨 위·끝 요약에 한 줄씩.
  * 끝에 'N개 나라, 약 …km, M명의 손'과, 오늘 고를 수 있는 길에 이야기가 있는 사람이 있으면 '오늘 저녁 …'(오늘 이미 만났으면 '내일 저녁').
  * 아무것도 쌓지 않는다: 하루 기록·만난 사람·이어진 실에 넣지 않고 점수·개수도 없다. 최근 걸어 본 물건 5개만 이 기기에(localStorage)
  */
@@ -101,6 +102,7 @@ function stopOf(personId: string) {
     doing: doingLine(personId, c.h, dayInfo(place.country, place.tz, now)),
     scene: !!sceneOf(personId),
     user: !!p.user,
+    me: !!p.user && personId === selfId.value,
     fact: factOf(personId),
   }
 }
@@ -136,12 +138,14 @@ const branches = computed(() =>
   })) : []))
 const hand = computed(() => (walk.value ? withGaps(walk.value.hand, walkLegs(walk.value.hand)) : []))
 const metToday = useMetToday()
+const { selfId } = useSelf()
+const meOnPath = computed(() => (walk.value ? selfOnWalk(walk.value, selfId.value) : false))
 const summary = computed(() => {
   if (!walk.value || !item.value) return null
   const sum = walkSummary(walk.value)
   const km = roundKm(sum.km) > 0 ? `약 ${formatKm(sum.km)}km, ` : ''
   return {
-    line: `이 ${withJosa(item.value.name, '은', '는')} ${sum.countries}개 나라, ${km}${sum.people}명의 손을 거쳐 왔어요.`,
+    line: `이 ${withJosa(item.value.name, '은', '는')} ${sum.countries}개 나라, ${km}${sum.people}명의 손을 거쳐 왔어요.${meOnPath.value ? ' 그중 한 손은 당신이에요.' : ''}`,
     story: sum.story ? `${metToday.value ? '내일' : '오늘'} 저녁 '오늘'에서 이 길 위의 누군가를 만날 수 있어요` : '',
   }
 })
@@ -183,6 +187,7 @@ const wake = computed(() => (walk.value ? wakeCounts(walkPeople(walk.value), new
       </div>
       <h1 class="t-title">{{ withJosa(item.name, '이', '가') }}{{ '\n' }}지나온 길</h1>
       <p class="wake">지금 이 길 위에서 깨어 있는 사람 {{ wake.awake }}명, 자고 있는 사람 {{ wake.asleep }}명</p>
+      <p v-if="meOnPath" class="me-line">이 길 위에 당신도 있어요</p>
 
       <section v-for="b in branches" :key="b.materialId" class="branch">
         <h2 class="branch-title">{{ b.name }}</h2>
@@ -190,7 +195,7 @@ const wake = computed(() => (walk.value ? wakeCounts(walkPeople(walk.value), new
           <template v-for="(s, i) in b.stops" :key="`${s.personId}-${i}`">
             <li class="cell" :class="{ 'sea-in': s.seaIn, 'sea-out': s.seaOut }">
               <button class="stop" @click="peeking = s.personId">
-                <span class="knot" aria-hidden="true" />
+                <span class="knot" :class="{ mine: s.me, found: s.me }" aria-hidden="true" />
                 <span class="body">
                   <span class="where">{{ s.where }} <span class="time"><span class="orb" :class="{ day: s.day }" aria-hidden="true" />{{ s.time }}</span></span>
                   <span class="who">{{ s.who }}<span v-if="s.user" class="user-dot" role="img" aria-label="이 앱을 쓰는 사람" title="이 앱을 쓰는 사람" /></span>
@@ -220,7 +225,7 @@ const wake = computed(() => (walk.value ? wakeCounts(walkPeople(walk.value), new
           <template v-for="(s, i) in hand" :key="`h-${s.personId}-${i}`">
             <li class="cell" :class="{ 'sea-in': s.seaIn, 'sea-out': s.seaOut }">
               <button class="stop" @click="peeking = s.personId">
-                <span class="knot" aria-hidden="true" />
+                <span class="knot" :class="{ mine: s.me, found: s.me }" aria-hidden="true" />
                 <span class="body">
                   <span class="where">{{ s.where }} <span class="time"><span class="orb" :class="{ day: s.day }" aria-hidden="true" />{{ s.time }}</span></span>
                   <span class="who">{{ s.who }}<span v-if="s.user" class="user-dot" role="img" aria-label="이 앱을 쓰는 사람" title="이 앱을 쓰는 사람" /></span>
@@ -285,6 +290,11 @@ const wake = computed(() => (walk.value ? wakeCounts(walkPeople(walk.value), new
 }
 .knot { position: relative; z-index: 1; width: 11px; height: 11px; margin-top: 4px; border-radius: 6px; background: #ffffff; border: 2px solid #c9ccd2; flex-shrink: 0; }
 .knot.mine { background: #14161a; border-color: #14161a; }
+/* 길 위의 나: 처음 그릴 때 두 번 살짝 반짝인다 */
+.knot.found { animation: found 0.9s ease-out 2; }
+@keyframes found { 0% { box-shadow: 0 0 0 0 rgba(20, 22, 26, 0.35); } 100% { box-shadow: 0 0 0 9px rgba(20, 22, 26, 0); } }
+@media (prefers-reduced-motion: reduce) { .knot.found { animation: none; } }
+.me-line { margin: 6px 0 0; font-size: 14px; font-weight: 700; color: var(--t-text); word-break: keep-all; }
 .body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
 .where { font-size: 13px; color: var(--t-sub); display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .time { display: inline-flex; align-items: center; gap: 5px; }

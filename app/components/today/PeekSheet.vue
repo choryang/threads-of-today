@@ -27,6 +27,9 @@ const local = computed(() => clockAt(place.value.tz, now.value))
 const diff = computed(() => seoulDiffText(place.value.tz, now.value))
 const doing = computed(() => nameDoingLine(props.personId, name.value, local.value.h, dayInfo(place.value.country, place.value.tz, now.value)))
 const peek = computed(() => peekOf(game.state.todays, props.personId))
+// 이 앱을 쓰는 진짜 사람이면 "이건 나예요" (기기에만 기억, useSelf)
+const { selfId, setSelf } = useSelf()
+const isMe = computed(() => selfId.value === props.personId)
 </script>
 
 <template>
@@ -55,6 +58,7 @@ const peek = computed(() => peekOf(game.state.todays, props.personId))
         <summary>지난 이야기</summary>
         <p v-for="(text, i) in peek.seen" :key="i">{{ text }}</p>
       </details>
+      <button v-if="person.user" class="me-btn" :aria-pressed="isMe" @click="setSelf(isMe ? null : personId)">{{ isMe ? '나로 표시했어요 · 취소' : '이건 나예요' }}</button>
       <p v-if="walk && hasKeyStory(personId)" class="later">이 사람의 이야기는 저녁에 '오늘'에서 만날 수 있어요.</p>
     </section>
   </div>
@@ -87,5 +91,7 @@ const peek = computed(() => peekOf(game.state.todays, props.personId))
 .stories { border-top: 1px solid #e8eaee; padding-top: 4px; }
 .stories summary { min-height: 44px; display: flex; align-items: center; font-size: 15px; font-weight: 700; cursor: pointer; }
 .stories p { margin: 0 0 12px; font-size: 15px; line-height: 1.8; color: #2a2d33; word-break: keep-all; white-space: pre-line; }
+.me-btn { align-self: flex-start; min-height: 44px; padding: 0 16px; border: 1px solid #e8eaee; border-radius: 22px; background: #ffffff; color: #14161a; font: inherit; font-size: 14px; cursor: pointer; }
+.me-btn[aria-pressed='true'] { background: #14161a; border-color: #14161a; color: #ffffff; }
 .later { margin: 6px 0 0; font-size: 13px; color: #6b7079; word-break: keep-all; }
 </style>
