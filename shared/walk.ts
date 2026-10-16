@@ -1,8 +1,10 @@
 import { DOING } from './data/doing'
+import { greatCircleKm, pointOf } from './distance'
 import { FORMS, formAt } from './data/forms'
 import { MATERIALS } from './data/materials'
 import { PEOPLE } from './data/people'
 import { PLACES } from './data/places'
+import { TRANSPORT } from './data/transport'
 import { forwardTimeline } from './journey'
 import { clockAt, doingBucket } from './local-time'
 
@@ -81,4 +83,35 @@ export function formChanges(materialId: string, stops: string[]): ({ from: strin
     const after = formAt(materialId, stops, id)
     return before && after && before.name !== after.name ? { from: before.name, to: after.name } : null
   })
+}
+
+export type LegMode = 'sea' | 'air' | 'land'
+export interface LegGap {
+  mode: LegMode
+  /** 이 구간의 대권 거리(반올림 전). 화면에는 roundKm으로 */
+  km: number
+  /** 구간의 첫 칸 사이에만 이름·거리를 적는다 */
+  first: boolean
+}
+
+/**
+ * 칸 사이 이동. gaps[i]는 ids[i]와 ids[i+1] 사이. 좌표가 있는 두 칸 사이를 한 구간으로 보고(바다 위처럼 좌표가 없는 칸은 건너뛴다)
+ * 구간 안의 칸 사이에 모두 같은 값을 둔다. 좌표 있는 다음 칸이 없으면 null.
+ * 바다: 떠나는 칸이나 그 사이에 배(transport.ts)나 바다 위 사람이 있다. 하늘: 공항 화물 담당에서 공항 화물 담당으로. 그 밖은 땅
+ */
+export function walkLegs(ids: string[]): (LegGap | null)[] {
+  const gaps: (LegGap | null)[] = ids.slice(1).map(() => null)
+  const points = ids.map(pointOf)
+  let a = points.findIndex(Boolean)
+  while (a >= 0) {
+    let b = a + 1
+    while (b < ids.length && !points[b]) b++
+    if (b >= ids.length) break
+    const sea = ids.slice(a, b).some((id) => TRANSPORT[id] === 'ship' || PLACES[PEOPLE[id]?.placeId ?? '']?.continent === 'sea')
+    const mode: LegMode = sea ? 'sea' : TRANSPORT[ids[a]!] === 'air' && TRANSPORT[ids[b]!] === 'air' ? 'air' : 'land'
+    const km = greatCircleKm(points[a]!, points[b]!)
+    for (let i = a; i < b; i++) gaps[i] = { mode, km, first: i === a }
+    a = b
+  }
+  return gaps
 }

@@ -9,7 +9,8 @@ import { PEOPLE } from '../shared/data/people'
 import { PLACES } from '../shared/data/places'
 import { clockAt, doingBucket } from '../shared/local-time'
 import { FORMS } from '../shared/data/forms'
-import { RECENT_WALKS, formChanges, rememberWalk, wakeCounts, walkJourneyId, walkPath, walkPeople } from '../shared/walk'
+import { roundKm } from '../shared/distance'
+import { RECENT_WALKS, formChanges, rememberWalk, wakeCounts, walkLegs, walkJourneyId, walkPath, walkPeople } from '../shared/walk'
 
 const AMERICANO = { materialIds: ['coffee', 'plastic'], name: '아이스 아메리카노' }
 
@@ -76,4 +77,22 @@ test('칸 사이 변신: forms.ts의 형태 이름만, 바뀌는 칸에만', () 
       for (const c of formChanges(b.materialId, b.stops)) if (c) assert.ok(names.has(c.from) && names.has(c.to))
     }
   }
+})
+
+test('칸 사이 이동: 바다 위 칸은 건너뛰어 한 구간, 배가 있으면 바다, 공항끼리는 하늘, 그 밖은 땅', () => {
+  const coffee = walkLegs(['coffee-picker', 'washing-station', 'djibouti-docker', 'sea-crew', 'busan-crane', 'roaster'])
+  assert.equal(coffee.length, 5)
+  assert.equal(coffee[1]!.mode, 'land')
+  // 지부티 → (바다 위) → 부산: 두 칸 사이가 한 구간, 이름·거리는 첫 칸 사이에만
+  assert.equal(coffee[2]!.mode, 'sea')
+  assert.equal(coffee[3]!.mode, 'sea')
+  assert.equal(coffee[2]!.first, true)
+  assert.equal(coffee[3]!.first, false)
+  assert.equal(coffee[2]!.km, coffee[3]!.km)
+  assert.ok(roundKm(coffee[2]!.km) >= 5000)
+  const salmon = walkLegs(['salmon-processor', 'oslo-air', 'air-cargo', 'warehouse'])
+  assert.deepEqual(salmon.map((g) => g!.mode), ['land', 'air', 'land'])
+  // 좌표 있는 다음 칸이 없으면 비워 둔다
+  assert.deepEqual(walkLegs(['djibouti-docker', 'sea-crew']), [null])
+  assert.deepEqual(walkLegs(['barista']), [])
 })

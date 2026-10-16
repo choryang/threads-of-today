@@ -21,7 +21,8 @@ export function greatCircleKm(a: Point, b: Point): number {
   return 2 * EARTH_KM * Math.asin(Math.min(1, Math.sqrt(h)))
 }
 
-function pointOf(personId: string): Point | null {
+/** 이 사람이 있는 곳의 대표 지점. 좌표 없는 바다 위는 null */
+export function pointOf(personId: string): Point | null {
   const place = PLACES[PEOPLE[personId]?.placeId ?? '']
   return place?.lat !== undefined && place.lng !== undefined ? { lat: place.lat, lng: place.lng } : null
 }

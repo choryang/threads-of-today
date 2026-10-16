@@ -6,7 +6,8 @@ import { sceneOf } from '../../shared/data/scenes'
 import { clockAt, clockLabel, dayInfo, doingLine } from '../../shared/local-time'
 import { seoulDateKey, withJosa } from '../../shared/logic'
 import { placeLabel } from '../../shared/rewind'
-import { formChanges, rememberWalk, wakeCounts, walkJourneyId, walkPath, walkPeople, type Walk } from '../../shared/walk'
+import { formatKm, roundKm } from '../../shared/distance'
+import { formChanges, rememberWalk, wakeCounts, walkLegs, walkJourneyId, walkPath, walkPeople, type LegGap, type LegMode, type Walk } from '../../shared/walk'
 import { MOTION } from '../utils/motion'
 import { resolveItem } from '../utils/resolve-item'
 
@@ -14,7 +15,8 @@ import { resolveItem } from '../utils/resolve-item'
  * 실 따라 걷기 (docs/redesign/README.md): 물건 입력 → 그 물건이 지나온 길을 세로 실로. 재료가 여럿이면 재료마다 갈래, 끝에 가게 사람.
  * 맨 위에 지금 이 길 위에서 깨어 있는·자고 있는 사람 수(1분마다).
  * 칸마다 장소 · 지금 그곳 시각(해·달 점) · 일 이름과 이름 · 카드 문구 한 줄 · 지금은 아마 … · (있으면) 작은 장면 그림. 누르면 들여다보기 시트.
- * 칸 사이(그 칸 아래)에 그 사람 손에서 바뀌는 모습 '커피 체리 → 생두'(forms.ts 이름만, 아이콘은 쓰지 않는다).
+ * 칸 사이(그 칸 아래)에 그 사람 손에서 바뀌는 모습 '커피 체리 → 생두'(forms.ts 이름만, 아이콘은 쓰지 않는다)와
+ * 바다·하늘·땅 구간과 대략 거리(100km 단위, walkLegs). 바다 구간은 실을 점선으로. 갈래 끝 칸 아래는 내 손 쪽 첫 사람까지.
  * 아무것도 쌓지 않는다: 하루 기록·만난 사람·이어진 실에 넣지 않고 점수·개수도 없다. 최근 걸어 본 물건 5개만 이 기기에(localStorage)
  */
 useHead({ htmlAttrs: { class: 'today-ui' }, title: '실 따라 걷기' })
@@ -97,12 +99,29 @@ function stopOf(personId: string) {
     scene: !!sceneOf(personId),
   }
 }
+const MODE_LABEL: Record<LegMode, string> = { sea: '바다', air: '하늘', land: '땅' }
+/** 구간 첫 칸 사이에만 '바다 · 약 7,600km'. 50km보다 짧은 땅 구간은 적지 않는다 */
+function legLabel(g: LegGap | null): string {
+  if (!g?.first) return ''
+  const km = roundKm(g.km) > 0 ? ` · 약 ${formatKm(g.km)}km` : ''
+  return km || g.mode !== 'land' ? `${MODE_LABEL[g.mode]}${km}` : ''
+}
+/** 칸마다 그 아래 칸 사이: 변신·이동 한 줄씩, 앞뒤가 바다 구간인지 (점선) */
+function withGaps(stops: string[], gaps: (LegGap | null)[], changes: ({ from: string; to: string } | null)[] = []) {
+  return stops.map((id, i) => ({
+    ...stopOf(id),
+    change: changes[i] ? `${changes[i]!.from} → ${changes[i]!.to}` : '',
+    leg: legLabel(gaps[i] ?? null),
+    seaIn: gaps[i - 1]?.mode === 'sea',
+    seaOut: gaps[i]?.mode === 'sea',
+  }))
+}
 const branches = computed(() =>
-  (walk.value ? walk.value.branches.map((b) => {
-    const changes = formChanges(b.materialId, b.stops)
-    return { ...b, stops: b.stops.map((id, i) => ({ ...stopOf(id), change: changes[i] ? `${changes[i]!.from} → ${changes[i]!.to}` : '' })) }
-  }) : []))
-const hand = computed(() => (walk.value ? walk.value.hand.map(stopOf) : []))
+  (walk.value ? walk.value.branches.map((b) => ({
+    ...b,
+    stops: withGaps(b.stops, walkLegs([...b.stops, ...walk.value!.hand.slice(0, 1)]), formChanges(b.materialId, b.stops)),
+  })) : []))
+const hand = computed(() => (walk.value ? withGaps(walk.value.hand, walkLegs(walk.value.hand)) : []))
 const wake = computed(() => (walk.value ? wakeCounts(walkPeople(walk.value), new Date(tick.value)) : { awake: 0, asleep: 0 }))
 </script>
 
@@ -146,7 +165,7 @@ const wake = computed(() => (walk.value ? wakeCounts(walkPeople(walk.value), new
         <h2 class="branch-title">{{ b.name }}</h2>
         <ol class="thread">
           <template v-for="(s, i) in b.stops" :key="`${s.personId}-${i}`">
-            <li class="cell">
+            <li class="cell" :class="{ 'sea-in': s.seaIn, 'sea-out': s.seaOut }">
               <button class="stop" @click="peeking = s.personId">
                 <span class="knot" aria-hidden="true" />
                 <span class="body">
@@ -158,25 +177,31 @@ const wake = computed(() => (walk.value ? wakeCounts(walkPeople(walk.value), new
                 <TodaySceneImage v-if="s.scene" class="thumb" :person-id="s.personId" :hour="s.hour" decorative />
               </button>
             </li>
-            <li v-if="s.change" class="gap"><span class="change">{{ s.change }}</span></li>
+            <li v-if="s.change || s.leg" class="gap" :class="{ sea: s.seaOut }">
+              <span v-if="s.change" class="change">{{ s.change }}</span>
+              <span v-if="s.leg" class="leg">{{ s.leg }}</span>
+            </li>
           </template>
         </ol>
       </section>
       <section v-if="hand.length" class="branch">
         <h2 class="branch-title">내 손에 닿기까지</h2>
         <ol class="thread">
-          <li v-for="(s, i) in hand" :key="`h-${s.personId}-${i}`" class="cell">
-            <button class="stop" @click="peeking = s.personId">
-              <span class="knot" aria-hidden="true" />
-              <span class="body">
-                <span class="where">{{ s.where }} <span class="time"><span class="orb" :class="{ day: s.day }" aria-hidden="true" />{{ s.time }}</span></span>
-                <span class="who">{{ s.who }}</span>
-                <span class="story">{{ s.story }}</span>
-                <span class="doing">{{ s.doing }}</span>
-              </span>
-              <TodaySceneImage v-if="s.scene" class="thumb" :person-id="s.personId" :hour="s.hour" decorative />
-            </button>
-          </li>
+          <template v-for="(s, i) in hand" :key="`h-${s.personId}-${i}`">
+            <li class="cell" :class="{ 'sea-in': s.seaIn, 'sea-out': s.seaOut }">
+              <button class="stop" @click="peeking = s.personId">
+                <span class="knot" aria-hidden="true" />
+                <span class="body">
+                  <span class="where">{{ s.where }} <span class="time"><span class="orb" :class="{ day: s.day }" aria-hidden="true" />{{ s.time }}</span></span>
+                  <span class="who">{{ s.who }}</span>
+                  <span class="story">{{ s.story }}</span>
+                  <span class="doing">{{ s.doing }}</span>
+                </span>
+                <TodaySceneImage v-if="s.scene" class="thumb" :person-id="s.personId" :hour="s.hour" decorative />
+              </button>
+            </li>
+            <li v-if="s.leg" class="gap" :class="{ sea: s.seaOut }"><span class="leg">{{ s.leg }}</span></li>
+          </template>
           <li class="me"><span class="knot mine" aria-hidden="true" /><span class="body"><span class="who">나</span></span></li>
         </ol>
       </section>
@@ -204,14 +229,16 @@ const wake = computed(() => (walk.value ? wakeCounts(walkPeople(walk.value), new
 .wake { margin: 10px 0 0; font-size: 14px; color: var(--t-sub); word-break: keep-all; }
 .branch { margin-top: 28px; }
 .branch-title { margin: 0 0 8px; font-size: 13px; font-weight: 500; color: var(--t-sub); }
-/* 실: 아주 옅은 회색 한 줄. 줄마다 따로 그어서 칸 사이를 이어 간다 (첫 매듭에서 시작해 마지막 매듭에서 끝) */
+/* 실: 아주 옅은 회색 한 줄. 칸은 매듭 위(::before)·아래(::after) 반쪽씩 따로 그어서, 바다 구간만 점선으로 (첫 매듭에서 시작해 마지막 매듭에서 끝) */
 .thread { list-style: none; margin: 0; padding: 0; }
 .thread > li { position: relative; }
-.thread > li::before { content: ''; position: absolute; left: 5px; top: 0; bottom: 0; width: 1px; background: #e8eaee; }
-.thread > li:first-child::before { top: 21px; }
-.thread > li.cell:last-child::before, .thread > li.me::before { bottom: auto; height: 21px; }
+.thread > li::before, .thread > li.cell::after { content: ''; position: absolute; left: 5px; top: 0; bottom: 0; border-left: 1px solid #e8eaee; }
+.thread > li.cell::before, .thread > li.me::before { bottom: auto; height: 21px; }
+.thread > li.cell::after { top: 21px; }
+.thread > li:first-child::before, .thread > li.cell:last-child::after { display: none; }
+.thread > li.sea-in::before, .thread > li.sea-out::after, .thread > li.gap.sea::before { border-left: 1px dashed #c9ccd2; }
 .gap { padding: 0 0 6px 25px; display: flex; flex-direction: column; gap: 2px; }
-.change { font-size: 12px; color: var(--t-faint); word-break: keep-all; }
+.change, .leg { font-size: 12px; color: var(--t-faint); word-break: keep-all; }
 .stop {
   position: relative; width: 100%; padding: 12px 0; border: 0; background: none; text-align: left; cursor: pointer;
   display: flex; align-items: flex-start; gap: 14px; color: var(--t-text); font: inherit;
