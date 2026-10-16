@@ -7,6 +7,9 @@ import { widensInput } from '../../shared/match'
 const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp']
 const MAX_IMAGE_BASE64 = 1_500_000 // 약 1.1MB. 클라이언트에서 줄여서 보낸다.
 
+/** 지금 한국 일상에는 없는 물건. 안내 문구(server/utils/decompose.ts)를 바꾸기 전 캐시에 남은 답을 거른다 */
+const OUTDATED = /승차권|승차표|버스표|회수권|토큰/
+
 const LIMIT_MESSAGE = '오늘은 새 물건을 정말 많이 알아봤어요. 내일 다시 적어 주거나, "골라 보기"에서 골라 볼까요?'
 
 /**
@@ -37,8 +40,8 @@ async function decompose(event: H3Event): Promise<DecomposeResult> {
     const local = matchText(text)
     if (local) return { ok: true, source: 'local', ...local }
     const cached = await readCache(text).catch(() => null)
-    // 예전 캐시 중 입력이 들어 있는 다른 물건('딸기' → 딸기 우유)으로 이은 것은 쓰지 않고 다시 묻는다
-    if (cached && !widensInput(text, cached.name)) return { ok: true, source: 'ai', via: 'cache', ...toDecomposed(cached) }
+    // 예전 캐시 중 입력이 들어 있는 다른 물건('딸기' → 딸기 우유)으로 이은 것, 지금은 없는 물건(버스 승차권)으로 이은 것은 쓰지 않고 다시 묻는다
+    if (cached && !widensInput(text, cached.name) && !OUTDATED.test(cached.name)) return { ok: true, source: 'ai', via: 'cache', ...toDecomposed(cached) }
   }
 
   const config = useRuntimeConfig(event)
