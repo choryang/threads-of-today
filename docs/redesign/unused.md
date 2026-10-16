@@ -1,61 +1,23 @@
-# 새 기획에서 쓰지 않게 된 파일
+# 새 기획에서 지운 것
 
-새 흐름(오늘 → 이어진 사람들 → 공유)을 검증한 뒤 지울 목록이에요. 아직 아무것도 지우지 않았어요.
-주소로 들어와도 첫 화면으로 보내고(app/middleware/redesign.global.ts, 예전 공유 링크는 server/routes/d·p·v), 메뉴에서는 뺐어요.
+새 흐름(오늘 → 이어진 사람들 → 걷기 → 공유)에서 닿지 않던 화면과 코드를 지웠어요. 필요하면 git 기록에서 되살릴 수 있어요.
+예전 주소는 첫 화면으로 보내요(app/middleware/redesign.global.ts, 예전 공유 링크 /d·/p·/v는 server/routes).
 
-목록은 새 화면(app.vue, pages/index·people·day·t, BottomNav, plugins, middleware, server/routes, cron)에서
-import·컴포넌트 태그·composable 호출·`/api/…` 호출을 따라가서 닿지 않는 파일을 뽑았어요.
+## 지운 것
 
-## 1. 새 화면에서 닿지 않는 파일 (지워도 빌드에 영향 없음)
+- 화면: 마을, 도감, 물건 넣기, 여정, 미스터리, 하루 유형 테스트, 지난 기록·나의 실타래, 밤사이 도착, 예전 공유 링크 화면(/d·/p·/v)
+- 컴포넌트: 캐릭터·사람 카드·주민 카드·마을 지도·친해진 정도·핵심 인물 여정·되감기 연출·오고 있는 물건 등 예전 화면용 전부
+- 기능 코드: 오고 있는 물건(incoming), 나의 실타래(threads), 고마워요·감사 장면·엔딩(thanks), 미스터리(mystery), 기능 열림 순서(unlocks),
+  하루 유형(day-type), 사람 소개(intro), 마을·꽃(village·visit·data/village), 다음 여정 추천(next), 파츠 캐릭터(character-svg)
+- 서버: 공유 링크의 답·고마워요·소개 고마워요·내용 고치기, 고마움 수(api/thanks), 마을 꽃(api/village), 사람별 모두의 오늘 보내기(api/meet)
+- 공유 종류: day·person·village. 지금은 thread(/t)만
+- 그림·스크립트: 예전 OG(하루 유형·사람 소개·마을 초대), 마을 지도와 생성기, 형태 아이콘(public/forms)·formIcon, 캐릭터 파츠,
+  build-og·build-map-overview·day-type-dist·sync-prop-icons
 
-### 화면 (app/pages)
-- `village.vue` 마을 (예전 첫 화면)
-- `dex.vue` 도감
-- `add.vue` 오늘 쓴 물건 넣기
-- `journey/[id].vue` 여정(핵심 인물 셋·묶음 칸·퀴즈·숨은 만남)
-- `mystery.vue` 미스터리
-- `test/index.vue`, `test/result.vue` 하루 유형 테스트
-- `result.vue` 지난 기록, `threads.vue` 나의 실타래
-- `arrival/[id].vue` 밤사이 도착
-- `d/[token].vue`, `p/[token].vue`, `v/[token].vue` 예전 공유 링크 화면
+## 남겨 둔 것
 
-### 컴포넌트 (app/components)
-Character, DayResultView, DeviceTransfer, EndScene, FlowerMark, FormBadge, FriendResidentSheet, FriendshipPanel,
-IncomingCard, IntroSheet, KeyGroup, KeyIntro, KeyPerson, MeetAgain, MiniCard, NicknameEditor, PersonCard, PlaceSky,
-RecordTabs, ResidentSheet, RewindReplay, SeenStories, ThanksScene, ThreadsTapestry, VillageMap
-
-### composables · utils (app)
-- composables: `useGratitude.ts`, `usePanZoom.ts`, `useShare.ts`(하루 유형·소개 링크), `useTapestry.ts`, `useVillageLink.ts`
-- utils: `day-test.ts`, `image.ts`, `labels.ts`, `pan-zoom.ts`, `product-icon.ts`, `vehicle-icon.ts`
-
-### 서버
-- 공유: `api/share/[token].get.ts`, `api/share/[token]/reply.post.ts`, `api/share/[token]/thank.post.ts`,
-  `api/share/intro-thanks.post.ts`, `api/share/replies.post.ts`, `api/share/update.post.ts`, `utils/intro.ts`
-- 고마움 수: `api/thanks/index.get.ts`, `api/thanks/index.post.ts`
-- 마을 꽃: `api/village/[token].get.ts`, `api/village/[token]/flower.post.ts`, `api/village/flowers.post.ts`, `utils/village.ts`
-
-### shared
-- `next.ts`(다음 여정 추천), `match/slim.ts`
-
-## 2. 아직 import되지만 새 흐름에서 쓰지 않는 것
-
-새 흐름은 `useGame`에서 저장값(state)과 동기화만 쓴다. 아래는 `useGame`(카드·여정·미스터리·마을·잠금 해제)이나
-`plugins/meet.client.ts`(예전 여정에서 만난 사람 보내기)를 거쳐서만 닿는 파일이에요. `useGame`에서 예전 기능을 덜어 내면 함께 지울 수 있어요.
-- `shared/village.ts`, `shared/visit.ts`, `shared/incoming.ts`, `shared/threads.ts`, `shared/thanks.ts`, `shared/mystery.ts`
-- `shared/data/thanks.ts`, `shared/data/mystery.ts`
-- `app/plugins/meet.client.ts`와 `server/api/meet/index.post.ts`(사람별 모두의 오늘 보내기)
-
-다른 길로도 닿지만 새 흐름에서는 일부만 쓰는 것:
-- `shared/share.ts`: 공유 종류 day·person·village(새 흐름은 thread만). `server/utils/share-page.ts`의 OG 넣기는 /t가 쓴다
-- `shared/progress.ts`의 예전 Save 필드(카드·여정·마을·잠금 해제 등): README "저장"대로 지우지 않고 화면에만 쓰지 않는다
-- `shared/journey.ts`: 한 사람 고르기가 timeline·keyPeople을 쓴다. 화면 목록(journeyScreens)·퀴즈·이벤트 부분은 쓰지 않음
-- `shared/key-story.ts`: storyEpisodes·storyEpisodeList만 (keyMeets·nextEpisode·seenEpisodes는 쓰지 않음)
-- `shared/unlocks.ts`, `shared/friendship.ts`, `shared/day-type.ts`, `shared/intro.ts`, `shared/rewind.ts`(placeLabel만), `shared/character-svg.ts`
-- `app/utils/share-image.ts`: drawQuoteCard·savePng만 (하루 유형·두 사람 카드는 쓰지 않음), `app/utils/character.ts`
-
-## 3. 파일 밖의 것
-- `public/og/day-*.png`, `public/og/person-*.png`, `public/og/village.png` (예전 링크 미리보기)
-- `public/village/*`(마을 지도), `public/forms/*`(형태 아이콘), `app/assets/character/*`(파츠 캐릭터)
-- 스크립트: `build-og.ts`(하루 유형 OG), `build-og-cards.ts`의 village·people(thread는 씀), `build-map-overview.ts`, `gen_map2.py`·`village-layout.json`,
-  `day-type-dist.ts`(npm run check:day-types), `sync-prop-icons.ts`, `key-candidates.ts`(핵심 자리 기준)
-- 테스트: 예전 기능 테스트(village·unlocks·reverse·friendship·mystery·day-type·share의 day·person·village 등)는 코드를 지울 때 같이 지운다
+- `shared/progress.ts`의 예전 Save 필드(카드·여정·마을·잠금 해제 등): 다른 기기·서버 기록과 합칠 때 잃지 않게 모양은 그대로 둔다(README "저장")
+- 사람 데이터의 예전 값(rarity·kind·look): 화면에서 쓰지 않는다
+- `shared/journey.ts`: 경로 시드 계산(한 사람 고르기·걷기가 쓴다). 퀴즈·이야기·숨은 만남 부분도 같은 시드 계산에 섞여 있어 그대로 둔다
+- `shared/friendship.ts`: 출처 있는 사실(factOf, 걷기)과 예전 사람별 기록 합치기
+- 복구 코드로 이어 하기(`/api/profile/restore`, `useSync().restore`): 화면은 없고 서버와 함수만 남아 있다

@@ -4,7 +4,8 @@
 
 하루 한 번 저녁에 1분. 출발점은 **오늘의 나(마음)**이고, 물건은 그 사람과 나를 잇는 증거(실)다.
 마음을 고르고 오늘 손에 닿은 물건을 고르면, 물건을 **재료로 분해**한 경로 위에서 같은 마음의 하루를 보낸 **한 사람**을 만나 그 사람의 이야기를 읽고 한마디를 건넨다.
-기준 문서는 docs/redesign/README.md, 시안은 docs/redesign/mockups. 카드 수집·희귀도·퀴즈·세트·마을·파츠 캐릭터는 화면에서 뺐다(코드는 아직 남아 있다: docs/redesign/unused.md).
+기준 문서는 docs/redesign/README.md, 시안은 docs/redesign/mockups. 카드 수집·희귀도·퀴즈·세트·마을·파츠 캐릭터 화면과 코드는 지웠다(docs/redesign/unused.md).
+예전 Save 필드와 사람 데이터의 예전 값(rarity·kind·look 등)은 기록 호환을 위해 남아 있다.
 
 ## 스택과 명령
 
@@ -22,8 +23,10 @@ app/pages/index.vue       오늘 흐름: 1 마음(V2Mood) → 2 물건(V2Item) �
                           오늘 기록이 있으면 오늘의 결과와 "내일 저녁에 또 만나요". 화면은 app/components/today/*, 상태는 composables/useToday.ts
 app/pages/people.vue      나와 이어진 사람들(V2Map): 서울 기준 방위·대권 거리 별자리 + 날짜 목록. 계산은 shared/connections.ts
 app/pages/day/[date].vue  지난 하루의 4번 화면 · app/pages/t/[token].vue 오늘의 실 공유 링크 → 1번 화면으로
-app/components/BottomNav.vue 아래 메뉴 두 개(오늘·이어진 사람들). 흐름 2~5번에서는 감춘다
-app/middleware/redesign.global.ts 뺀 화면(마을·도감·여정·미스터리·테스트 등) 주소는 첫 화면으로
+app/pages/walk.vue        걷기: 물건이 지나온 길 전체(shared/walk.ts). 깨어 있는 수·형태 변화·바다/하늘/땅 거리·일의 크기·끝 요약, 길 위의 "나"(useSelf, 기기에만).
+                          열 때 서버를 부르지 않는다. 고유명사는 길 대신 한마디 + 지도 검색 링크(server/api/whereis.post.ts, 캐시 quip:{정규화})
+app/components/BottomNav.vue 아래 메뉴 셋(오늘·이어진 사람들·걷기). 흐름 2~5번에서는 감춘다
+app/middleware/redesign.global.ts 지운 화면(마을·도감·여정·미스터리·테스트 등) 주소는 첫 화면으로
 app/assets/css/today.css  새 기획 디자인 기준(흰 바탕, Noto Sans KR, 56px 버튼, 강조색 없이 실의 색 = 마음의 색)
 app/composables/useToday.ts 흐름 상태와 저장(Save.todays, 기기에만 남기는 한 줄·직접 쓴 말은 utils/today-local.ts)
 app/composables/useThreadShare.ts 오늘의 실 공유: 링크(/t) + 앱이 그린 V2Quote 카드(utils/share-image.ts drawQuoteCard)를 og:image로 올림
@@ -41,131 +44,74 @@ shared/connections.ts     이어진 사람들 자리(방위각·대권 거리·�
 shared/progress.ts        Save.todays[서울 날짜] = { mood, item, personId, episode, reply(번호|'own') }. mergeSaves는 한마디를 건넨 쪽
 shared/share.ts           공유 종류 thread(/t, 30일): 날짜·마음·사람·편·물건만. threadQuote(첫 문장)·threadWho
 shared/local-time.ts      그곳의 시각·서울과의 차이·하늘 시간대(SKY)·지금은 아마(doing.ts·calendar.ts의 주말·공휴일)
-shared/today.ts           모두의 오늘 스냅샷: 사람별 수 + 마음 id별 수(moods), moodCountFor
+shared/today.ts           모두의 오늘 스냅샷: 마음 id별 수(moods, 8개 PFCOUNT), moodCountFor. counts는 예전 모양이라 늘 비어 있다
+shared/peek.ts            지금 들여다보기 시트(이어진 사람·걷기에서 누른 사람) · shared/job.ts 하는 일 묻기(3일째 한 번, data/jobs.ts)
 server/api/mood.post.ts   실을 묶으면 마음 id만 받아 mood:{마음}:{YYYYMMDD} HyperLogLog에 (스냅샷이 30분마다 센다)
 server/api/share/[token]/image.post.ts 오늘의 실 카드 그림(JPEG) 올리기(링크를 만든 기기만) · server/routes/og/t/[file] 그림 주기 · server/routes/t/[token] OG
 server/routes/d·p·v       예전 공유 링크 → 첫 화면
 ```
 
-## 구조 (예전 기획 포함, 아래 중 화면에서 뺀 것은 docs/redesign/unused.md)
+## 구조 (공통 데이터·서버)
 
 ```
 shared/                 앱과 서버가 상대 경로로 함께 import (Nuxt 자동 import 대상 아님)
-  types.ts              Person, Material, Product, LinkRule, CardSet 타입
-  data/places.ts        장소 (country, continent → 캐릭터 몸 색, tz → 여정 화면 그곳의 시각)
-  data/people.ts        사람 카드. kind: stage | quiz | link | set | hidden, rarity: common | rare | epic | legendary
-  data/materials.ts     재료 여정(stages = 사람 id 순서), 출발지 변형(originHead, origins), 퀴즈(quiz + extraQuizzes), 대표 물건(PRODUCTS), 연결 규칙, 세트
+  types.ts              Person, Material, Product, MaterialForm 타입
+  data/places.ts        장소 (country, continent, tz → 그곳의 시각)
+  data/people.ts        사람. user: 이 앱을 쓰는 진짜 사람(USERS, 화면에서 이름 옆 점). rarity·kind·look은 예전 값(화면에서 쓰지 않음)
+  data/names.ts         사람 이름(나라별 출처는 주석)
+  data/materials.ts     재료 경로(stages = 사람 id 순서), 출발지 변형(originHead, origins), 대표 물건(PRODUCTS)
   data/synonyms.ts      동의어 묶음 (첫 단어가 대표 표기)
-  data/journey-extras.ts 여정 이벤트(EVENTS, '이야기')·숨은 만남 규칙(HIDDEN_RULES)
-  data/shops.ts         여정 마지막 장면의 가게·사무실 사람. closingKind(물건 이름, 재료)로 종류를 정한다
-  data/thanks.ts        고마워요 답·세트 감사 장면·엔딩 문구
-  data/stories.ts       핵심 인물 이야기(story 또는 episodes 여러 편, joy 작은 기쁨). 사용자가 쓴 문구라 고치지 않는다. 규칙은 docs/key-people.md
-  data/doing.ts         여정 화면 '지금은 아마 …': 사람마다 일·저녁(일 끝나고 4시간)·잠 문구, 일하는 시간(hours, 기본 7~18시),
+  data/journey-extras.ts 예전 여정 이벤트·숨은 만남 규칙(경로 시드 계산이 아직 같이 쓴다)
+  data/shops.ts         길 마지막의 가게·사무실 사람. closingKind(물건 이름, 재료)로 종류를 정한다(가게가 없는 종류는 [])
+  data/stories.ts       이야기(사용자가 쓴 문구라 고치지 않는다). 규칙은 docs/key-people.md
+  data/doing.ts         '지금은 아마 …': 사람마다 일·저녁(일 끝나고 4시간)·잠 문구, 일하는 시간(hours, 기본 7~18시),
                         평일에만 일하는 사람(days: 'weekdays'). 없으면 일반 문구(check:data)
   data/calendar.ts      나라 코드·주말 요일·공휴일 찾기. 공휴일은 holidays.json(npm run holidays가 date-holidays로 3년치 생성,
                         한국어 이름표는 scripts/build-holidays.ts). check:data가 올해·내년이 있는지 본다
-  data/mystery.ts       미스터리 힌트 1·2번(대표 물건별 쓰임새 한 줄·분류). 대표 물건을 추가하면 여기도 채운다(check:data)
-  data/village.ts       내 하루 마을: 구역 5개(이름표·대략적인 범위·발끝 자리 slots·넘칠 때 빈 땅 overflow), 일터 목록,
-                        사람마다 구역·일터(RESIDENCE → Person.zone·workplace), 구역이 애매한 사람. 자리는 지도 생성기 도형으로 계산
   data/transport.ts     운송 구간 사람(배·비행기·트럭)과 '배'·'바다를 건너는 중' 같은 말
-  data/scenes.ts        여정 장면 그림 목록(public/scenes/{id}.webp, 대체 글)과 사람 → 장면. 원본은 art/scenes에 두고 npm run scenes
-  data/forms.ts         되감기 변신: 재료별 형태 목록(실제 가공 순서, by = 그 형태를 만드는 사람, formIcon = public/forms 아이콘 slug). 재료를 추가하면 여기도 채운다(check:data)
+  data/scenes.ts        장면 그림 목록(public/scenes/{id}.webp, 대체 글)과 사람 → 장면. 원본은 art/scenes에 두고 npm run scenes
+  data/forms.ts         재료별 형태 목록(실제 가공 순서, by = 그 형태를 만드는 사람). 걷기의 형태 변화. 재료를 추가하면 여기도 채운다(check:data)
+  data/work-quizzes.ts  일의 크기 숫자(출처·계산식 주석). friendship.ts factOf가 걷기에 내준다
   data/dictionary.json  미리 만든 물건 사전 (scripts/build-dictionary.ts가 생성). 서버에서만 import
-  data/dictionary-client.json 앱용 사전(한마디 하나만, scripts/build-client-dictionary.ts). 화면에서 바로 매칭할 때 쓴다
+  data/dictionary-client.json 앱용 사전(한마디 하나만, scripts/build-client-dictionary.ts, match/slim.ts). 화면에서 바로 매칭할 때 쓴다
   safety.ts             looksFactual: AI 문구에 숫자·나라 이름이 섞였는지 검사
-  progress.ts           Save 타입, mergeSaves(카드·물건 합집합, 날짜 기록 30일, 사람별 기록 합집합·OR, 오고 있는 물건은 여정 id로·연 기록 유지, 단짝 연출 본 주민 bestSeen 합집합, 본 열림 알림 unlockSeen 합집합·연 날짜 unlockedOn 이른 날짜·없으면 없는 채로), sanitizeSave(서버 입력 검사)
-  friendship.ts         친해진 정도: 사람별 기록(metItems·gratitudeDays·quizCorrect)에서 퍼센트 계산(저장하지 않음), 열리는 단계,
-                        출처 있는 사실(workFact)·퀴즈(한 재료에만 나오는 사람의 일의 크기 퀴즈), 예전 기록 마이그레이션
-  nickname.ts           기본 닉네임 조합·normalizeNickname(1~12자)
-  recovery.ts           복구 코드 '낱말-낱말-숫자4' 생성·정규화
-  voice.ts              voice의 {name} 자리표시자 검사·renderVoice (AI에 닉네임을 보내지 않는다)
+  progress.ts           Save 타입, mergeSaves·sanitizeSave(예전 필드도 합치고 검사한다), hasProgress(서버 기록을 만들지)
+  friendship.ts         출처 있는 사실(factOf)·예전 사람별 기록 합치기(Save 호환)
+  nickname.ts · recovery.ts(복구 코드 '낱말-낱말-숫자4') · voice.ts({name} 자리표시자, AI에 닉네임을 보내지 않는다)
   match/                AI 없는 매칭. normalize → exact → synonym → typo(자모 편집 거리) → compound → partial, 결과에 via
-  journey.ts            buildTimeline(materialIds, journeyId): 여정 id 시드로 출발지·이야기·숨은 만남·퀴즈 변형. '-꼬리' 없는 예전 id는 기본 경로
-                        첫 여정('-first')은 사람 카드만(퀴즈·경유지 맞히기·이야기·같은 길·숨은 만남 없음), 두 번째 여정('-second')에 숨은 만남·퀴즈 선물 보장
-                        id에 '-r'이 붙은 새 여정은 reverseTimeline(내 손 → 원산지). forwardTimeline을 재배치만 해서 판정은 정방향과 같다
-                        keyPeople: 핵심 인물 셋(시작한 손·건너온 손·건네준 손, docs/key-people.md). '-k'가 붙은 여정은 journeyScreens(시작 화면 →
-                        핵심 인물, 사이 사람은 묶음 칸, 퀴즈·숨은 만남은 묶음 칸 뒤, 이야기 칩 없음)를 한 칸씩 간다(journeySteps·screenPeople)
-  key-story.ts          핵심 인물 화면의 이야기: 핵심 자리에서 만난 횟수(Save.keyMeets)대로 다음 편, 없으면 카드 문구
-  distance.ts           거리 계산기: 장소 좌표로 대권 거리 누적(바다는 건너뜀), 100km 단위 반올림
-  incoming.ts           오고 있는 물건: 운송 구간(data/transport.ts)이 있고 못 만난 평범한 사람이 남으면 생김(최대 3), 다음 날 6시(서울) 도착,
-                        진행 비율, 여정 데이터의 경유지 문구. 데려올 사람은 stage 사람만(희소도를 건드리지 않게)
-  day-type.ts           나의 하루 유형(10초 테스트): docs/day-types.md 기준표 그대로. 테스트 물건 18개, 재료 분류, 판정·숫자 3개(기본 경로만)
-  share.ts              공유 링크 공통 구조: 종류(day /d · person /p · village /v)별 TTL·주소·내용 검사, 발급·조회·재발급(이전 링크 닫기)·답.
-                        링크를 만든 기기의 관리 키 해시만 저장. 복구 코드·사용자 id는 토큰·저장 값·응답·로그 어디에도 넣지 않는다
-  visit.ts              마을에 놀러 가서 꽃 남기기: 꽃(닉네임·주민·날짜) 색(구역별)·하루 한 송이·새 꽃 알림 문구, 못 만난 주민의 힌트 물건(없으면 세트 보상: setRewardOf)
-  intro.ts              사람 카드 소개: 정해진 문구 4개(맛있어서는 먹는 대표 물건만), 소개 화면의 사람 크기 사실(workFactHuman), 보낸 사람 알림 문구
-  unlocks.ts            기능을 여는 순서 (docs/screen-cleanup.md 표 그대로): 단계·조건(마친 여정 수·첫 단짝)·알림 문구, 순수 판정 함수.
-                        화면은 game.opens(기능)만 보고 보여 준다. 잠긴 단계도 stepState·nextLocked로 남은 조건을 보여 준다(마을 한 줄·메뉴 열리는 기능·도감 탭). 열림은 서울 날짜로 하루에 하나씩(연 날짜 Save.unlockedOn, 이른 날짜). 본 알림은 Save.unlockSeen(합집합). 링크로 들어온 화면(/d·/p·/v)은 조건과 상관없이
-  today.ts              모두의 오늘: 숫자 포맷, "오늘 1,203명이 이 분을 만났어요"·여정 끝 합 문구, 사람마다 하루 한 번만 보내기, 스냅샷(MEET_SNAPSHOT_MINUTES, 기본 30분)·스냅샷 뒤 내 몫 더하기
-  cleanup.ts            날짜 키 청소 규칙: 기간 없이 두는 meet:*·thanks:day:* 중 어제보다 이전 것
-  character-svg.ts      캐릭터 SVG 조립(순수 함수)과 피부색. 앱(app/utils/character.ts)과 OG 스크립트가 같이 쓴다
-  village.ts            마을 자리 배정(먼저 만난 사람부터 hash(id) 자리, 모자라면 빈 땅), 빈 집터, 주민 나라 수
-  rewind.ts             거꾸로 가는 여정 연출: 칸마다 형태(formsAlong), 문구, '이 전엔 어디 있었을까요?', 되감기 엔딩 순서
-  local-time.ts         지금 그곳의 시각: 장소 tz(IANA)로 시계·서울과의 차이·하늘 시간대(가이드 표의 색·섞는 방식)·해와 달 자리·'지금은 아마'
+  journey.ts            경로 시드 계산(buildTimeline·keyPeople·materialRoute). 한 사람 고르기와 걷기가 쓴다
+  key-story.ts          이야기 편(storyEpisodes, 예전 판 편 번호 옮기기)
+  distance.ts           장소 좌표로 대권 거리, 100km 단위 반올림
+  rewind.ts             placeLabel('에티오피아 시다마')
+  cleanup.ts            날짜 키 청소 규칙: 기간 없이 두는 mood:*(예전 meet:*·thanks:day:*) 중 어제보다 이전 것
+  local-time.ts         그곳의 시각·서울과의 차이·하늘 시간대·'지금은 아마'
   random.ts             hash / mix32 / seeded
-  logic.ts              sanitizeMaterialIds / dayStats(여정별 실제 경로) / findLinkCards / 미스터리 등 순수 함수
-  mystery.ts            미스터리 힌트 5개. 3·4번은 보기의 다른 물건과 겹치지 않는 사람·출발지를 고른다
-  thanks.ts             고마워요 답(카드 id 시드)·세트 감사 장면·엔딩 판정. 문구는 data/thanks.ts
-  threads.ts            나의 실타래: 재료별 누적(backfillThreads·addJourneyToThreads)과 나라 매듭 방사형 배치(buildTapestry)
+  logic.ts              sanitizeMaterialIds / findLinkCards / withJosa / seoulDateKey / 고유명사(PROPER_KINDS) 등 순수 함수
 server/
   api/decompose.post.ts 텍스트·사진 → 재료 id. 로컬 매칭 → 공유 캐시 → (IP별 하루 한도 안에서) Claude → 캐시 저장
-  api/profile/          index(익명 id·복구 코드 발급) · sync · restore
-  api/share/            공유 링크: POST(만들기·다시 만들기) · GET [token] · POST [token]/reply('보여주기') · POST replies(관리 키로 답 읽기)
-  routes/d/[token].get.ts  /d/{token}: SPA 껍데기 HTML에 그 링크의 OG meta를 넣어 돌려준다(ssr: false라 크롤러용). utils/share-page.ts
-  api/village/          [token] GET(공개용: 닉네임·주민 id·최근 꽃만) · [token]/flower POST(하루 한 송이, 감사 수 B에도) · flowers POST(주인, 관리 키)
-  routes/p/[token].get.ts  /p/{token}: 사람 카드 소개 OG(사람별 og/person-{id}.png)
-  api/share/[token]/thank  소개받은 사람의 고마워요(가입 없이, 링크마다 한 번, 감사 수 B에도) · api/share/intro-thanks(보낸 사람, 관리 키 목록). utils/intro.ts
-  routes/v/[token].get.ts  /v/{token}: 마을 초대 OG(공통 이미지 og/village.png). /d·/v·/p는 utils/share-page.ts의 defineShareRoute 하나로
-  utils/village.ts      마을 꽃 저장(village-flowers:{주인 해시} 최근 200개·60일, village-flower-day 하루 한 송이)
-  api/meet/             모두의 오늘 보내기: POST(만난 사람들, PFADD meet:{사람}:{YYYYMMDD}, EXPIRE 없음). utils/meet.ts
-  api/today-snapshot.get.ts 모두의 오늘 읽기: 사람 전체 수를 한 번에 센 스냅샷 한 키(meet-snapshot, MEET_SNAPSHOT_MINUTES 기본 30분 지나면 다시 셈). CDN s-maxage도 같은 값
+  api/profile/          index(익명 id·복구 코드 발급, 오늘 기록이 생긴 뒤에만) · sync · restore(지금은 화면 없음)
+  api/share/            오늘의 실 링크 만들기(POST) · [token]/image(카드 그림)
+  routes/t/[token].get.ts /t/{token}: SPA 껍데기 HTML에 그 링크의 OG meta(utils/share-page.ts defineShareRoute). 예전 /d·/p·/v는 첫 화면으로
+  api/today-snapshot.get.ts 모두의 오늘 읽기: 마음 수 스냅샷 한 키(meet-snapshot, MEET_SNAPSHOT_MINUTES 기본 30분). CDN s-maxage도 같은 값
   api/cron/cleanup.get.ts Vercel Cron(서울 새벽 4시, nuxt.config의 nitro.vercel.config.crons). CRON_SECRET Bearer 검사 후 이틀 지난 날짜 키 SCAN·DEL
-  api/thanks/           다른 사람들의 고마움: POST(고마워요 1번 세기, 같은 기기·같은 날·같은 사람은 한 번) · GET ?ids=(오늘 수·누적 수)
   plugins/kv.ts         useStorage('kv'): Upstash(env 있을 때) / 개발 .data/kv 파일 / 그 밖 메모리
-  utils/kv.ts           incrementCounter(INCR, EXPIRE는 처음 한 번만·없으면 청소가 지움), incrementScores(ZINCRBY), setIfAbsent, hllAdd/hllCount, scanKeys/deleteKeys, hashIp. 키는 Redis에서 mdp: 아래
+  utils/kv.ts           incrementCounter, incrementScores(ZINCRBY), setIfAbsent, hllAdd/hllCount, scanKeys/deleteKeys, hashIp. 키는 Redis에서 mdp: 아래
   utils/ai-cache.ts     캐시 읽기·쓰기(hits, firstSeen), allowAiCall(한국 자정 기준), countMissing(준비 중 재료 집계)
-  utils/gratitude.ts    고마움 수 키(thanks:day·thanks:total·thanks:seen). 사람 한 명씩만 읽고 순위는 만들지 않는다
+  utils/visitor.ts      visitorKey: 하루 한 번 세기의 '누가'(사용자 id 해시, 없으면 IP 해시)
   utils/users.ts        user:{id}(메타+진행 상황 한 값), code:{code}→id. 나중 로그인 연결 구조 주석
   utils/matcher.ts      대표 물건 + 물건 사전으로 만든 서버 매처 (사전을 클라이언트 번들에 넣지 않으려고 서버에 둔다)
   utils/decompose.ts    Claude Messages API 호출. SYSTEM·buildTool을 사전 스크립트와 공유. voice/twist는 looksFactual로 거름
-                        주재료가 목록에 없으면 대신하지 않고 missing_ingredients로 받는다 → 화면에 "○○의 여정은 아직 준비 중이에요"
 app/
-  composables/useGame.ts  게임 상태·규칙 (effectScope로 저장 watch, 여정 횟수 제한 없음(AI 입력만 서버가 IP별 하루 한도), 미스터리 여정, 닉네임, 기능 열림 opens·알림)
-  composables/useTodayMeets.ts 모두의 오늘 보내기(모아서·하루 한 번)·읽기. plugins/meet.client.ts가 useGame의 onMeet에 붙인다
-  composables/usePanZoom.ts 마을 지도 끌기·두 손가락·휠 확대(라이브러리 없이), 8px 이상 끌면 클릭 무시.
-                          보기(위치·배율)는 반응형이 아니다: rAF로 한 프레임에 한 번 VillageMap의 paint()가 지도 요소에 직접 쓴다.
-                          반응형은 far(0.25 경계) 하나. will-change는 움직이는 동안만(멈추고 150ms 뒤 뗀다, 늘 붙이면 휴대폰에서 축소 시 타일이 빈다). 지도 위에 템플릿으로 transform·배율 값을 묶지 말 것(움직일 때마다 주민 213명을 다시 그린다)
-  composables/useSync.ts  서버 동기화·복구 코드로 이어 하기 (plugins/sync.client.ts가 호출)
-  components/             ResidentSheet(주민 카드) · FriendshipPanel(친해진 정도) · MeetAgain(또 만났어요)
-                          NicknameEditor·DeviceTransfer(마을 메뉴의 설정) · RecordTabs(지난 기록 안 오늘/나의 실타래 전환)
-                          VillageMap(내 마을·친구 마을이 같이 쓰는 지도) · FriendResidentSheet · FlowerMark · IntroSheet(이 분 소개하기)
-                          KeyIntro(핵심 인물 여정 시작: 세 사람의 그곳 시각 띠) · KeyPerson(핵심 인물 화면) · KeyGroup(그리고 이 사람들도요)
-                          PlaceSky(여정 사람 카드 위 하늘·시계·장면 그림) · FormBadge(지금 물건의 형태) · RewindReplay(빨리 감기 엔딩) · IncomingCard(오고 있는 물건)
-  pages/                  index(내 하루 마을: 지도·주민·주민 카드·오고 있는 물건, 처음 온 사람은 /test로) · test(10초 테스트)·test/result
-                          d/[token](친구가 보낸 하루 → "당신의 하루는요?") · v/[token](친구 마을: 주민에게 고마워요 → 꽃)
-                          p/[token](소개받은 사람: 15초 안에 끝나는 다섯 단계, 가입 없이 고마워요) · arrival/[id](밤사이 도착했어요) · add(오늘 쓴 물건 넣기: 물건 타일 + 직접 쓰기·사진, 미스터리로 가는 길)
-                          journey/[id] · mystery · dex(통계) · result(기록: 오늘 여정·html-to-image 공유) · threads(기록 안 나의 실타래)
-                          하단 탭은 2개(마을·도감). 지난 기록(/result·/threads)은 마을 메뉴에서, 미스터리는 물건 넣기 화면에서 연다.
-                          도감에는 진행률·세트·카드 목록만 둔다
-  utils/share-image.ts    공유 이미지 1080×1350을 캔버스로 그린다(나의 하루 유형·두 사람의 하루). 글씨는 위아래 80px 안쪽
-  utils/day-test.ts       테스트 물건 18개의 아이콘(형태 아이콘, 없던 7개는 완성품 아이콘 product-*). tests/forms.test.ts가 파일·index.json을 검사
-  utils/pan-zoom.ts       지도 배율(최소 = 섬 전체가 위·아래 카드 사이 영역에 들어오는 크기, 최대 1.4)·위치 제한(insets 기준, 작으면 영역 가운데), 한 점 기준 확대, 주민 누르는 영역 hitBox(140×210, 화면 최소 44px),
-                          멀리 보기 FAR_SCALE 0.25 (usePanZoom.ts·VillageMap이 쓰는 순수 함수)
-  utils/motion.ts         모든 시간 값(전환 0.3초·토스트·고마워요 손 흔들기·자동 넘김 3~6초). CSS는 plugins/motion.client.ts가 넣는 --motion-* 변수
+  composables/useGame.ts  저장소(localStorage + effectScope watch). replaceSave·snapshotSave
+  composables/useSync.ts  서버 동기화·복구 코드로 이어 하기 (plugins/sync.client.ts가 앱을 열 때 호출)
+  composables/useTodayMeets.ts 모두의 오늘: 마음 묶기(tieMood)·스냅샷 읽기
+  utils/share-image.ts    오늘의 실 카드(drawQuoteCard)·savePng
+  utils/motion.ts         모든 시간 값. CSS는 plugins/motion.client.ts가 넣는 --motion-* 변수
   utils/local-match.ts    대표 물건 + 앱용 사전으로 서버 없이 즉시 분해
-  utils/character.ts      모자(hat)·소품(prop) 파츠를 조합한 SVG 콩 캐릭터
-  utils/product-icon.ts   메인 물건 타일 아이콘. 대표 물건을 추가하면 여기도 그린다(없으면 상자 모양)
 scripts/check-data.ts     데이터 검사. 모든 변경 후 반드시 통과시킬 것
-scripts/key-candidates.ts 핵심 자리에 올 수 있는 사람 목록·이야기 유무·자리에 서는 비율 → docs/key-candidates.md (npm run key-candidates)
-scripts/build-og-cards.ts OG 이미지를 resvg로(마을 초대 공통 한 장, 사람 카드 소개 사람마다 한 장). 글꼴은 scripts/fonts의 Pretendard OTF(OFL) (npm run build:og-cards)
+scripts/key-candidates.ts 핵심 자리에 올 수 있는 사람 목록 → docs/key-candidates.md (npm run key-candidates)
+scripts/build-og-cards.ts 오늘의 실 공통 OG(public/og/thread.png)를 resvg로. 글꼴은 scripts/fonts의 Pretendard OTF(OFL) (npm run build:og-cards)
 scripts/build-scenes.ts   장면 그림을 webp, 가로 1200px 이하로 (npm run scenes, sharp)
-scripts/build-og.ts       OG 이미지(하루 유형 9장 1200×630)를 이 컴퓨터의 Chrome·Edge로 찍어 public/og에 (npm run build:og)
-scripts/day-type-dist.ts  하루 유형 분포(3~5개 조합 12,444가지). 한 유형이 25%를 넘으면 실패 (npm run check:day-types)
-scripts/sync-prop-icons.ts 캐릭터 소품 7개를 형태 아이콘(public/forms/prop-*.svg)으로 옮긴다. 소품을 고치면 다시 실행
-public/village/map-overview.png 지도 전체를 반 크기(1400×2100)로 미리 그린 PNG (npm run build:map-overview). 지도 SVG 아래에 깔고, 배율 0.3 미만에서는 이것만 보인다
-public/village/map.svg   마을 지도 2800×4200 (scripts/gen_map2.py로 그린 그림. 출처 메타데이터 <metadata>가 붙어 있어 resvg에 넣을 때는 뺀다)
-scripts/gen_map2.py       마을 지도 생성기(python). map.svg와 scripts/village-layout.json(구역 이름표·범위·자리·빈 땅)을 만든다. 값은 data/village.ts에 옮겨 적는다
-public/forms/             형태 아이콘 SVG와 index.json(slug → ko·group). tests/forms.test.ts가 formIcon이 모두 있는지 검사
 scripts/build-dictionary.ts  data/seeds/*.txt → Message Batches API → dictionary.json + data/review/dictionary.csv (--dry-run, --limit, --resume)
 scripts/import-foodsafety.ts (선택, 실행 보류) 식품안전나라 원재료 → 재료 규칙 연결 뼈대
 scripts/update-origins.ts (실행 보류) 관세청 수출입실적 → 출발지 가중치 제안 뼈대
