@@ -12,7 +12,7 @@ import { FORMS } from '../shared/data/forms'
 import { roundKm } from '../shared/distance'
 import { hasKeyStory } from '../shared/key-story'
 import { pickRoute } from '../shared/pick'
-import { RECENT_WALKS, branchLegs, formChanges, selfOnWalk, rememberWalk, wakeCounts, walkLegs, walkSummary, walkJourneyId, walkPath, walkPeople } from '../shared/walk'
+import { branchLegs, formChanges, selfOnWalk, wakeCounts, walkLegs, walkSummary, walkJourneyId, walkPath, walkPeople } from '../shared/walk'
 
 const AMERICANO = { materialIds: ['coffee', 'plastic'], name: '아이스 아메리카노' }
 
@@ -34,14 +34,9 @@ test('걷기는 아무것도 쌓지 않는다: 만남 기록·이어진 사람�
   assert.equal(JSON.stringify(save), before)
   assert.deepEqual(historyOf(save.todays), [])
   assert.deepEqual(strandsOf(save.todays), [])
-  // 최근 걸어 본 물건: 맨 앞에, 중복 없이, 5개까지
-  let recent: string[] = []
-  for (const n of ['라면', '커피', '라면', 'a', 'b', 'c', 'd']) recent = rememberWalk(recent, n)
-  assert.deepEqual(recent, ['d', 'c', 'b', 'a', '라면'])
-  assert.equal(recent.length, RECENT_WALKS)
   // 걷기 화면은 저장값(게임 상태·하루 기록·기기에만 남기는 한 줄)을 건드리지 않는다
   const page = readFileSync(new URL('../app/pages/walk.vue', import.meta.url), 'utf8')
-  for (const forbidden of ['useGame', 'useToday', 'game.state', 'todays', 'setLocalDay', 'today-local']) assert.ok(!page.includes(forbidden), forbidden)
+  for (const forbidden of ['useGame', 'useToday', 'game.state', 'todays', 'setLocalDay', 'today-local', 'localStorage']) assert.ok(!page.includes(forbidden), forbidden)
 })
 
 test('맨 위 요약: 길 위의 사람을 그곳 시각의 일·저녁·잠으로 나눠 센다', () => {

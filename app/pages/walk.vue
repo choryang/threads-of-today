@@ -8,7 +8,7 @@ import { seoulDateKey, withJosa } from '../../shared/logic'
 import { factOf } from '../../shared/friendship'
 import { placeLabel } from '../../shared/rewind'
 import { formatKm, roundKm } from '../../shared/distance'
-import { branchLegs, formChanges, selfOnWalk, rememberWalk, wakeCounts, walkLegs, walkJourneyId, walkSummary, walkPath, walkPeople, type LegGap, type LegMode, type Walk } from '../../shared/walk'
+import { branchLegs, formChanges, selfOnWalk, wakeCounts, walkLegs, walkJourneyId, walkSummary, walkPath, walkPeople, type LegGap, type LegMode, type Walk } from '../../shared/walk'
 import { MOTION } from '../utils/motion'
 import { resolveItem } from '../utils/resolve-item'
 
@@ -21,31 +21,12 @@ import { resolveItem } from '../utils/resolve-item'
  * 바다·하늘·땅 구간과 대략 거리(100km 단위, walkLegs). 바다 구간은 실을 점선으로. 갈래 끝 칸 아래는 내 손 쪽 첫 사람까지.
  * 길 위에 '나'(시트에서 "이건 나예요"로 표시한 칸, useSelf)가 있으면 그 매듭을 '나'처럼 채우고 한 번 반짝이며, 맨 위·끝 요약에 한 줄씩.
  * 끝에 'N개 나라, 약 …km, M명의 손'과, 오늘 고를 수 있는 길에 이야기가 있는 사람이 있으면 '오늘 저녁 …'(오늘 이미 만났으면 '내일 저녁').
- * 아무것도 쌓지 않는다: 하루 기록·만난 사람·이어진 실에 넣지 않고 점수·개수도 없다. 최근 걸어 본 물건 5개만 이 기기에(localStorage)
+ * 아무것도 쌓지 않는다: 하루 기록·만난 사람·이어진 실에 넣지 않고 점수·개수도 없다. 걸어 본 물건도 남기지 않는다.
  */
 useHead({ htmlAttrs: { class: 'today-ui' }, title: '실 따라 걷기' })
 
-/** 먹고 입는 것 넷 + 새로 생긴 길(책·노래·컴퓨터·영화) 넷 */
-const CHOICES = ['아이스 아메리카노', '라면', '스마트폰', '운동화', '책', '노래', '컴퓨터', '영화']
-const RECENT_KEY = 'my-day-people:walk-recent'
-
-const recent = ref<string[]>([])
-onMounted(() => {
-  try {
-    const v = JSON.parse(window.localStorage.getItem(RECENT_KEY) ?? '[]')
-    recent.value = Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string').slice(0, 5) : []
-  } catch {
-    recent.value = []
-  }
-})
-function remember(name: string) {
-  recent.value = rememberWalk(recent.value, name)
-  try {
-    window.localStorage.setItem(RECENT_KEY, JSON.stringify(recent.value))
-  } catch {
-    // 저장이 막히면 이번 방문 동안만
-  }
-}
+/** "어? 이것도?" 싶은 길: 지폐(목화), 립스틱(팜유·나무), 크레파스, 영수증, 반창고, 껌, 그리고 나라를 많이 건너는 떡볶이·마라탕 (모두 앱 안 사전으로 바로 잡힌다) */
+const CHOICES = ['지폐', '립스틱', '떡볶이', '영수증', '반창고', '크레파스', '껌', '마라탕']
 
 const query = ref('')
 const busy = ref(false)
@@ -91,7 +72,6 @@ async function go(name: string) {
   }
   item.value = res
   query.value = res.name
-  remember(res.name)
   newWalk()
 }
 function back() {
@@ -196,13 +176,7 @@ const wake = computed(() => (walk.value ? wakeCounts(walkPeople(walk.value), new
         <input id="walk-item" v-model="query" placeholder="물건, 노래, 영화… 무엇이든" maxlength="60" autocomplete="off" enterkeyhint="go">
       </form>
       <p v-if="error" class="error" role="alert">{{ error }}</p>
-      <template v-if="recent.length">
-        <span class="list-title">최근 걸어 본 것</span>
-        <div class="chips">
-          <button v-for="name in recent" :key="`r-${name}`" class="chip" @click="go(name)">{{ name }}</button>
-        </div>
-      </template>
-      <span class="list-title">자주 고르는 것</span>
+      <span class="list-title">이런 것도 걸어 봐요</span>
       <div class="chips">
         <button v-for="name in CHOICES" :key="name" class="chip" @click="go(name)">{{ name }}</button>
       </div>

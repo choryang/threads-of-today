@@ -13,7 +13,7 @@ import { clockAt, doingBucket } from './local-time'
  * 실 따라 걷기 (docs/redesign/README.md): 하루 한 편 이야기와 별개로, 언제든 물건의 길을 구경한다.
  * 경로는 forwardTimeline의 사람 칸만(퀴즈·숨은 만남·이벤트 없음), 재료마다 갈래, 끝에 가게 사람(closingPeople).
  * 출발지 변형은 걸을 때마다 무작위(여정 id를 새로 만든다).
- * 걷기는 아무것도 쌓지 않는다: 만난 사람·이어진 실·마음 기록에 넣지 않는다. 기기에 남기는 건 최근 걸어 본 물건 이름 5개뿐.
+ * 걷기는 아무것도 쌓지 않는다: 만난 사람·이어진 실·마음 기록에 넣지 않고, 걸어 본 물건도 기기에 남기지 않는다.
  */
 export interface WalkBranch {
   materialId: string
@@ -45,12 +45,6 @@ export function walkPath(materialIds: string[], journeyId: string, itemName: str
 /** 걸을 때마다 새 여정 id (출발지 변형이 달라진다). random은 0~1 */
 export function walkJourneyId(date: string, random: () => number = Math.random): string {
   return `${date}-1-w${Math.floor(random() * 36 ** 5).toString(36).padStart(5, '0')}`
-}
-
-export const RECENT_WALKS = 5
-/** 최근 걸어 본 물건: 맨 앞에, 같은 이름은 하나, 5개까지 */
-export function rememberWalk(list: string[], name: string): string[] {
-  return [name, ...list.filter((n) => n !== name)].slice(0, RECENT_WALKS)
 }
 
 /** 길 위에 '나'(이 앱을 쓰는 진짜 사람으로 표시한 칸)가 있는지 */
