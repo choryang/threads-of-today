@@ -1,9 +1,8 @@
-import { LINK_RULES, MATERIALS, PRODUCTS, SETS } from './data/materials'
+import { LINK_RULES, MATERIALS, SETS } from './data/materials'
 import { timelinePeople } from './journey'
-import { hash, seeded } from './random'
 import { PEOPLE } from './data/people'
 import { PLACES } from './data/places'
-import type { CardSet, Product } from './types'
+import type { CardSet } from './types'
 
 
 export const MAX_MATERIALS = 5
@@ -110,23 +109,3 @@ export function previousDateKey(key: string): string {
   const [y, m, d] = key.split('-').map(Number)
   return dateKey(new Date(y!, m! - 1, d! - 1))
 }
-
-export function mysteryProduct(key: string): Product {
-  return PRODUCTS[hash(`mystery:${key}`) % PRODUCTS.length]!
-}
-
-/** 정답 포함 6개 보기, 날짜마다 같은 순서 */
-export function mysteryOptions(key: string): Product[] {
-  const answer = mysteryProduct(key)
-  const rand = seeded(hash(`options:${key}`))
-  const others = PRODUCTS.filter((p) => p.id !== answer.id)
-    .map((p) => ({ p, r: rand() }))
-    .sort((a, b) => a.r - b.r)
-    .slice(0, 5)
-    .map((x) => x.p)
-  return [...others, answer]
-    .map((p) => ({ p, r: rand() }))
-    .sort((a, b) => a.r - b.r)
-    .map((x) => x.p)
-}
-

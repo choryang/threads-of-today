@@ -31,7 +31,9 @@ import { PEOPLE, PEOPLE_LIST } from './data/people'
 import { LOG_CAP, legacyMeeting, mergePersonLog } from './friendship'
 import { isManageKey, isToken } from './share'
 import { normalizeNickname } from './nickname'
-import { UNLOCK_STEP_IDS } from './unlocks'
+
+/** 예전 기획의 기능 열림 단계 id (shared/unlocks.ts는 지웠다). 예전 기록의 unlockSeen·unlockedOn을 검사할 때만 쓴다 */
+const UNLOCK_STEP_IDS: string[] = ['day1', 'second-journey', 'journeys-3', 'journeys-5', 'journeys-7', 'journeys-10', 'first-best']
 
 export type JourneySource = 'text' | 'photo' | 'pick' | 'mystery'
 

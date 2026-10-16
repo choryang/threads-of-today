@@ -11,19 +11,14 @@ import { isMoodId } from '../shared/data/moods'
 import dictionary from '../shared/data/dictionary.json'
 import { EVENTS, HIDDEN_RULES } from '../shared/data/journey-extras'
 import { SYNONYM_GROUPS } from '../shared/data/synonyms'
-import { SET_THANKS_SCENES, THANKS_BY_PERSON } from '../shared/data/thanks'
 import { CLOSINGS, CLOSING_PEOPLE, IMPORT_OFFICE, closingKind, type ClosingKind } from '../shared/data/shops'
-import { thanksRepliesOf } from '../shared/thanks'
 import { buildTimeline, forwardTimeline, quizzesOf, resolveStages, reverseTimeline, timelinePeople } from '../shared/journey'
 import { FORMS } from '../shared/data/forms'
 import { reverseDistances } from '../shared/distance'
-import { createIncoming } from '../shared/incoming'
 import { looksFactual } from '../shared/safety'
 import { CODE_WORDS } from '../shared/recovery'
 import { NICKNAME_MAX, NICKNAME_PARTS } from '../shared/nickname'
-import { dayStats, findLinkCards, journeyMaterialIds, mysteryOptions, mysteryProduct } from '../shared/logic'
-import { MYSTERY_HINT_COUNT, middleCandidates, mysteryHints } from '../shared/mystery'
-import { MYSTERY_INFO } from '../shared/data/mystery'
+import { dayStats, findLinkCards, journeyMaterialIds } from '../shared/logic'
 import { createMatcher, match, productEntries, type DictEntry } from '../shared/match'
 import { WORK_QUIZZES } from '../shared/data/work-quizzes'
 import { factOf, quizOf } from '../shared/friendship'
@@ -264,20 +259,6 @@ for (const e of dictionary as DictEntry[]) {
   for (const v of [...(e.voices ?? []), e.twist ?? '']) if (v && looksFactual(v)) errors.push(`사전 ${e.key}: 사실처럼 보이는 문구 "${v}"`)
 }
 
-// 고마워요: 모든 사람에게 답이 2개 이상, 세트마다 감사 장면. 숫자·이모지 없이
-const EMOJI = /\p{Extended_Pictographic}/u
-for (const person of PEOPLE_LIST) {
-  const replies = thanksRepliesOf(person.id)
-  if (replies.length < 2) errors.push(`${person.id}: 고마워요 답이 ${replies.length}개`)
-  for (const r of replies) if (/[0-9]/.test(r) || EMOJI.test(r)) errors.push(`${person.id}: 답에 숫자·이모지 "${r}"`)
-}
-for (const id of Object.keys(THANKS_BY_PERSON)) if (!PEOPLE[id]) errors.push(`고마워요 답: 사람 ${id} 없음`)
-for (const set of SETS) {
-  const lines = SET_THANKS_SCENES[set.id] ?? []
-  if (!lines.length) errors.push(`${set.id}: 감사 장면 없음`)
-  for (const line of lines) if (/[0-9]/.test(line) || EMOJI.test(line)) errors.push(`${set.id}: 장면에 숫자·이모지`)
-}
-
 // 복구 코드 낱말: 두 글자, 중복 없음, 경우의 수 확보
 if (CODE_WORDS.length < 100) errors.push(`복구 코드 낱말이 ${CODE_WORDS.length}개뿐이에요 (100개 이상)`)
 if (new Set(CODE_WORDS).size !== CODE_WORDS.length) errors.push('복구 코드 낱말 중복')
@@ -309,13 +290,6 @@ if (match('ㅁㄴㅇㄹ') !== null) errors.push('match 무의미 입력이 매�
 const links = findLinkCards([{ materialIds: ['cobalt', 'lithium'] }])
 if (!links.includes('link-cn-refinery')) errors.push(`연결 카드 실패: ${links}`)
 
-for (const key of ['2026-10-14', '2026-10-15', '2027-01-01']) {
-  const answer = mysteryProduct(key)
-  const options = mysteryOptions(key)
-  if (options.length !== 6 || !options.find((o) => o.id === answer.id)) errors.push(`${key}: 미스터리 보기 오류`)
-  if (new Set(options.map((o) => o.id)).size !== 6) errors.push(`${key}: 보기 중복`)
-}
-
 console.log('물건 사전', dictKeys.size, '· 재료', MATERIAL_LIST.length, '· 사람 카드', PEOPLE_LIST.length, '· 대표 물건', PRODUCTS.length, '· 장소', Object.keys(PLACES).length)
 console.log('스마트폰 하루 통계', dayStats([{ materialIds: phone!.materialIds }]))
 
@@ -338,27 +312,6 @@ for (let i = 0; i < N; i++) {
 for (const old of ['2026-10-14-1', '2026-10-14-1abcd']) if (JSON.stringify(buildTimeline(['coffee', 'cacao'], old)) !== JSON.stringify(buildTimeline(['coffee', 'cacao']))) errors.push(`예전 여정 id ${old}는 기본 경로여야 함`)
 if (resolveStages(MATERIAL_LIST.find((m) => m.id === 'coffee')!, null).stages[0] !== 'coffee-picker') errors.push('기본 출발지 오류')
 console.log(`여정 ${N}개(커피·카카오·연어): 이벤트 ${Math.round((withEvent / N) * 100)}%, 숨은 만남 ${Math.round((withHidden / N) * 100)}%, 커피 첫 사람`, originCount)
-// 미스터리 힌트: 모든 대표 물건이 힌트 5개, 1~4번에 정답 이름(물건 이름·별칭)이 없을 것. 날짜별 보기 조합으로도 확인
-const answerWords = (p: (typeof PRODUCTS)[number]) => [...new Set([p.name, ...p.aliases].flatMap((w) => [w, w.replace(/\s+/g, '')]).filter((w) => w.length >= 2))]
-function checkHints(p: (typeof PRODUCTS)[number], hints: string[], where: string) {
-  if (hints.length !== MYSTERY_HINT_COUNT || hints.some((h) => !h)) errors.push(`미스터리 ${p.id}${where}: 힌트가 ${MYSTERY_HINT_COUNT}개가 아님 ${JSON.stringify(hints)}`)
-  for (const [i, h] of hints.slice(0, 4).entries()) {
-    const word = answerWords(p).find((w) => h.replace(/\s+/g, '').includes(w.replace(/\s+/g, '')))
-    if (word) errors.push(`미스터리 ${p.id}${where}: 힌트 ${i + 1}에 정답 이름 '${word}' — ${h}`)
-  }
-}
-for (const p of PRODUCTS) {
-  if (!MYSTERY_INFO[p.id]) errors.push(`미스터리 ${p.id}: 쓰임새·분류 데이터 없음`)
-  if (!middleCandidates(p).length) errors.push(`미스터리 ${p.id}: 힌트 3에 쓸 중간 사람이 없음`)
-  checkHints(p, mysteryHints(p), '')
-}
-for (const id of Object.keys(MYSTERY_INFO)) if (!PRODUCTS.find((p) => p.id === id)) errors.push(`미스터리 데이터 ${id}: 대표 물건에 없음`)
-for (let i = 0; i < 120; i++) {
-  const d = new Date(2026, 9, 15 + i)
-  const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-  const answer = mysteryProduct(key)
-  checkHints(answer, mysteryHints(answer, mysteryOptions(key).filter((o) => o.id !== answer.id)), ` (${key})`)
-}
 // 일의 크기 한 줄: 40자 이내 해요체, 숫자 앞에 '약'·'보통', 출처(이름·연도·URL) 필수, 임금·사고 같은 이야기는 넣지 않는다
 const FORBIDDEN_FACT = ['임금', '월급', '시급', '연봉', '소득', '빈곤', '가난', '사고', '부상', '사망', '다쳐', '힘들']
 for (const person of PEOPLE_LIST) {
@@ -501,23 +454,6 @@ for (const p of PEOPLE_LIST) {
 }
 console.log('친해진 정도: 사실 없음', noFact.length, '명 · 퀴즈 없음', noQuiz.length, '명 (퀴즈가 없으면 90%까지)')
 
-// 오고 있는 물건: 대표 물건마다 여정 40개 중 하나라도 생길 수 있는지 (운송 구간 + 아직 못 만난 평범한 사람)
-const canIncoming: string[] = []
-const noIncoming: string[] = []
-for (const product of PRODUCTS) {
-  let ok = false
-  for (let i = 0; i < 40 && !ok; i++) {
-    const id = `2026-10-15-1-${i.toString(36).padStart(4, '0')}-r`
-    const fwd = forwardTimeline(product.materialIds, id, product.name)
-    const owned = new Set(fwd.flatMap((t) => (t.type === 'stage' || t.type === 'hidden' ? [t.personId] : [])))
-    ok = !!createIncoming({ id, name: product.name, materialIds: product.materialIds }, owned, [], Date.UTC(2026, 9, 15, 3))
-  }
-  ;(ok ? canIncoming : noIncoming).push(product.name)
-}
-console.log('오고 있는 물건: 생길 수 있는 물건', canIncoming.length, '개 · 생길 수 없는 물건', noIncoming.length, '개', noIncoming.join(', '))
-
-const today = mysteryProduct('2026-10-15')
-console.log('오늘 미스터리', today.name, mysteryHints(today, mysteryOptions('2026-10-15').filter((o) => o.id !== today.id)))
 if (errors.length) {
   console.error('\n오류', errors.length, '건\n' + errors.join('\n'))
   process.exit(1)

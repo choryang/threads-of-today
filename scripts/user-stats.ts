@@ -78,15 +78,13 @@ async function main() {
 
   table('사용자', [
     ['전체', sum.users],
-    ['여정을 1번 이상 마친 사용자', sum.journeyed],
-    ['하루 유형 테스트를 한 사용자', '기록 없음 (아래 /d 링크 수 참고)'],
+    ['하루 기록을 1번 이상 남긴 사용자', sum.recorded],
   ])
   table('만든 날짜별 사용자', sum.byDate)
-  table('마을 주민 수 분포', Object.entries(sum.residents))
+  table('하루 기록을 남긴 날 수', Object.entries(sum.days))
   table('살아 있는 공유 링크', [
-    ['/d 하루 유형', sum.shares.day],
-    ['/p 사람 소개', sum.shares.person],
-    ['/v 마을 초대', sum.shares.village],
+    ['/t 오늘의 실', sum.shares.thread],
+    ['예전 링크(/d /p /v)', sum.shares.old],
   ])
   console.log(`\n읽기 명령 ${commands}번 (SCAN·MGET만, 쓰기 0번)`)
 }
