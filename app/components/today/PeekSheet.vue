@@ -13,7 +13,7 @@ import { MOTION } from '../../utils/motion'
 /**
  * 지금 들여다보기 (docs/redesign/README.md): 장면 그림(그곳 지금 시각으로 물든 것) · 지금 그곳 시각과 서울과의 차이 ·
  * "{이름}은 아마 …" · 마지막으로 만난 날과 그날의 내 마음 색 · 지난 이야기(본 편만). 1분마다 다시 그린다.
- * 하루 기록을 읽기만 한다(새 편을 열지 않는다). walk: 걷기에서 연 시트 (이야기 있는 사람이면 끝에 한 줄, 몇 편인지는 말하지 않는다)
+ * 하루 기록을 읽기만 한다(새 편을 열지 않는다). walk: 걷기에서 연 시트 (이름 아래 카드 문구 전문, 이야기 있는 사람이면 끝에 한 줄, 몇 편인지는 말하지 않는다)
  */
 const props = defineProps<{ personId: string; walk?: boolean }>()
 const emit = defineEmits<{ close: [] }>()
@@ -40,6 +40,7 @@ const peek = computed(() => peekOf(game.state.todays, props.personId))
         <h2 class="name">{{ name }}</h2>
         <span class="job">{{ person.name ? person.job : '' }}</span>
       </div>
+      <p v-if="walk" class="intro">{{ person.story }}</p>
       <p class="clock">
         지금 {{ withJosa(placeShort(place), '은', '는') }} <strong>{{ clockLabel(local) }}</strong>
         <span class="diff">(서울보다 {{ diff === '같은 시각' ? '같은 시각' : diff }})</span>
@@ -74,6 +75,7 @@ const peek = computed(() => peekOf(game.state.todays, props.personId))
 .who { margin-top: 8px; display: flex; align-items: baseline; gap: 8px; }
 .name { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.01em; }
 .job { font-size: 14px; color: #6b7079; }
+.intro { margin: 0 0 12px; font-size: 15px; line-height: 1.7; color: var(--t-body, #2a2d33); word-break: keep-all; }
 .clock { margin: 0; font-size: 15px; color: #3f434a; word-break: keep-all; }
 .clock strong { font-weight: 700; color: #14161a; }
 .diff { font-size: 13px; color: #8a8f98; }

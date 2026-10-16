@@ -15,7 +15,7 @@ import { resolveItem } from '../utils/resolve-item'
 /**
  * 실 따라 걷기 (docs/redesign/README.md): 물건 입력 → 그 물건이 지나온 길을 세로 실로. 재료가 여럿이면 재료마다 갈래, 끝에 가게 사람.
  * 맨 위에 지금 이 길 위에서 깨어 있는·자고 있는 사람 수(1분마다).
- * 칸마다 장소 · 지금 그곳 시각(해·달 점) · 일 이름과 이름 · 카드 문구 한 줄 · 지금은 아마 … · (있으면) 작은 장면 그림. 누르면 들여다보기 시트.
+ * 칸마다 장소 · 지금 그곳 시각(해·달 점) · 일 이름과 이름 · 지금은 아마 … · (있으면) 작은 장면 그림. 누르면 들여다보기 시트(카드 문구 전문은 시트에서).
  * 칸 사이(그 칸 아래)에 그 사람 손에서 바뀌는 모습 '커피 체리 → 생두'(forms.ts 이름만, 아이콘은 쓰지 않는다)와
  * 일의 크기(workFact)가 있는 사람은 칸 아래 한 줄, 누르면 출처(PersonCard와 같은 규칙).
  * 바다·하늘·땅 구간과 대략 거리(100km 단위, walkLegs). 바다 구간은 실을 점선으로. 갈래 끝 칸 아래는 내 손 쪽 첫 사람까지.
@@ -97,7 +97,6 @@ function stopOf(personId: string) {
     day: c.h >= 6 && c.h < 18,
     hour: c.h,
     who: p.name ? `${p.job} · ${p.name}` : p.job,
-    story: p.story,
     doing: doingLine(personId, c.h, dayInfo(place.country, place.tz, now)),
     scene: !!sceneOf(personId),
     fact: factOf(personId),
@@ -190,7 +189,6 @@ const wake = computed(() => (walk.value ? wakeCounts(walkPeople(walk.value), new
                 <span class="body">
                   <span class="where">{{ s.where }} <span class="time"><span class="orb" :class="{ day: s.day }" aria-hidden="true" />{{ s.time }}</span></span>
                   <span class="who">{{ s.who }}</span>
-                  <span class="story">{{ s.story }}</span>
                   <span class="doing">{{ s.doing }}</span>
                 </span>
                 <TodaySceneImage v-if="s.scene" class="thumb" :person-id="s.personId" :hour="s.hour" decorative />
@@ -220,7 +218,6 @@ const wake = computed(() => (walk.value ? wakeCounts(walkPeople(walk.value), new
                 <span class="body">
                   <span class="where">{{ s.where }} <span class="time"><span class="orb" :class="{ day: s.day }" aria-hidden="true" />{{ s.time }}</span></span>
                   <span class="who">{{ s.who }}</span>
-                  <span class="story">{{ s.story }}</span>
                   <span class="doing">{{ s.doing }}</span>
                 </span>
                 <TodaySceneImage v-if="s.scene" class="thumb" :person-id="s.personId" :hour="s.hour" decorative />
@@ -288,7 +285,6 @@ const wake = computed(() => (walk.value ? wakeCounts(walkPeople(walk.value), new
 .orb { width: 7px; height: 7px; border-radius: 4px; background: #5f6b8c; }
 .orb.day { background: #f2b33d; }
 .who { font-size: 16px; font-weight: 700; }
-.story { font-size: 14px; color: var(--t-quiet); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .doing { font-size: 13px; color: var(--t-sub); word-break: keep-all; }
 .fact { padding: 0 0 6px 25px; margin-top: -10px; }
 .fact-btn { min-height: 44px; padding: 0; border: 0; background: none; text-align: left; font: inherit; font-size: 13px; line-height: 1.5; color: var(--t-body); word-break: keep-all; cursor: pointer; display: flex; align-items: center; gap: 6px; }
