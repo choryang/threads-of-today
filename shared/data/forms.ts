@@ -202,6 +202,40 @@ export const FORMS: Record<string, MaterialForm[]> = {
     { name: '보리', formIcon: 'barley' },
     { name: '맥아', formIcon: 'malt', by: ['au-malt'] },
   ],
+  // 컴퓨터·주변기기 부품 (아이콘 없음)
+  switch: [
+    { name: '플라스틱 알갱이', formIcon: 'plastic-pellets' },
+    { name: '스위치', by: ['switch-maker'] },
+    { name: '검사 마친 스위치', by: ['switch-tester'] },
+    { name: '키보드', by: ['keyboard-assembler'] },
+  ],
+  pcb: [
+    { name: '구리 광석' },
+    { name: '구리판', by: ['copper-smelter'] },
+    { name: '동박적층판', by: ['ccl-maker'] },
+    { name: '빈 회로기판', by: ['pcb-maker'] },
+    { name: '부품 붙은 기판', by: ['smt-operator'] },
+  ],
+  panel: [
+    { name: '유리 기판' },
+    { name: '패널', by: ['panel-engineer'] },
+    { name: '디스플레이 모듈', by: ['module-assembler'] },
+    { name: '모니터', by: ['monitor-assembler'] },
+  ],
+  cpu: [
+    { name: '웨이퍼' },
+    { name: '회로 새긴 웨이퍼', by: ['cpu-fab'] },
+    { name: 'CPU', by: ['osat'] },
+  ],
+  memory: [
+    { name: '웨이퍼' },
+    { name: '회로 새긴 웨이퍼', by: ['fab-engineer'] },
+    { name: '메모리 칩', by: ['memory-packager'] },
+  ],
+  sensor: [
+    { name: '센서 칩' },
+    { name: '마우스', by: ['mouse-assembler'] },
+  ],
   // 책 만들기: 원고가 손을 거치며 바뀌는 모습 (아이콘 없음)
   publishing: [
     { name: '원고' },

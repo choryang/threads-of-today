@@ -25,6 +25,19 @@ const KO_BY_COUNTRY: Record<string, Record<string, string>> = {
   BR: { 'Republic Day': '공화국 선포일' },
   ID: { 'Chinese New Year': '음력 설' },
   MY: { 'Chinese New Year': '음력 설' },
+  TW: {
+    'Founding of the Republic of China': '중화민국 개국 기념일',
+    "Chinese New Year's Eve": '음력 섣달그믐',
+    'Chinese New Year': '음력 설',
+    'The second day of the Chinese New Year': '음력 설 연휴',
+    'The third day of the Chinese New Year': '음력 설 연휴',
+    'The forth day of the Chinese New Year': '음력 설 연휴',
+    'Chinese New Year Holiday': '음력 설 연휴',
+    'Peace Memorial Day': '평화 기념일',
+    "Children's Day": '어린이날',
+    'Tomb Sweeping Day': '청명절',
+    'National Day / Double Tenth Day': '쌍십절',
+  },
 }
 
 const KO: Record<string, string> = {

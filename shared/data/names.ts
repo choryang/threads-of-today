@@ -63,6 +63,8 @@ export const NAME_GROUPS: NameGroup[] = [
       //   하은은 2008년 상위 이름(위 파이낸셜뉴스), 도윤은 2015년 상위 이름(머니투데이 2015-12-16 https://www.mt.co.kr/society/2015/12/16/2015121616374076724)
       'book-writer': '하은', 'book-translator': '지안', 'book-editor': '도윤', proofreader: '예린', 'cover-designer': '태오',
       typesetter: '수아', 'press-operator': '한결', binder: '나래', 'book-logistics': '다온', bookseller: '소연',
+      // 컴퓨터·주변기기 길: 2008년 상위 이름 중 남은 것(위 파이낸셜뉴스 2009). 메모리 패키징 기술자·조립 PC 기사는 출처 있는 이름이 남지 않아 비워 둔다
+      'copper-smelter': '예준', 'ccl-maker': '윤서', 'panel-engineer': '지우',
     },
   },
   {
@@ -81,6 +83,7 @@ export const NAME_GROUPS: NameGroup[] = [
       'cn-redbean-farmer': '궈잉', // 国英
       'cn-buckwheat-farmer': '융', // 勇
       'cn-tomato-paste': '징', // 静
+      'keyboard-assembler': '민', // 敏 — 2019년 전국 성명 보고 상위 10에 张敏(위 중국신문망 2020-01-20)
     },
   },
   {
@@ -172,10 +175,18 @@ export const NAME_GROUPS: NameGroup[] = [
     names: { 'co-coffee-farmer': '이사벨', 'co-buenaventura-docker': '미겔' },
   },
   {
+    // 대만: 내정부「全國姓名統計分析」(2023년 6월 30일 호적 기준, 2023-10 발간) — 남자 家豪 1위·志明 2위, 여자 淑芬 1위
+    //   https://www.ris.gov.tw/info-liferay/app/channel/pressReleaseDetail/23303697 , 신두 보도 https://newtalk.tw/news/view/2023-10-30/894420
+    country: '대만',
+    names: { 'smt-operator': '자하오', 'sensor-designer': '즈밍', 'cpu-fab': '수펀' },
+  },
+  {
     // 칠레: Emol 2019-09-18, 민사등록청(Registro Civil) 정보공개 자료 — 1970년대에 많이 지은 이름 Rodrigo, Claudia
     //   https://www.emol.com/noticias/Nacional/2019/09/18/961553/Nombres-inscritos-historicos.html
     country: '칠레',
-    names: { 'brine-engineer': '클라우디아', 'cl-grape-farmer': '로드리고' },
+    // José: 1970~2010년에 가장 많이 지은 남자 이름(Cooperativa 2013-09-15, 민사등록청 자료)
+    //   https://cooperativa.cl/noticias/pais/servicios-publicos/registro-civil/estos-son-los-nombres-mas-inscritos-en-2/2013-09-15/105602.html
+    names: { 'brine-engineer': '클라우디아', 'cl-grape-farmer': '로드리고', 'copper-hauler': '호세' },
   },
   {
     // 태국: 내무부 주민등록(ทะเบียนราษฎร์) 이름 상위 20, Sanook 2024-09-13 https://www.sanook.com/campus/1426583/
@@ -221,6 +232,7 @@ export const NAME_GROUPS: NameGroup[] = [
     names: {
       'vn-factory': '흐엉', 'vn-port': '훙', 'hanoi-air': '란', 'phone-tester': '뚜언', 'shrimp-farmer': '끄엉',
       'shrimp-processor': '마이', 'water-keeper': '호아', 'vn-coffee-farmer': '마인', 'vn-coffee-port': '히엔',
+      'module-assembler': '중', // Dũng
     },
   },
   {

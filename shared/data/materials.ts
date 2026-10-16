@@ -221,7 +221,7 @@ const list: Material[] = [
     },
   },
   {
-    id: 'chip', name: '반도체', aliases: ['반도체', '칩', '휴대폰', '스마트폰', '노트북', '컴퓨터', '태블릿', '이어폰', '스마트워치'],
+    id: 'chip', name: '반도체', aliases: ['반도체', '칩', '휴대폰', '스마트폰', '노트북', '태블릿', '이어폰', '스마트워치'],
     stages: ['fab-engineer', 'osat', 'air-cargo'],
     quiz: {
       q: '반도체를 만드는, 먼지가 거의 없는 방을 뭐라고 할까요?',
@@ -271,6 +271,31 @@ const list: Material[] = [
     extraQuizzes: [
       { q: '종이컵 안쪽이 물에 젖지 않는 까닭은?', options: ['얇은 플라스틱 막을 입혀서', '소금을 발라서', '유리를 녹여 발라서'], answer: 0, explain: '종이컵 안쪽에는 아주 얇은 플라스틱 막이 입혀져 있어서 물이 스며들지 않아요.', rewardId: 'forest-auditor' },
     ],
+  },
+  // 컴퓨터·주변기기 부품 길 (docs/redesign/computer-people-review.md). 키캡·몸체는 플라스틱 길, 방열판은 알루미늄 길을 같이 쓴다
+  {
+    id: 'switch', name: '기계식 스위치', aliases: ['기계식 스위치', '키 스위치'],
+    stages: ['switch-maker', 'switch-tester', 'keyboard-assembler', ...SEA],
+  },
+  {
+    id: 'pcb', name: '회로기판', aliases: ['회로기판', '기판', '메인보드'],
+    stages: ['copper-hauler', 'bulk-crew', 'copper-smelter', 'ccl-maker', 'pcb-maker', 'smt-operator', 'air-cargo'],
+  },
+  {
+    id: 'panel', name: '디스플레이 패널', aliases: ['디스플레이 패널', '디스플레이', '패널'],
+    stages: ['glass-maker', 'panel-engineer', 'module-assembler', 'monitor-assembler', ...SEA],
+  },
+  {
+    id: 'cpu', name: 'CPU', aliases: ['CPU', '씨피유', '프로세서'],
+    stages: ['cpu-fab', 'osat', 'air-cargo', 'warehouse'],
+  },
+  {
+    id: 'memory', name: '메모리', aliases: ['메모리', '램카드'],
+    stages: ['fab-engineer', 'memory-packager', 'warehouse'],
+  },
+  {
+    id: 'sensor', name: '광센서', aliases: ['광센서', '마우스 센서'],
+    stages: ['sensor-designer', 'mouse-assembler', ...SEA],
   },
   {
     // 책 = 출판(이 길) + 종이(pulp). 번역서는 출발지 변형으로 (docs/redesign/book-people-review.md)
@@ -658,6 +683,10 @@ export const PRODUCTS: Product[] = [
   { id: 'oj', name: '오렌지 주스', aliases: ['오렌지주스', '주스'], materialIds: ['orange', 'pulp'] },
   { id: 'tofu', name: '두부', aliases: ['두부'], materialIds: ['soybean', 'plastic'] },
   { id: 'bicycle', name: '자전거', aliases: ['자전거', '따릉이'], materialIds: ['steel', 'aluminum', 'rubber'] },
+  { id: 'keyboard', name: '키보드', aliases: ['키보드', '기계식 키보드', '기계식키보드'], materialIds: ['switch', 'pcb', 'plastic'] },
+  { id: 'mouse', name: '마우스', aliases: ['마우스', '무선 마우스', '무선마우스'], materialIds: ['sensor', 'pcb', 'plastic'] },
+  { id: 'monitor', name: '모니터', aliases: ['모니터'], materialIds: ['panel', 'pcb', 'plastic'] },
+  { id: 'desktop', name: '컴퓨터', aliases: ['컴퓨터', '데스크톱', '데스크탑', '본체', '조립 PC', '조립컴퓨터'], materialIds: ['cpu', 'memory', 'pcb', 'chip', 'aluminum'] },
   { id: 'book', name: '책', aliases: ['책', '소설책', '소설', '만화책', '잡지', '교과서', '문제집', '동화책', '시집'], materialIds: ['publishing', 'pulp'] },
   { id: 'notebook', name: '공책', aliases: ['공책', '노트', '다이어리'], materialIds: ['pulp'] },
   { id: 'tuna-can', name: '참치캔', aliases: ['참치캔', '참치'], materialIds: ['tuna', 'steel'] },

@@ -32,6 +32,7 @@ export const COUNTRY_CODE: Record<string, string> = {
   브라질: 'BR',
   콜롬비아: 'CO',
   칠레: 'CL',
+  대만: 'TW',
 }
 
 /**
