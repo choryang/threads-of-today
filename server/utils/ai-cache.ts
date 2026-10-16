@@ -25,7 +25,7 @@ export async function readCache(text: string): Promise<CachedDecompose | null> {
   if (!normalize(text)) return null
   const key = cacheKey(text)
   const entry = await kv().getItem<CachedDecompose>(key)
-  if (!entry?.materialIds || (!entry.materialIds.length && !entry.missing?.length)) return null
+  if (!entry?.materialIds || (!entry.materialIds.length && !entry.missing?.length && !entry.proper)) return null
   const updated = { ...entry, hits: (entry.hits ?? 0) + 1, lastSeen: dateKey() }
   await kv().setItem(key, updated, { ttl: CACHE_TTL })
   return updated
@@ -41,6 +41,7 @@ export async function writeCache(text: string, result: Decomposed): Promise<void
     ...(result.twist ? { twist: result.twist } : {}),
     ...(result.voice ? { voice: result.voice } : {}),
     ...(result.missing?.length ? { missing: result.missing } : {}),
+    ...(result.proper ? { proper: result.proper } : {}),
     hits: 1,
     firstSeen: today,
     lastSeen: today,
@@ -63,10 +64,11 @@ export async function countMissing(missing: string[] | undefined): Promise<void>
   if (missing?.length) await incrementScores(MISSING_KEY, missing)
 }
 
-export const toDecomposed = ({ name, materialIds, twist, voice, missing }: Decomposed): Decomposed => ({
+export const toDecomposed = ({ name, materialIds, twist, voice, missing, proper }: Decomposed): Decomposed => ({
   name,
   materialIds: journeyMaterialIds(materialIds, missing),
   twist,
   voice,
   ...(missing?.length ? { missing } : {}),
+  ...(proper ? { proper } : {}),
 })

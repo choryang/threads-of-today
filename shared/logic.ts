@@ -8,9 +8,15 @@ import type { CardSet, Product } from './types'
 
 export const MAX_MATERIALS = 5
 
+/** 고유명사의 종류. 길 대신 지도에서 그 이름을 찾아 첫 결과를 보여 준다(server/api/whereis). 사람 이름은 넣지 않는다 */
+export const PROPER_KINDS = ['company', 'organization', 'brand', 'service', 'game', 'place'] as const
+export type ProperKind = (typeof PROPER_KINDS)[number]
+
 export interface Decomposed {
   name: string
   materialIds: string[]
+  /** 고유명사면 그 종류. materialIds는 비어 있다 */
+  proper?: ProperKind
   /** 입력을 어떻게 물건으로 이었는지 한 줄 (물건이 아닌 입력일 때) */
   twist?: string
   /** 물건이 직접 건네는 한마디 */

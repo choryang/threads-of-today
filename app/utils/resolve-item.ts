@@ -10,9 +10,14 @@ export interface ResolvedItem {
   materialIds: string[]
 }
 
-type ApiResult = { ok: true; name: string; materialIds: string[]; missing?: string[] } | { ok: false; message: string; limited?: boolean }
+type ApiResult = { ok: true; name: string; materialIds: string[]; missing?: string[]; proper?: string } | { ok: false; message: string; limited?: boolean }
 
-export async function resolveItem(text: string): Promise<ResolvedItem | { error: string }> {
+/** 고유명사(회사·기관·브랜드·서비스·게임·장소): 길 대신 지도에서 찾는다 (걷기, /api/whereis) */
+export interface ProperItem {
+  proper: string
+}
+
+export async function resolveItem(text: string): Promise<ResolvedItem | ProperItem | { error: string }> {
   const value = text.trim().slice(0, 60)
   if (!value) return { error: '물건 이름을 적어 주세요' }
   const local = matchLocal(value)
@@ -23,6 +28,7 @@ export async function resolveItem(text: string): Promise<ResolvedItem | { error:
   try {
     const res = await $fetch<ApiResult>('/api/decompose', { method: 'POST', body: { text: value } })
     if (!res.ok) return { error: res.limited ? '오늘은 직접 쓴 물건을 더 찾을 수 없어요. 아래에서 골라 주세요' : res.message }
+    if (res.proper) return { proper: value }
     const ids = journeyMaterialIds(res.materialIds, res.missing)
     return ids.length ? { name: res.name, materialIds: ids } : { error: '이 물건이 지나온 길은 아직 준비 중이에요. 다른 물건을 골라 주세요' }
   } catch {

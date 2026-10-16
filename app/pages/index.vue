@@ -87,6 +87,10 @@ async function chooseItem(name: string) {
     itemError.value = res.error
     return
   }
+  if ('proper' in res) {
+    itemError.value = "이 이름은 '걷기'에서 지도로 찾아볼 수 있어요. 오늘 손에 닿은 물건을 적어 주세요"
+    return
+  }
   if (!today.chooseItem(res)) {
     itemError.value = '이 물건이 지나온 길은 아직 준비 중이에요. 다른 물건을 골라 주세요'
     return

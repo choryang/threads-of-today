@@ -18,6 +18,10 @@ export default defineNuxtConfig({
     anthropicModel: 'claude-haiku-5-5',
     // NUXT_AI_DAILY_LIMIT: IP별 하루 AI 호출 한도
     aiDailyLimit: 20,
+    // NUXT_GOOGLE_MAPS_KEY: 고유명사를 구글 지도(Places API Text Search)에서 찾을 때. 없으면 지도 검색 링크만 보여 준다
+    googleMapsKey: '',
+    // NUXT_MAPS_DAILY_LIMIT: IP별 하루 지도 검색 한도
+    mapsDailyLimit: 30,
   },
   app: {
     head: {

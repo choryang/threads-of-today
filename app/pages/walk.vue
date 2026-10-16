@@ -53,6 +53,19 @@ const error = ref('')
 const item = ref<{ name: string; materialIds: string[] } | null>(null)
 const walk = ref<Walk | null>(null)
 const peeking = ref<string | null>(null)
+/** 고유명사: 길 대신 지도에서 찾아본 첫 결과와 한마디 (/api/whereis) */
+interface Found { query: string; place: { name: string; address: string; mapsUri: string } | null; quip: string; searchUrl: string }
+const found = ref<Found | null>(null)
+const FOUND_FALLBACK = '이 이름은 길로 잇기보다 지도에서 찾아보는 게 더 재밌을 것 같아요.'
+async function lookUp(name: string) {
+  const res = await $fetch<({ ok: true } & Found) | { ok: false; message: string }>('/api/whereis', { method: 'POST', body: { text: name } }).catch(() => null)
+  if (!res || !res.ok) {
+    error.value = res?.message ?? '연결이 불안정해요. 잠시 후 다시 찾아볼까요?'
+    return
+  }
+  found.value = { query: res.query, place: res.place, quip: res.quip, searchUrl: res.searchUrl }
+  window.scrollTo({ top: 0 })
+}
 
 /** 걸을 때마다 출발지가 달라진다 */
 function newWalk() {
@@ -66,6 +79,11 @@ async function go(name: string) {
   busy.value = true
   error.value = ''
   const res = await resolveItem(v)
+  if ('proper' in res) {
+    await lookUp(res.proper)
+    busy.value = false
+    return
+  }
   busy.value = false
   if ('error' in res) {
     error.value = res.error
@@ -79,6 +97,7 @@ async function go(name: string) {
 function back() {
   item.value = null
   walk.value = null
+  found.value = null
 }
 
 // 그곳 시각은 1분마다 다시 (칸마다 따로 세지 않고 한 번에)
@@ -154,7 +173,27 @@ const wake = computed(() => (walk.value ? wakeCounts(walkPeople(walk.value), new
 
 <template>
   <main class="today with-nav walk">
-    <template v-if="!walk || !item">
+    <template v-if="found">
+      <div class="top">
+        <button class="t-back" aria-label="다른 것 고르기" @click="back">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg>
+        </button>
+      </div>
+      <p class="t-kicker">길 대신 지도에서</p>
+      <h1 class="t-title">{{ withJosa(found.query, '을', '를') }}{{ '\n' }}찾아봤더니</h1>
+      <section v-if="found.place" class="place">
+        <p class="place-name">{{ found.place.name }}</p>
+        <p class="place-address">{{ found.place.address }}</p>
+        <a class="place-link" :href="found.place.mapsUri" target="_blank" rel="noopener noreferrer">Google 지도에서 보기</a>
+      </section>
+      <p class="quip">{{ found.quip || FOUND_FALLBACK }}</p>
+      <a v-if="!found.place" class="place-link" :href="found.searchUrl" target="_blank" rel="noopener noreferrer">Google 지도에서 찾아보기</a>
+      <div class="t-bottom">
+        <button class="t-btn" @click="back">다른 것 걸어 보기</button>
+      </div>
+    </template>
+
+    <template v-else-if="!walk || !item">
       <p class="t-kicker">언제든, 몇 번이든</p>
       <h1 class="t-title">실 따라 걷기</h1>
       <p class="lead">물건 하나가 지나온 길을 걸어 봐요. 걸을 때마다 다른 길이 나올 수 있어요.</p>
@@ -268,6 +307,11 @@ const wake = computed(() => (walk.value ? wakeCounts(walkPeople(walk.value), new
 .chips { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 8px; }
 .chip { min-height: 44px; padding: 0 16px; border: 0; border-radius: 22px; background: var(--t-button-2); color: var(--t-text); font-size: 15px; cursor: pointer; }
 
+.place { margin-top: 24px; padding: 18px 20px; border-radius: 18px; background: var(--t-button-2); }
+.place-name { margin: 0; font-size: 18px; font-weight: 700; color: var(--t-text); word-break: keep-all; }
+.place-address { margin: 6px 0 0; font-size: 14px; line-height: 1.6; color: var(--t-sub); word-break: keep-all; }
+.place-link { display: inline-flex; align-items: center; min-height: 44px; margin-top: 4px; font-size: 13px; color: var(--t-sub); text-decoration: underline; }
+.quip { margin: 20px 0 0; font-size: 17px; line-height: 1.6; font-weight: 500; color: var(--t-text); word-break: keep-all; }
 .top { display: flex; align-items: center; justify-content: space-between; }
 .again { min-height: 44px; padding: 0 4px; border: 0; background: none; color: var(--t-sub); font-size: 14px; text-decoration: underline; cursor: pointer; }
 .t-title { margin-top: 12px; }
