@@ -3,7 +3,7 @@ import { ref } from 'vue'
 import { MOODS, type MoodId } from '../../../shared/data/moods'
 
 /**
- * 2번 화면 (시안 V2Item): 오늘 손에 닿은 물건은요? 입력 + 자주 고르는 것.
+ * 2번 화면 (시안 V2Item): 오늘 손에 닿은 물건은요? 입력 + 고르기 버튼("이런 것도 있어요").
  * 고른 이름을 그대로 넘기고, 재료 찾기는 부모가 한다(resolveItem). 찾는 동안 busy
  */
 const props = defineProps<{ mood: MoodId; choices: string[]; busy?: boolean; error?: string; initial?: string }>()
@@ -50,7 +50,7 @@ function submit() {
     </form>
     <p v-if="error" class="error" role="alert">{{ error }}</p>
 
-    <span class="list-title">자주 고르는 것</span>
+    <span class="list-title">이런 것도 있어요</span>
     <ul class="choices">
       <li v-for="name in choices" :key="name">
         <button :aria-pressed="picked === name" :class="{ on: picked === name }" @click="choose(name)">

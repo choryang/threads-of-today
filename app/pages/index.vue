@@ -20,8 +20,11 @@ useHead({ htmlAttrs: { class: 'today-ui' }, title: '내 하루에 닿은 사람�
 const today = useToday()
 const d = today.draft
 
-/** 자주 고르는 것 (시안 V2Item) */
-const CHOICES = ['아이스 아메리카노', '스마트폰', '참치마요 삼각김밥', '라면', '운동화', '면 티셔츠']
+/**
+ * 고르기 버튼 (시안 V2Item): 오늘 손에 닿았을 법한데 "어? 이것도?" 싶은 길. 모두 앱 안 사전으로 바로 잡히고,
+ * 첫 재료 길에 이야기 사람이 있다(영수증 궈량·도현, 교통카드 무니라·위차이, 떡볶이 영수·우진, 립스틱 위차이·민서, 반창고 무니라·위차이·도현, 초콜릿 로널드·진호·민서)
+ */
+const CHOICES = ['영수증', '교통카드', '떡볶이', '립스틱', '반창고', '초콜릿']
 
 const route = useRoute()
 const game = useGame()
