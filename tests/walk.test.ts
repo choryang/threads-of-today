@@ -94,6 +94,8 @@ test('칸 사이 이동: 바다 위 칸은 건너뛰어 한 구간, 배가 있�
   assert.ok(roundKm(coffee[2]!.km) >= 5000)
   const salmon = walkLegs(['salmon-processor', 'oslo-air', 'air-cargo', 'warehouse'])
   assert.deepEqual(salmon.map((g) => g!.mode), ['land', 'air', 'land'])
+  // 강을 오가는 바지선은 땅, 항구에서 큰 배로는 바다
+  assert.deepEqual(walkLegs(['corn-farmer', 'barge-crew', 'nola-port', 'bulk-crew', 'starch-plant']).map((g) => g!.mode), ['land', 'land', 'sea', 'sea'])
   // 좌표 있는 다음 칸이 없으면 비워 둔다
   assert.deepEqual(walkLegs(['djibouti-docker', 'sea-crew']), [null])
   assert.deepEqual(walkLegs(['barista']), [])
