@@ -113,6 +113,12 @@ const list: Person[] = [
   p('cotton-farmer', '목화 농부', 'in-gujarat', '하얗게 터진 목화솜을 따서 모아요.', 'scarf', 'leaf', 'farm', 'smile'),
   p('cotton-gin', '조면 공장 작업자', 'in-gujarat', '목화솜에서 씨를 빼내고 솜을 꾹꾹 눌러 커다란 덩어리로 묶어요.', 'cap', 'gear', 'coverall', 'smile'),
   p('spinner', '방적 공장 작업자', 'in', '솜을 길게 늘이고 꼬아서 실을 만들어요.', 'scarf', 'spool', 'coverall', 'smile'),
+  // 서울 봉제 기술자. 근거: 서울시 미디어허브 '창신동에 이음피움 봉제역사관 개관'(1961년 평화시장이 문을 열며 동대문 일대에 의류산업 집적지,
+  //   가까운 창신동에 소규모·분업화된 봉제공장), 뉴스토마토 '(벼랑끝 소공인) 시간이 멈춰버린 패션의 메카'(2013, 창신동 일대 가내수공업 형태 공장 3,000여 곳,
+  //   재단·미싱·마무리를 한 곳에서 하는 곳과 공정별로 나뉜 곳), 주간경향 '[골목내시경] 창신동엔 얼마나 많은 봉제공장이 있을까?'(2019, 설계·재단·재봉·마무리·완성
+  //   공정이 공장별로 나뉘어 한 공정을 마치면 다음 공장으로), 서울시 경제분야 누리집(2020 지원 대상 의류봉제·중개 15,205곳). 하루 몇 벌 같은 한 사람 숫자는 못 찾아 넣지 않았다
+  //   https://mediahub.seoul.go.kr/archives/1149791 · https://newstomato.com/ReadNews.aspx?no=369104 · https://weekly.khan.co.kr/article/201905101717291 · https://news.seoul.go.kr/economy/archives/507509
+  p('seoul-sewer', '서울 봉제 기술자', 'kr-changsin', '창신동 골목의 작은 공장에서 재단된 원단을 재봉틀로 이어 옷 한 벌을 만들어요. 다 만든 옷은 가까운 동대문 시장으로 가요.', 'scarf', 'spool', 'apron', 'focus'),
   p('garment-sewer', '봉제 공장 재봉사', 'bd-dhaka', '재단된 원단을 재봉틀로 이어 티셔츠 한 장을 완성해요. 방글라데시는 손꼽히는 의류 수출국이에요.', 'scarf', 'spool', 'apron', 'focus'),
   p('chittagong-port', '치타공 항만 노동자', 'bd-chittagong', '완성된 옷 상자를 컨테이너에 실어 세계로 보내요.', 'safetyHelmet', 'box', 'vest', 'smile'),
   p('cotton-classer', '면화 등급 감정사', 'in-gujarat', '솜의 길이와 색, 섬세함을 살펴 등급을 매겨요.', 'none', 'magnifier', 'lab', 'focus', 'rare', 'quiz'),

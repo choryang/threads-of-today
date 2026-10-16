@@ -58,11 +58,11 @@ export const FORMS: Record<string, MaterialForm[]> = {
     { name: '목화송이' },
     { name: '원면', by: ['cotton-gin'] },
     { name: '면실', by: ['spinner'] },
-    { name: '면 옷', by: ['garment-sewer'] },
+    { name: '면 옷', by: ['garment-sewer', 'seoul-sewer'] },
   ],
   polyester: [
     { name: '폴리에스터 실' },
-    { name: '옷', by: ['vn-factory'] },
+    { name: '옷', by: ['vn-factory', 'seoul-sewer'] },
   ],
   plastic: [
     { name: '원유' },

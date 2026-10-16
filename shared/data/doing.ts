@@ -187,6 +187,7 @@ export const DOING: Record<string, Doing> = {
   'cotton-gin': { work: '목화에서 씨를 빼고 있을 거예요' },
   spinner: { work: '실을 뽑는 기계를 지켜보고 있을 거예요' },
   'garment-sewer': { work: '재봉틀로 옷을 박고 있을 거예요', ...WEEKDAYS },
+  'seoul-sewer': { work: '재봉틀 앞에서 동대문에 보낼 옷을 박고 있을 거예요', ...WEEKDAYS },
   'poly-fiber': { work: '합성섬유 실을 감고 있을 거예요' },
   'vn-factory': { work: '공장에서 물건을 조립하고 있을 거예요', ...WEEKDAYS },
 

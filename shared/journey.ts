@@ -97,9 +97,12 @@ function pickWeighted<T extends { weight: number }>(list: T[], rand: () => numbe
 }
 
 /** 이 재료가 이번 여정에서 지나는 사람들과 출발지 */
-export function resolveStages(m: Material, rand: (() => number) | null): { stages: string[]; origin?: Origin } {
+export function resolveStages(m: Material, rand: (() => number) | null, itemName = ''): { stages: string[]; origin?: Origin } {
   if (!rand || !m.origins?.length) return { stages: m.stages, origin: m.origins?.[0] }
-  const origin = pickWeighted(m.origins, rand)
+  const name = itemName.replace(/\s/g, '')
+  const open = m.origins.filter((o) => !o.forItems || o.forItems.some((w) => name.includes(w)))
+  // 난수는 늘 한 번 굴린다 (물건 이름과 상관없이 다음 칸의 결과가 같은 규칙으로 정해지게)
+  const origin = pickWeighted(open.length ? open : m.origins.slice(0, 1), rand)
   return { stages: [...origin.head, ...m.stages.slice(m.originHead ?? 0)], origin }
 }
 
@@ -138,7 +141,7 @@ export function forwardTimeline(materialIds: string[], journeyId?: string, itemN
   materialIds.forEach((materialId, mi) => {
     const m = MATERIALS[materialId]
     if (!m) return
-    const { stages } = resolveStages(m, rand)
+    const { stages } = resolveStages(m, rand, itemName)
     stages.forEach((personId, si) => {
       items.push({ type: 'stage', materialId, personId })
       if (!rand) return

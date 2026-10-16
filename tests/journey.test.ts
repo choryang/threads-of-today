@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { MATERIALS } from '../shared/data/materials'
-import { buildTimeline, closingPeople, optionOrder, quizFor, quizzesOf } from '../shared/journey'
+import { buildTimeline, closingPeople, forwardTimeline, optionOrder, quizFor, quizzesOf } from '../shared/journey'
 import { closingKind } from '../shared/data/shops'
 import { dayStats, findLinkCards } from '../shared/logic'
 
@@ -88,4 +88,13 @@ test('퀴즈 보기: 같은 여정이면 같은 순서, 정답 자리는 고르�
   }
   const total = counts.reduce((a, b) => a + b, 0)
   for (const c of counts) assert.ok(Math.abs(c / total - 1 / 3) < 0.02, `정답 자리 비율 ${counts.map((x) => (x / total).toFixed(3))}`)
+})
+
+test('서울 봉제 공장 길은 옷 이름일 때만 나온다 (반창고·운동화의 면·폴리에스터에는 없다)', () => {
+  const sewnIn = (name: string, ids: string[]) =>
+    Array.from({ length: 60 }, (_, i) => forwardTimeline(ids, `2026-10-16-1-${i.toString(36)}s`, name)).filter((t) => t.some((x) => x.type === 'stage' && x.personId === 'seoul-sewer')).length
+  assert.ok(sewnIn('면 티셔츠', ['cotton']) > 10)
+  assert.ok(sewnIn('패딩', ['polyester']) > 10)
+  assert.equal(sewnIn('반창고', ['plastic', 'cotton', 'rubber']), 0)
+  assert.equal(sewnIn('운동화', ['rubber', 'polyester']), 0)
 })

@@ -53,7 +53,7 @@ export function pickRoute(materialIds: string[], journeyId: string, itemName: st
   const timeline = forwardTimeline(materialIds, journeyId, itemName)
   const firstStages = timeline.flatMap((t) => (t.type === 'stage' && !t.closing && t.materialId === first.id ? [t.personId] : []))
   // 타임라인이 없을 때(예전 id)도 출발지 변형 규칙은 그대로
-  const route = firstStages.length ? firstStages : resolveStages(first, journeyRandom(journeyId)).stages
+  const route = firstStages.length ? firstStages : resolveStages(first, journeyRandom(journeyId), itemName).stages
   const closing = timeline.flatMap((t) => (t.type === 'stage' && t.closing ? [t.personId] : []))
   return [...new Set([...route, ...closing])]
 }

@@ -8,6 +8,8 @@ import { WORK_QUIZZES } from './work-quizzes'
  * 가장 드문 출발지도 25% 이상 나오게 정했다(2곳 3:2, 3곳 2:1:1, 4곳 1:1:1:1). 실제 통계는 각 재료 주석에 남긴다. 게임이라 허구가 조금 섞여도 되고, 실제 자료에서 가져온 사실에는 출처를 주석으로 남긴다.
  */
 const SEA = ['sea-crew', 'busan-crane', 'warehouse']
+/** 서울 봉제 공장 길이 나오는 물건 이름 (옷만) */
+const CLOTHES = ['옷', '티셔츠', '셔츠', '바지', '후드', '원피스', '치마', '스커트', '블라우스', '자켓', '재킷', '코트', '패딩', '점퍼', '니트', '맨투맨', '조끼', '레깅스', '운동복', '등산복', '바람막이', '플리스']
 
 const list: Material[] = [
   {
@@ -155,6 +157,12 @@ const list: Material[] = [
   {
     id: 'cotton', name: '면', aliases: ['면', '티셔츠', '청바지', '셔츠', '양말', '수건', '에코백', '속옷', '후드티'],
     stages: ['cotton-farmer', 'cotton-gin', 'spinner', 'garment-sewer', 'bd-merchandiser', 'chittagong-port', ...SEA],
+    // 실을 들여와 서울 창신동 봉제 공장에서 짓는 옷(동대문, 옷 이름일 때만). 근거는 people.ts seoul-sewer 주석. 가중치는 게임용(2곳 3:2)
+    originHead: 9,
+    origins: [
+      { id: 'bd', name: '방글라데시', weight: 3, head: ['cotton-farmer', 'cotton-gin', 'spinner', 'garment-sewer', 'bd-merchandiser', 'chittagong-port', ...SEA] },
+      { id: 'kr', name: '서울', weight: 2, head: ['cotton-farmer', 'cotton-gin', 'spinner', 'sea-crew', 'busan-crane', 'seoul-sewer'], forItems: CLOTHES },
+    ],
     quiz: {
       q: '목화솜에서 씨를 빼내는 작업을 뭐라고 할까요?',
       options: ['조면', '방적', '염색'], answer: 0,
@@ -165,6 +173,12 @@ const list: Material[] = [
   {
     id: 'polyester', name: '폴리에스터', aliases: ['폴리에스터', '운동복', '레깅스', '패딩', '운동화', '등산복', '바람막이', '플리스'],
     stages: ['poly-fiber', 'vn-factory', 'vn-port', ...SEA],
+    // 실을 들여와 서울 창신동 봉제 공장에서 짓는 옷(동대문, 옷 이름일 때만). 근거는 people.ts seoul-sewer 주석. 가중치는 게임용(2곳 3:2)
+    originHead: 6,
+    origins: [
+      { id: 'vn', name: '베트남', weight: 3, head: ['poly-fiber', 'vn-factory', 'vn-port', ...SEA] },
+      { id: 'kr', name: '서울', weight: 2, head: ['poly-fiber', 'sea-crew', 'busan-crane', 'seoul-sewer'], forItems: CLOTHES },
+    ],
     quiz: {
       q: '폴리에스터 섬유의 원료는?',
       options: ['나무', '석유', '목화'], answer: 1,

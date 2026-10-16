@@ -34,6 +34,7 @@ const list: Place[] = [
   { id: 'kr-yeongnam', name: '경상도', country: '대한민국', continent: 'korea', tz: 'Asia/Seoul' , lat: 36.57, lng: 128.73 },
   { id: 'kr-honam', name: '전라도', country: '대한민국', continent: 'korea', tz: 'Asia/Seoul' , lat: 35.02, lng: 126.71 },
   { id: 'kr-gangwon-land', name: '강원도', country: '대한민국', continent: 'korea', tz: 'Asia/Seoul' , lat: 37.88, lng: 127.73 },
+  { id: 'kr-changsin', name: '서울 창신동', country: '대한민국', continent: 'korea', tz: 'Asia/Seoul' , lat: 37.576, lng: 127.012 },
   { id: 'kr-garak', name: '서울 가락시장', country: '대한민국', continent: 'korea', tz: 'Asia/Seoul' , lat: 37.49, lng: 127.11 },
   { id: 'kr-daejeo', name: '부산 대저', country: '대한민국', continent: 'korea', tz: 'Asia/Seoul' , lat: 35.21, lng: 128.97 },
   { id: 'kr-ulleung', name: '울릉도', country: '대한민국', continent: 'korea', tz: 'Asia/Seoul' , lat: 37.48, lng: 130.9 },

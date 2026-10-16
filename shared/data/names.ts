@@ -30,7 +30,7 @@ export const NAME_GROUPS: NameGroup[] = [
     country: '대한민국',
     names: {
       // 1945~1958년 상위 이름
-      'rice-farmer': '영수', 'laver-farmer': '순자', 'laver-auctioneer': '정웅', 'dairy-farmer': '영숙',
+      'rice-farmer': '영수', 'laver-farmer': '순자', 'seoul-sewer': '금순', 'laver-auctioneer': '정웅', 'dairy-farmer': '영숙',
       'cabbage-farmer': '영식', 'cabbage-trader': '경숙', 'broiler-farmer': '상철', 'chicken-shop': '명숙',
       'tea-farmer': '옥순', 'tea-roaster': '영길', 'garak-auctioneer': '광수', 'redbean-farmer': '춘자',
       'jeju-buckwheat-farmer': '정순', 'potato-farmer': '영호', 'sweetpotato-farmer': '경자', 'radish-farmer': '정수',

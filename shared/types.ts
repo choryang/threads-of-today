@@ -103,6 +103,8 @@ export interface Origin {
   /** 뽑힐 가중치. 게임용이라 실제 수입 비중이 아니다 (가장 드문 출발지도 25% 이상) */
   weight: number
   head: string[]
+  /** 물건 이름에 이 말 중 하나가 들어 있을 때만 뽑힌다 (서울 봉제 공장 길은 옷일 때만. 반창고·운동화의 면·폴리에스터에는 나오지 않게) */
+  forItems?: string[]
 }
 
 export interface Material {
