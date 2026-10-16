@@ -54,7 +54,7 @@ test('실타래: 늘 같은 모양, 매듭은 나라, 한국·바다는 그리�
   assert.equal(a.ring.length, 3)
   // 매듭 크기는 그 나라에서 만난 사람 수
   const et = a.countries.find((c) => c.country === '에티오피아')!
-  assert.deepEqual(et.people, ['coffee-picker', 'washing-station'])
+  assert.deepEqual(et.people, ['coffee-picker', 'et-coffee-cupper', 'washing-station'])
   assert.ok(et.r > a.countries.find((c) => c.country === '지부티')!.r)
   // 오늘 표시
   assert.equal(a.threads.find((t) => t.materialId === 'coffee')!.today, true)

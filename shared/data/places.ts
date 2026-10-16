@@ -133,6 +133,7 @@ const list: Place[] = [
   { id: 'br-santos', name: '산투스 항구', country: '브라질', continent: 'americas', tz: 'America/Sao_Paulo' , lat: -23.96, lng: -46.33 },
   { id: 'br-mg', name: '브라질 미나스제라이스', country: '브라질', continent: 'americas', tz: 'America/Sao_Paulo' , lat: -21.55, lng: -45.43 },
   { id: 'co-huila', name: '콜롬비아 우일라', country: '콜롬비아', continent: 'americas', tz: 'America/Bogota' , lat: 2.93, lng: -75.28 },
+  { id: 'co-bogota', name: '콜롬비아 보고타', country: '콜롬비아', continent: 'americas', tz: 'America/Bogota' , lat: 4.71, lng: -74.07 },
   { id: 'co-buenaventura', name: '부에나벤투라 항구', country: '콜롬비아', continent: 'americas', tz: 'America/Bogota' , lat: 3.88, lng: -77.03 },
   { id: 'cl', name: '칠레', country: '칠레', continent: 'americas', tz: 'America/Santiago' , lat: -33.45, lng: -70.67 },
   { id: 'cl-atacama', name: '칠레 아타카마 사막', country: '칠레', continent: 'americas', tz: 'America/Santiago' , lat: -23.5, lng: -68.25 },

@@ -477,9 +477,9 @@ for (const zone of ZONES) {
   for (const [x, y] of zone.slots) if (x < x0 - 40 || x > x1 + 40 || y < y0 - 40 || y > y1 + 40) errors.push(`${zone.id}: 자리 (${x}, ${y})가 구역 밖`)
   if (new Set(zone.slots.map((s2) => s2.join())).size !== zone.slots.length) errors.push(`${zone.id}: 같은 자리 두 번`)
   for (const [x, y] of zone.overflow) if (x < 0 || x > MAP_W || y < 0 || y > MAP_H) errors.push(`${zone.id}: 빈 땅 (${x}, ${y})가 지도 밖`)
-  // 그 구역에 살 사람이 모두 자리에 서고(빈 땅까지 가지 않고), 빈 집터 2곳도 남는다
+  // 마을은 새 기획에서 뺀 화면(docs/redesign/unused.md)이라, 자리보다 사람이 많으면 빈 땅(overflow)에 선다. 빈 땅까지 모자라면 오류
   const residents = PEOPLE_LIST.filter((p) => p.kind !== 'link' && p.zone === zone.id).length
-  if (zone.slots.length < residents) errors.push(`${zone.id}: 자리 ${zone.slots.length}개 < 사는 사람 ${residents}명`)
+  if (zone.slots.length + zone.overflow.length < residents) errors.push(`${zone.id}: 자리 ${zone.slots.length}개 + 빈 땅 ${zone.overflow.length}곳 < 사는 사람 ${residents}명`)
 }
 // 자리끼리는 (다른 구역 자리까지) 가로 90 또는 세로 130 떨어져 있다
 const allSlots = ZONES.flatMap((z) => z.slots.map(([x, y]) => ({ z: z.id, x, y })))

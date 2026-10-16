@@ -12,12 +12,12 @@ const SEA = ['sea-crew', 'busan-crane', 'warehouse']
 const list: Material[] = [
   {
     id: 'coffee', name: '커피 원두', aliases: ['커피', '원두', '아메리카노', '라떼', '콜드브루', '에스프레소'],
-    stages: ['coffee-picker', 'washing-station', 'djibouti-docker', ...SEA.slice(0, 2), 'roaster', 'warehouse'],
+    stages: ['coffee-picker', 'washing-station', 'et-coffee-cupper', 'djibouti-docker', ...SEA.slice(0, 2), 'roaster', 'warehouse'],
     // 출발지 변형. 경로 근거는 people.ts 주석. 가중치는 게임용(GAME_WEIGHTS 참고)
-    originHead: 3,
+    originHead: 4,
     origins: [
-      { id: 'et', name: '에티오피아', weight: 1, head: ['coffee-picker', 'washing-station', 'djibouti-docker'] },
-      { id: 'co', name: '콜롬비아', weight: 1, head: ['co-coffee-farmer', 'co-buenaventura-docker'] },
+      { id: 'et', name: '에티오피아', weight: 1, head: ['coffee-picker', 'washing-station', 'et-coffee-cupper', 'djibouti-docker'] },
+      { id: 'co', name: '콜롬비아', weight: 1, head: ['co-coffee-farmer', 'co-coffee-exporter', 'co-buenaventura-docker'] },
       { id: 'vn', name: '베트남', weight: 1, head: ['vn-coffee-farmer', 'vn-coffee-port'] },
       { id: 'br', name: '브라질', weight: 1, head: ['br-coffee-farmer', 'br-santos-coffee'] },
     ],
@@ -35,11 +35,11 @@ const list: Material[] = [
   },
   {
     id: 'cacao', name: '카카오', aliases: ['초콜릿', '초코', '카카오', '코코아', '핫초코', '브라우니'],
-    stages: ['cacao-farmer', 'cacao-dryer', 'abidjan-docker', 'sea-crew', 'cocoa-grinder', 'busan-crane', 'warehouse'],
-    originHead: 3,
+    stages: ['cacao-farmer', 'cacao-dryer', 'ci-cacao-exporter', 'abidjan-docker', 'sea-crew', 'cocoa-grinder', 'busan-crane', 'warehouse'],
+    originHead: 4,
     origins: [
-      { id: 'ci', name: '코트디부아르', weight: 1, head: ['cacao-farmer', 'cacao-dryer', 'abidjan-docker'] },
-      { id: 'gh', name: '가나', weight: 1, head: ['gh-cacao-farmer', 'gh-takoradi-docker'] },
+      { id: 'ci', name: '코트디부아르', weight: 1, head: ['cacao-farmer', 'cacao-dryer', 'ci-cacao-exporter', 'abidjan-docker'] },
+      { id: 'gh', name: '가나', weight: 1, head: ['gh-cacao-farmer', 'gh-cacao-buyer', 'gh-takoradi-docker'] },
     ],
     quiz: {
       q: '세계에서 카카오를 가장 많이 생산하는 나라는?',
@@ -130,7 +130,7 @@ const list: Material[] = [
   },
   {
     id: 'salmon', name: '연어', aliases: ['연어', '연어초밥', '포케', '훈제연어', '연어덮밥'],
-    stages: ['salmon-farmer', 'salmon-processor', 'oslo-air', 'air-cargo', 'warehouse'],
+    stages: ['salmon-farmer', 'salmon-processor', 'no-seafood-exporter', 'oslo-air', 'air-cargo', 'warehouse'],
     quiz: {
       q: '얼리지 않은 신선한 노르웨이 연어는 무엇을 타고 한국에 올까요?',
       options: ['컨테이너선', '비행기', '기차'], answer: 1,
@@ -140,7 +140,7 @@ const list: Material[] = [
   },
   {
     id: 'banana', name: '바나나', aliases: ['바나나', '바나나우유'],
-    stages: ['banana-farmer', 'banana-packer', 'davao-port', 'sea-crew', 'busan-crane', 'ripening', 'warehouse'],
+    stages: ['banana-farmer', 'banana-packer', 'ph-banana-scheduler', 'davao-port', 'sea-crew', 'busan-crane', 'ripening', 'warehouse'],
     quiz: {
       q: '초록색으로 도착한 바나나를 노랗게 만드는 것은?',
       options: ['햇볕에 말리기', '에틸렌 가스로 숙성', '냉동 보관'], answer: 1,
@@ -154,7 +154,7 @@ const list: Material[] = [
   },
   {
     id: 'cotton', name: '면', aliases: ['면', '티셔츠', '청바지', '셔츠', '양말', '수건', '에코백', '속옷', '후드티'],
-    stages: ['cotton-farmer', 'cotton-gin', 'spinner', 'garment-sewer', 'chittagong-port', ...SEA],
+    stages: ['cotton-farmer', 'cotton-gin', 'spinner', 'garment-sewer', 'bd-merchandiser', 'chittagong-port', ...SEA],
     quiz: {
       q: '목화솜에서 씨를 빼내는 작업을 뭐라고 할까요?',
       options: ['조면', '방적', '염색'], answer: 0,
@@ -236,7 +236,7 @@ const list: Material[] = [
   },
   {
     id: 'assembly', name: '기기 조립', aliases: ['휴대폰', '스마트폰', '태블릿', '스마트워치', '이어폰'],
-    stages: ['vn-factory', 'hanoi-air', 'air-cargo', 'warehouse', 'courier'],
+    stages: ['vn-factory', 'vn-forwarder', 'hanoi-air', 'air-cargo', 'warehouse', 'courier'],
     quiz: {
       q: '한국 브랜드 휴대폰을 많이 조립하는 나라는?',
       options: ['베트남', '멕시코', '독일'], answer: 0,
@@ -359,7 +359,7 @@ const list: Material[] = [
   },
   {
     id: 'soybean', name: '대두', aliases: ['콩', '대두', '두부', '두유', '간장', '된장', '식용유', '콩나물'],
-    stages: ['soy-farmer', 'santos-port', 'bulk-crew', 'tofu-maker', 'warehouse'],
+    stages: ['soy-farmer', 'br-soy-trader', 'santos-port', 'bulk-crew', 'tofu-maker', 'warehouse'],
     quiz: {
       q: '두부를 굳힐 때 넣는 것은?',
       options: ['간수', '식초', '설탕'], answer: 0,
@@ -397,7 +397,7 @@ const list: Material[] = [
   },
   {
     id: 'chili', name: '고춧가루', aliases: ['고춧가루', '고추', '김치', '고추장', '떡볶이', '짬뽕', '김치찌개', '라볶이', '김치볶음밥', '깍두기', '육개장'],
-    stages: ['chili-farmer', 'chili-mill', 'qingdao-port', 'sea-crew', 'incheon-port', 'warehouse'],
+    stages: ['chili-farmer', 'chili-mill', 'cn-chili-trader', 'qingdao-port', 'sea-crew', 'incheon-port', 'warehouse'],
     quiz: {
       q: '수입 고춧가루는 주로 어느 나라에서 올까요?',
       options: ['중국', '인도', '멕시코'], answer: 0,
@@ -445,7 +445,7 @@ const list: Material[] = [
   },
   {
     id: 'beef', name: '소고기', aliases: ['소고기', '쇠고기', '불고기', '햄버거', '스테이크', '육회', '갈비', '차돌박이', '규동', '소불고기', '버거'],
-    stages: ['cattle-rancher', 'meatworks', 'sea-crew', 'busan-crane', 'warehouse'],
+    stages: ['cattle-rancher', 'meatworks', 'au-beef-export-officer', 'sea-crew', 'busan-crane', 'warehouse'],
     quiz: {
       q: '넓은 초원에 소를 풀어 놓고 풀을 먹이며 키우는 방식은?',
       options: ['방목', '양식', '수경'], answer: 0,

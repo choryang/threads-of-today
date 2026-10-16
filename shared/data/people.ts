@@ -407,6 +407,18 @@ const list: Person[] = [
   p('press-operator', '인쇄 기장', 'kr-paju', '판을 걸고 잉크를 맞춰, 큰 종이 한 장에 여러 쪽을 한꺼번에 찍어요. 색이 고르게 나오는지 계속 들여다봐요.', 'cap', 'gear', 'coverall', 'focus'),
   p('binder', '제본 작업자', 'kr-paju', '인쇄된 종이를 접고 순서대로 모아 실로 꿰매거나 풀로 붙여요. 표지를 씌우고 세 면을 잘라 책 모양을 만들어요.', 'cap', 'box', 'apron', 'smile'),
   p('book-logistics', '출판 물류센터 직원', 'kr-paju', '여러 출판사의 책을 맡아 두었다가 서점 주문대로 골라 상자에 담아요. 돌아온 책도 다시 제자리에 꽂아요.', 'cap', 'box', 'vest', 'smile'),
+  // 해외 사무실 칸 (docs/redesign/office-abroad-people-review.md)
+  p('et-coffee-cupper', '커피 맛 감정사', 'et-addis', '생두를 조금씩 볶아 내린 커피를 숟가락으로 후루룩 맛보고, 향과 맛에 따라 등급을 매겨요.', 'none', 'cup', 'apron', 'focus'),
+  p('co-coffee-exporter', '커피 수출 서류 담당', 'co-bogota', '농가에서 모인 생두 자루마다 원산지와 무게를 적고, 배에 싣기 전 서류를 빠짐없이 맞춰요.', 'none', 'clipboard', 'office', 'smile'),
+  p('ci-cacao-exporter', '카카오 수출 회사 선적 담당', 'ci-abidjan', '말린 카카오 콩 자루가 어느 배에 언제 실릴지 정하고, 창고에서 항구까지 차례를 맞춰요.', 'none', 'clipboard', 'office', 'smile'),
+  p('gh-cacao-buyer', '카카오 수매 담당', 'gh-western', '마을을 돌며 농가가 말린 카카오 콩의 무게를 달고 사들여요. 저울 눈금을 농부와 함께 확인해요.', 'straw', 'clipboard', 'vest', 'smile'),
+  p('ph-banana-scheduler', '바나나 선적 일정 담당', 'ph-davao', '초록색 바나나가 너무 익지 않도록, 포장한 상자가 바로 냉장 컨테이너에 오를 날을 맞춰요.', 'none', 'clipboard', 'office', 'smile'),
+  p('bd-merchandiser', '의류 머천다이저', 'bd-dhaka', '해외 주문서와 공장 사이를 이어요. 원단 색과 단추 하나까지 주문대로인지 확인하고 날짜를 맞춰요.', 'none', 'clipboard', 'office', 'smile'),
+  p('vn-forwarder', '운송 주선 업체 직원', 'vn-hanoi-city', '공장에서 나온 상자를 실을 비행기 자리를 잡고, 공항까지 가는 트럭 시간을 맞춰요.', 'none', 'clipboard', 'office', 'smile'),
+  p('no-seafood-exporter', '수산물 수출 영업 담당', 'no', '바다 건너 손님들과 연락하며, 가공한 연어가 신선할 때 비행기에 오르도록 주문을 맞춰요.', 'none', 'clipboard', 'office', 'smile'),
+  p('au-beef-export-officer', '수출 검역 서류 담당', 'au-qld', '고기 상자마다 검사를 마쳤다는 증명서를 챙겨, 받는 나라의 규칙에 맞게 서류를 꾸려요.', 'none', 'clipboard', 'office', 'smile'),
+  p('br-soy-trader', '곡물 수출 회사 직원', 'br-sp', '농장에서 거둔 콩을 사들여, 큰 배 한 척을 채울 만큼 모이면 항구로 보내는 날을 정해요.', 'none', 'clipboard', 'office', 'smile'),
+  p('cn-chili-trader', '무역 회사 직원', 'cn-qingdao', '빻은 고춧가루 자루를 컨테이너에 맞춰 싣고, 바다 건너 받을 회사와 서류를 주고받아요.', 'none', 'clipboard', 'office', 'smile'),
   // 게임 길 (docs/redesign/game-people-review.md)
   p('game-designer', '게임 기획자', 'kr-pangyo', '게임의 규칙과 목표, 레벨이 오르는 순서를 정해요. 어디서 즐거워하고 어디서 멈칫할지 먼저 상상해요.', 'none', 'clipboard', 'office', 'smile'),
   p('game-writer', '게임 시나리오 작가', 'kr-pangyo', '게임 속 세계의 역사와 인물, 대사를 써요. 지나가는 마을 사람의 한마디까지 이 사람이 지어요.', 'none', 'clipboard', 'office', 'focus'),

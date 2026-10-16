@@ -8,12 +8,12 @@ import {
 
 // docs/day-types.md 7번 예시
 const EXAMPLES: Array<[string[], string, number, number]> = [
-  [['kimchi', 'apple', 'samgak'], 'home', 25, 3],
-  [['samgyeopsal', 'banana-milk', 'burger'], 'ranch', 26, 5],
-  [['notebook', 'chopsticks', 'tshirt'], 'forest', 18, 5],
-  [['ramen', 'tofu', 'tshirt'], 'plain', 24, 7],
-  [['salmon-sushi', 'smartphone', 'tuna-can'], 'sky', 29, 8],
-  [['americano', 'choco-bar', 'smartphone', 'samgyeopsal', 'kimchi'], 'world', 48, 13],
+  [['kimchi', 'apple', 'samgak'], 'home', 26, 3],
+  [['samgyeopsal', 'banana-milk', 'burger'], 'ranch', 27, 5],
+  [['notebook', 'chopsticks', 'tshirt'], 'forest', 19, 5],
+  [['ramen', 'tofu', 'tshirt'], 'plain', 26, 7],
+  [['salmon-sushi', 'smartphone', 'tuna-can'], 'sky', 31, 8],
+  [['americano', 'choco-bar', 'smartphone', 'samgyeopsal', 'kimchi'], 'world', 52, 13],
 ]
 
 for (const [ids, type, people, countries] of EXAMPLES) {

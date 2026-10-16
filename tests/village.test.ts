@@ -129,9 +129,10 @@ test('친구 마을: 링크의 주민 순서로 placeAll하면 주인 마을과 
   const owner = villageLayout(cards, {}, [stage[100]!.id, stage[101]!.id])
   const link = owner.residents.map((r) => r.id) // useVillageLink.payload()가 담는 순서
   assert.deepEqual(placeAll(link), owner.residents)
-  // 새 지도에서는 구역 자리가 넉넉해서 모두 자리(slot) 위에 선다
+  // 모두 자기 구역에 선다. 마을은 새 기획에서 뺀 화면이라 자리보다 사람이 많아질 수 있어서, 넘치면 빈 땅이나 자리 앞에 비켜 선다(placeAll)
   const all = placeAll(stage.map((p) => p.id))
-  for (const p of all) assert.ok(ZONE_BY_ID[p.zone].slots.some(([x, y]) => x === p.x && y === p.y), p.id)
+  assert.equal(all.length, stage.length)
+  for (const p of all) assert.equal(p.zone, stage.find((s) => s.id === p.id)!.zone, p.id)
 })
 
 test('마을로 모시기: 이번에 만난 사람들 상자가 화면에 다 들어오는 배율(최대 0.6)로 가운데에', () => {

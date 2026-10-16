@@ -401,6 +401,18 @@ export const RESIDENCE: Record<string, [ZoneId, WorkplaceId]> = {
   'mixing-engineer': ['town', 'studio'],
   'mastering-engineer': ['town', 'studio'],
   'datacenter-tech': ['factory', 'datacenter'],
+  // 해외 사무실 칸 (마을 화면은 지금 쓰지 않음, 자리가 모자라면 빈 땅에)
+  'et-coffee-cupper': ['port', 'office'],
+  'co-coffee-exporter': ['port', 'office'],
+  'ci-cacao-exporter': ['port', 'office'],
+  'gh-cacao-buyer': ['port', 'office'],
+  'ph-banana-scheduler': ['port', 'office'],
+  'bd-merchandiser': ['port', 'office'],
+  'vn-forwarder': ['port', 'office'],
+  'no-seafood-exporter': ['port', 'office'],
+  'au-beef-export-officer': ['port', 'office'],
+  'br-soy-trader': ['port', 'office'],
+  'cn-chili-trader': ['port', 'office'],
   // 게임 사람: 남은 자리가 있는 언덕 구역에 (마을 화면은 지금 쓰지 않음)
   'game-designer': ['farm', 'office'],
   'game-writer': ['farm', 'office'],

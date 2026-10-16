@@ -86,7 +86,7 @@ export const NAME_GROUPS: NameGroup[] = [
     // 공안부 전국 공민신분번호 조회 서비스센터가 확인한 '동명이인 많은 이름 50'(신민망 2007-07-25)
     //   https://news.sohu.com/20070725/n251242978.shtml — 王秀英 5위, 王磊 19위, 王勇 22위, 张涛 32위
     country: '중국',
-    names: {
+    names: { 'cn-chili-trader': '쥐안' /* 순위 출처 없는 평범한 이름 */,
       'cn-refinery': '웨이', // 伟
       'poly-fiber': '팡', // 芳
       'chili-farmer': '궈창', // 国强
@@ -104,19 +104,19 @@ export const NAME_GROUPS: NameGroup[] = [
     // 코트디부아르: NamSor "Some popular baby names of Côte d'Ivoire"(2017) https://namesorts.com/2017/06/26/ivory-coast-cote-divoire-baby-names/
     //   아칸 요일 이름은 이름·성 둘 다로 쓴다. 성 순위 Kouassi 3위·Kouadio 5위(surnam.es, 2026) https://surnam.es/ivory-coast
     country: '코트디부아르',
-    names: { 'cacao-farmer': '쿠아시', 'cacao-dryer': '아주아', 'abidjan-docker': '쿠아디오', 'cacao-grader': '아키시' },
+    names: { 'ci-cacao-exporter': '야오' /* 순위 출처 없는 평범한 이름 */, 'cacao-farmer': '쿠아시', 'cacao-dryer': '아주아', 'abidjan-docker': '쿠아디오', 'cacao-grader': '아키시' },
   },
   {
     // 가나: Agyekum, "The Sociolinguistic of Akan Personal Names", Nordic Journal of African Studies 15(2), 2006, 표 1
     //   https://njas.fi/njas/article/view/24 — 아칸 요일 이름(판티어 표기). 서부 주만의 빈도 자료는 찾지 못했다
     country: '가나',
-    names: { 'gh-cacao-farmer': '에시', 'gh-takoradi-docker': '코조' },
+    names: { 'gh-cacao-buyer': '아베나' /* 순위 출처 없는 평범한 이름 */, 'gh-cacao-farmer': '에시', 'gh-takoradi-docker': '코조' },
   },
   {
     // 에티오피아: surnam.es 에티오피아 성 순위(2026) https://surnam.es/ethiopia — 에티오피아의 '성'은 아버지 이름이라 이름 순위로 쓴다.
     //   Tesfaye 1위, Almaz 32위, Tsehay 46위. 시다마 지역만의 자료는 찾지 못했다
     country: '에티오피아',
-    names: { 'coffee-picker': '알마즈', 'washing-station': '테스파예', cupper: '체하이' },
+    names: { 'et-coffee-cupper': '메세레트' /* 순위 출처 없는 평범한 이름 */, 'coffee-picker': '알마즈', 'washing-station': '테스파예', cupper: '체하이' },
   },
   {
     // 콩고민주공화국: surnam.es(2026, INS-RDC 참고) https://surnam.es/democratic-republic-of-the-congo — Ilunga 1위, 카탕가·카사이의 루바어 이름
@@ -144,7 +144,7 @@ export const NAME_GROUPS: NameGroup[] = [
     //   https://www.cnnbrasil.com.br/nacional/brasil/ibge-revela-nomes-e-sobrenomes-mais-populares-do-brasil-veja-ranking/
     //   남자 João 2위·Antônio 3위·Francisco 4위·Carlos 6위·Paulo 9위, 여자 Ana 2위·Juliana 6위·Adriana 7위·Fernanda 8위·Márcia 9위·Patrícia 10위
     country: '브라질',
-    names: {
+    names: { 'br-soy-trader': '루시아나' /* 순위 출처 없는 평범한 이름 */,
       eucalyptus: '프란시스쿠', 'pulp-mill': '아드리아나', 'forest-auditor': '페르난다', 'orange-picker': '아나', 'juice-plant': '파울루',
       'citrus-scientist': '파트리시아', 'soy-farmer': '안토니우', 'soy-breeder': '줄리아나', 'br-coffee-farmer': '주앙',
       'br-santos-coffee': '마르시아', 'santos-port': '카를루스',
@@ -154,7 +154,7 @@ export const NAME_GROUPS: NameGroup[] = [
     // 호주: NSW 출생·사망·혼인 등록청 "Popular Baby Names 1952 to 2025" https://data.nsw.gov.au/data/dataset/popular-baby-names-from-1952
     //   1965~1995년 합계 남자 Daniel 5위·Matthew 3위·Andrew 4위·Mark 7위·Scott 16위·Craig 24위, 여자 Rebecca 1위·Kylie 9위·Karen 10위·Samantha 11위·Natalie 15위·Rachel 18위
     country: '호주',
-    names: {
+    names: { 'au-beef-export-officer': '레베카' /* 순위 출처 없는 평범한 이름 */,
       'cane-harvester': '매슈', 'raw-sugar-mill': '리베카', 'lithium-miner': '카일리', 'bauxite-miner': '앤드루', smelter: '캐런',
       'iron-miner': '스콧', 'hedland-port': '크레이그', 'cattle-rancher': '마크', meatworks: '서맨사', 'beef-grader': '내털리',
       'au-malt': '레이철', 'mine-rescue': '대니얼',
@@ -177,7 +177,7 @@ export const NAME_GROUPS: NameGroup[] = [
     //   1880~2022년 역대 Lars 7위·Bjørn 8위, Ingrid 4위·Kari 7위·Marit 9위
     country: '노르웨이',
     // track-maker의 올레(Ole)는 순위 출처 없는 평범한 이름 (2026-10 사용자 결정)
-    names: { 'salmon-farmer': '라르스', 'salmon-processor': '카리', 'oslo-air': '비에른', 'fish-vet': '잉리드', 'seed-vault': '마리트', 'track-maker': '올레' },
+    names: { 'no-seafood-exporter': '시리' /* 순위 출처 없는 평범한 이름 */, 'salmon-farmer': '라르스', 'salmon-processor': '카리', 'oslo-air': '비에른', 'fish-vet': '잉리드', 'seed-vault': '마리트', 'track-maker': '올레' },
   },
   {
     // 네덜란드: 메르턴스 연구소 네덜란드 이름 은행 순위 예시(1970년 무렵 남자 Marco 4위, 여자 Sandra 5위)
@@ -189,7 +189,7 @@ export const NAME_GROUPS: NameGroup[] = [
     // 콜롬비아: El País Cali 2023-07-01, 국가등록청(Registraduría) 수치 인용(Isabel 57만, Miguel 51만)
     //   https://www.elpais.com.co/colombia/cuales-son-los-10-nombres-mas-comunes-en-colombia-y-su-significado-aqui-se-los-decimos-3055.html
     country: '콜롬비아',
-    names: { 'co-coffee-farmer': '이사벨', 'co-buenaventura-docker': '미겔' },
+    names: { 'co-coffee-exporter': '카롤리나' /* 순위 출처 없는 평범한 이름 */, 'co-coffee-farmer': '이사벨', 'co-buenaventura-docker': '미겔' },
   },
   {
     // 일본: 처음 들어온 나라. 순위 출처 없는 평범한 이름 (2026-10 사용자 결정)
@@ -242,7 +242,7 @@ export const NAME_GROUPS: NameGroup[] = [
     //   http://web.archive.org/web/20170115211627/http://psa.gov.ph/sites/default/files/Trivia_Leap%20Year.pdf
     //   남자 Joel 5위·Reynaldo 6위·Ronald 8위, 여자 Evelyn 1위·Jocelyn 4위
     country: '필리핀',
-    names: { 'banana-farmer': '조엘', 'banana-packer': '에벌린', 'davao-port': '레이날도', 'banana-scientist': '조슬린', 'ink-painter': '마리셀' /* 순위 출처 없는 평범한 이름 */ },
+    names: { 'ph-banana-scheduler': '크리스틴' /* 순위 출처 없는 평범한 이름 */, 'banana-farmer': '조엘', 'banana-packer': '에벌린', 'davao-port': '레이날도', 'banana-scientist': '조슬린', 'ink-painter': '마리셀' /* 순위 출처 없는 평범한 이름 */ },
   },
   {
     // 베트남: 정부 이름 통계가 없어 백과사전·학술 자료로 확인한 흔한 이름(성 없이 이름만)
@@ -251,7 +251,7 @@ export const NAME_GROUPS: NameGroup[] = [
     //   Nguyen-Viet Khoa, "The Linguistic Landscape of Gender in Vietnamese Personal Names", Names 73(2), 2025 — Hoa·Lan·Hiền을 흔한 여자 이름으로 다룸
     //   https://ans-names.pitt.edu/ans/article/view/2703
     country: '베트남',
-    names: {
+    names: { 'vn-forwarder': '꽝' /* 순위 출처 없는 평범한 이름 */,
       'vn-factory': '흐엉', 'vn-port': '훙', 'hanoi-air': '란', 'phone-tester': '뚜언', 'shrimp-farmer': '끄엉',
       'shrimp-processor': '마이', 'water-keeper': '호아', 'vn-coffee-farmer': '마인', 'vn-coffee-port': '히엔',
       'module-assembler': '중', // Dũng
@@ -266,7 +266,7 @@ export const NAME_GROUPS: NameGroup[] = [
     //   https://www.thedailystar.net/literature/news/the-name-game-1836856
     //   Shariful: Forebears 방글라데시 이름 136위(약 13만 명) https://forebears.io/forenames/shariful (상업 자료, 약함)
     country: '방글라데시',
-    names: { 'garment-sewer': '야스민', 'chittagong-port': '샤리풀' },
+    names: { 'bd-merchandiser': '나스린' /* 순위 출처 없는 평범한 이름 */, 'garment-sewer': '야스민', 'chittagong-port': '샤리풀' },
   },
   {
     // 사우디아라비아: 정부 이름 통계를 찾지 못함. Alzamil, "Analysis of the Sociolinguistic Status of Saudi Female Personal Names",
