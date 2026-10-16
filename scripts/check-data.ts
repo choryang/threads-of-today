@@ -22,8 +22,6 @@ import { dayStats, findLinkCards, journeyMaterialIds } from '../shared/logic'
 import { createMatcher, match, productEntries, type DictEntry } from '../shared/match'
 import { WORK_QUIZZES } from '../shared/data/work-quizzes'
 import { factOf, quizOf } from '../shared/friendship'
-import { MAP_H, MAP_W, RESIDENCE, WORKPLACES, ZONES } from '../shared/data/village'
-import { SLOT_GAP } from '../shared/village'
 import { NAME_GROUPS } from '../shared/data/names'
 
 const errors: string[] = []
@@ -413,32 +411,6 @@ for (const product of PRODUCTS) {
 if (JSON.stringify(buildTimeline(['coffee'], '2026-10-15-1-k3x9-r', '아메리카노')) !== JSON.stringify(reverseTimeline(['coffee'], '2026-10-15-1-k3x9-r', '아메리카노'))) errors.push("'-r' 여정은 거꾸로 가야 함")
 if (JSON.stringify(buildTimeline(['coffee'], '2026-10-15-1-k3x9', '아메리카노')) !== JSON.stringify(forwardTimeline(['coffee'], '2026-10-15-1-k3x9', '아메리카노'))) errors.push("'-r'이 없는 여정은 예전 순서여야 함")
 console.log('형태:', Object.values(FORMS).flat().length, '개 · 거꾸로 가는 여정 검사', PRODUCTS.length * 40, '개 · 가장 먼 여정 약', Math.round(maxKm), 'km')
-
-// 마을: 사람마다 구역·일터가 적혀 있고, 자리는 지도 안·구역 근처(생성기 범위 + 40px)에 있다
-for (const p of PEOPLE_LIST) {
-  if (!RESIDENCE[p.id]) errors.push(`${p.id}: 마을 구역(RESIDENCE)이 없음`)
-  if (!(p.workplace in WORKPLACES)) errors.push(`${p.id}: 모르는 일터 ${p.workplace}`)
-}
-for (const id of Object.keys(RESIDENCE)) if (!PEOPLE[id]) errors.push(`마을 구역: 모르는 사람 ${id}`)
-for (const zone of ZONES) {
-  const [x0, y0, x1, y1] = zone.bounds
-  for (const [x, y] of zone.slots) if (x < x0 - 40 || x > x1 + 40 || y < y0 - 40 || y > y1 + 40) errors.push(`${zone.id}: 자리 (${x}, ${y})가 구역 밖`)
-  if (new Set(zone.slots.map((s2) => s2.join())).size !== zone.slots.length) errors.push(`${zone.id}: 같은 자리 두 번`)
-  for (const [x, y] of zone.overflow) if (x < 0 || x > MAP_W || y < 0 || y > MAP_H) errors.push(`${zone.id}: 빈 땅 (${x}, ${y})가 지도 밖`)
-  // 마을은 새 기획에서 뺀 화면(docs/redesign/unused.md)이라, 자리보다 사람이 많으면 빈 땅(overflow)에 선다. 빈 땅까지 모자라면 오류
-  const residents = PEOPLE_LIST.filter((p) => p.kind !== 'link' && p.zone === zone.id).length
-  if (zone.slots.length + zone.overflow.length < residents) errors.push(`${zone.id}: 자리 ${zone.slots.length}개 + 빈 땅 ${zone.overflow.length}곳 < 사는 사람 ${residents}명`)
-}
-// 자리끼리는 (다른 구역 자리까지) 가로 90 또는 세로 130 떨어져 있다
-const allSlots = ZONES.flatMap((z) => z.slots.map(([x, y]) => ({ z: z.id, x, y })))
-for (let i = 0; i < allSlots.length; i++) {
-  for (let j = i + 1; j < allSlots.length; j++) {
-    const a = allSlots[i]!
-    const b = allSlots[j]!
-    if (Math.abs(a.x - b.x) < SLOT_GAP[0] && Math.abs(a.y - b.y) < SLOT_GAP[1]) errors.push(`마을 자리 (${a.x}, ${a.y})·(${b.x}, ${b.y})가 너무 가까움`)
-  }
-}
-console.log('마을: 구역별 자리', ZONES.map((z) => `${z.name} ${z.slots.length}+${z.overflow.length}`).join(' · '), '/ 주민이 될 사람', PEOPLE_LIST.filter((p) => p.kind !== 'link').length, '명')
 
 // 친해진 정도: 50%(사실)·75%(퀴즈) 단계는 출처 있는 데이터가 있는 사람만 열린다. 없는 사람은 그 단계를 건너뛴다
 const noFact = PEOPLE_LIST.filter((p) => !factOf(p.id))

@@ -1,7 +1,6 @@
 import type { Face, FactSource, Hair, Hat, Outfit, Person, Prop, Rarity } from '../types'
 import { hash } from '../random'
 import { nameOf } from './names'
-import { RESIDENCE } from './village'
 
 const HAIRS: Hair[] = ['short', 'bob', 'tied', 'curly', 'gray']
 
@@ -31,9 +30,7 @@ function p(
   // 머리 모양은 id 해시로 정한다. 사람을 더 넣어도 기존 사람의 머리는 그대로다
   const hair = HAIRS[hash(id) % HAIRS.length]!
   const tint = DROP_TINT[id]
-  // 구역·일터는 village.ts에 사람마다 적어 두었다 (없으면 check:data가 잡는다)
-  const [zone, workplace] = RESIDENCE[id] ?? ['town', 'office']
-  return { id, job, placeId, story, look: { hat, prop, outfit, hair, face, ...(tint ? { tint } : {}) }, rarity, kind, zone, workplace }
+  return { id, job, placeId, story, look: { hat, prop, outfit, hair, face, ...(tint ? { tint } : {}) }, rarity, kind }
 }
 
 const list: Person[] = [

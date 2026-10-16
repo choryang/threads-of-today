@@ -68,19 +68,6 @@ export async function incrementScores(key: string, members: string[]): Promise<v
   await kv().setItem(key, counts)
 }
 
-/** incrementScores로 센 점수를 많은 순으로 돌려준다 */
-export async function readScores(key: string): Promise<Array<[string, number]>> {
-  const r = redisClient()
-  if (r) {
-    const flat = await r.zrange<(string | number)[]>(`${KV_PREFIX}:${key}`, 0, -1, { rev: true, withScores: true })
-    const out: Array<[string, number]> = []
-    for (let i = 0; i < flat.length; i += 2) out.push([String(flat[i]), Number(flat[i + 1])])
-    return out
-  }
-  const counts = (await kv().getItem<Record<string, number>>(key)) ?? {}
-  return Object.entries(counts).sort((a, b) => b[1] - a[1])
-}
-
 /** 키가 없을 때만 쓴다 (복구 코드 중복 방지). 썼으면 true */
 export async function setIfAbsent(key: string, value: string, ttlSeconds: number): Promise<boolean> {
   const r = redisClient()
@@ -93,32 +80,6 @@ export async function setIfAbsent(key: string, value: string, ttlSeconds: number
 /** IP를 그대로 저장하지 않고 소금 친 해시로 바꾼다 */
 export function hashIp(ip: string): string {
   return createHash('sha256').update(`${process.env.NUXT_IP_SALT ?? 'my-day-people'}:${ip}`).digest('base64url').slice(0, 16)
-}
-
-/** incrementCounter로 센 값들을 읽는다. 없는 키는 0 */
-export async function readCounters(keys: string[]): Promise<number[]> {
-  if (!keys.length) return []
-  const r = redisClient()
-  if (r) {
-    const values = await r.mget<(number | string | null)[]>(...keys.map((k) => `${KV_PREFIX}:${k}`))
-    return values.map((v) => Number(v ?? 0) || 0)
-  }
-  return Promise.all(keys.map(async (k) => (await kv().getItem<number>(k)) ?? 0))
-}
-
-/** incrementScores로 센 점수 중 몇 이름만 읽는다. 없는 이름은 0 */
-export async function readScoresOf(key: string, members: string[]): Promise<number[]> {
-  if (!members.length) return []
-  const r = redisClient()
-  if (r) {
-    const full = `${KV_PREFIX}:${key}`
-    const p = r.pipeline()
-    for (const m of members) p.zscore(full, m)
-    const values = await p.exec<(number | null)[]>()
-    return values.map((v) => Number(v ?? 0) || 0)
-  }
-  const counts = (await kv().getItem<Record<string, number>>(key)) ?? {}
-  return members.map((m) => counts[m] ?? 0)
 }
 
 /**

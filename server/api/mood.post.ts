@@ -1,5 +1,5 @@
 import { isMoodId } from '../../shared/data/moods'
-import { visitorKey } from '../utils/gratitude'
+import { visitorKey } from '../utils/visitor'
 import { kvPersistent } from '../utils/kv'
 import { recordMood } from '../utils/meet'
 import { TOO_MANY, underLimit } from '../utils/profile-api'
