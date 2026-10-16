@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { PEOPLE_LIST } from '../shared/data/people'
 import { NICKNAME_MAX, normalizeNickname, randomNickname } from '../shared/nickname'
-import { emptySave, mergeSaves, sanitizeSave, type Journey, type Save } from '../shared/progress'
+import { emptySave, hasProgress, mergeSaves, sanitizeSave, type Journey, type Save } from '../shared/progress'
 import { CODE_WORDS, generateRecoveryCode, normalizeRecoveryCode } from '../shared/recovery'
 import { isValidVoiceTemplate, renderVoice } from '../shared/voice'
 
@@ -256,4 +256,10 @@ test('오늘 흐름 하루 기록(todays): 날짜마다 하나, 한마디를 건
     },
   }, TODAY)
   assert.deepEqual(clean?.todays, { [TODAY]: { mood: 'glad', item: '라면', personId: 'barista', episode: 1, reply: 2 } })
+})
+
+test('서버 기록은 남길 게 생긴 뒤부터: 걷기만 본 사람은 만들지 않는다', () => {
+  assert.equal(hasProgress(emptySave()), false)
+  assert.equal(hasProgress({ ...emptySave(), todays: { '2026-10-16': { mood: 'tired', item: '라면', personId: 'barista', episode: null, how: 'none' } as never } }), true)
+  assert.equal(hasProgress({ ...emptySave(), job: { value: 'declined', at: 1 } }), true)
 })

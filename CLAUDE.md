@@ -10,6 +10,7 @@
 
 - Nuxt 4 (Vue 3.5, TypeScript), `ssr: false` SPA + Nitro 서버 API. 배포는 Vercel.
 - 진행 상황 원본은 브라우저 localStorage(`my-day-people:v1`). 앱을 열 때·한마디를 건넬 때 Upstash와 합친다(익명 id + 복구 코드, 로그인 없음).
+  남길 기록(하루 기록·하는 일)이 생기기 전에는 서버에 익명 기록을 만들지 않는다(걷기만 보는 사람, shared/progress.ts hasProgress).
   하루의 한 줄과 직접 쓴 한마디는 기기에만(`my-day-people:today-local`).
 - `npm run dev` / `npm run build` / `npm run typecheck` / `npm run check:data`(데이터 무결성 + 스모크 테스트) / `npm test`(node:test, 매칭 사례)
 - 환경 변수: `NUXT_ANTHROPIC_API_KEY`, `NUXT_ANTHROPIC_MODEL`(기본 `claude-haiku-5-5`), `KV_REST_API_URL`/`KV_REST_API_TOKEN`(Upstash), `NUXT_AI_DAILY_LIMIT`, `NUXT_IP_SALT`, `CRON_SECRET`, `MEET_SNAPSHOT_MINUTES`(기본 30). 자세한 건 README

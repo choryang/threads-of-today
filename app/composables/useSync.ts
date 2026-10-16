@@ -1,10 +1,11 @@
 import { reactive } from 'vue'
 import { dateKey } from '../../shared/logic'
-import { mergeSaves, type Save } from '../../shared/progress'
+import { hasProgress, mergeSaves, type Save } from '../../shared/progress'
 import { replaceSave, snapshotSave } from './useGame'
 
 /**
- * 진행 상황 서버 동기화. localStorage가 원본이고, 앱을 열 때와 여정을 마칠 때만 서버(Upstash)와 합친다.
+ * 진행 상황 서버 동기화. localStorage가 원본이고, 앱을 열 때와 하루 기록을 남길 때만 서버(Upstash)와 합친다.
+ * 남길 기록이 생기기 전(걷기만 본 사람)에는 서버에 익명 기록을 만들지 않는다(hasProgress).
  * 이 기기의 익명 id·기기 비밀값·복구 코드는 진행 상황과 따로 저장한다.
  */
 interface Profile {
@@ -66,6 +67,8 @@ async function post<T>(url: string, body: Record<string, unknown>): Promise<T | 
 
 async function runSync() {
   if (!status.profile) {
+    // 남길 기록이 없으면(걷기만 본 사람) 서버에 만들지 않는다. 처음 하루 기록을 남길 때(useToday) 다시 불린다
+    if (!hasProgress(snapshotSave())) return
     const res = await post<ProfileResponse>('/api/profile', { save: snapshotSave() })
     if (!res) return
     if (!res.ok) {

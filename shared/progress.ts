@@ -200,6 +200,14 @@ const DATE = /^\d{4}-\d{2}-\d{2}$/
 /** 여정 id 길이 상한: '2026-10-15-12-abcdef-r-k-second'(31자)에 여유를 둔다 */
 const JOURNEY_ID_MAX = 48
 
+/**
+ * 서버에 남길 만한 기록이 있는지. 걷기만 보고 가는 사람은 서버에 익명 기록을 만들지 않는다(Upstash 사용량).
+ * 하루 기록(todays)이나 하는 일을 고른 뒤부터 만든다. 예전 기획의 기록(카드·여정)이 있어도 만든다
+ */
+export function hasProgress(save: Save): boolean {
+  return Object.keys(save.todays ?? {}).length > 0 || !!save.job || Object.keys(save.cards ?? {}).length > 0
+}
+
 export function emptySave(): Save {
   return { v: 1, cards: {}, days: {}, streak: { last: '', count: 0 }, mystery: {}, items: {}, thanks: {}, seenScenes: [], threads: {}, people: {}, incoming: [], visitedVillages: [], bestSeen: [] }
 }
