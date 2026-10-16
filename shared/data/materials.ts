@@ -272,6 +272,19 @@ const list: Material[] = [
       { q: '종이컵 안쪽이 물에 젖지 않는 까닭은?', options: ['얇은 플라스틱 막을 입혀서', '소금을 발라서', '유리를 녹여 발라서'], answer: 0, explain: '종이컵 안쪽에는 아주 얇은 플라스틱 막이 입혀져 있어서 물이 스며들지 않아요.', rewardId: 'forest-auditor' },
     ],
   },
+  // 앱·노래는 만드는 길 + 같이 지나는 인터넷 길 (docs/redesign/app-song-people-review.md). 화면에 회사·서비스 이름은 쓰지 않는다
+  {
+    id: 'app', name: '앱 만들기', aliases: ['앱 개발', '앱 만들기'],
+    stages: ['app-planner', 'ux-researcher', 'ui-designer', 'app-developer', 'server-developer', 'qa-tester', 'localizer', 'app-reviewer', 'content-moderator'],
+  },
+  {
+    id: 'song', name: '노래 만들기', aliases: ['작곡', '노래 만들기'],
+    stages: ['track-maker', 'topliner', 'lyricist', 'arranger', 'session-player', 'vocal-director', 'recording-engineer', 'mixing-engineer', 'mastering-engineer', 'album-designer', 'music-distributor'],
+  },
+  {
+    id: 'internet', name: '인터넷', aliases: ['인터넷', '와이파이', '데이터'],
+    stages: ['datacenter-tech', 'cable-repairer', 'base-station'],
+  },
   // 컴퓨터·주변기기 부품 길 (docs/redesign/computer-people-review.md). 키캡·몸체는 플라스틱 길, 방열판은 알루미늄 길을 같이 쓴다
   {
     id: 'switch', name: '기계식 스위치', aliases: ['기계식 스위치', '키 스위치'],
@@ -683,6 +696,8 @@ export const PRODUCTS: Product[] = [
   { id: 'oj', name: '오렌지 주스', aliases: ['오렌지주스', '주스'], materialIds: ['orange', 'pulp'] },
   { id: 'tofu', name: '두부', aliases: ['두부'], materialIds: ['soybean', 'plastic'] },
   { id: 'bicycle', name: '자전거', aliases: ['자전거', '따릉이'], materialIds: ['steel', 'aluminum', 'rubber'] },
+  { id: 'app', name: '앱', aliases: ['앱', '어플', '애플리케이션', '메신저', '메신저 앱', '배달앱', '배달 앱', '카톡', '카카오톡'], materialIds: ['app', 'internet'] },
+  { id: 'song', name: '노래', aliases: ['노래', '음악', '음원', '케이팝', 'K팝', '플레이리스트', '신곡'], materialIds: ['song', 'internet'] },
   { id: 'keyboard', name: '키보드', aliases: ['키보드', '기계식 키보드', '기계식키보드'], materialIds: ['switch', 'pcb', 'plastic'] },
   { id: 'mouse', name: '마우스', aliases: ['마우스', '무선 마우스', '무선마우스'], materialIds: ['sensor', 'pcb', 'plastic'] },
   { id: 'monitor', name: '모니터', aliases: ['모니터'], materialIds: ['panel', 'pcb', 'plastic'] },

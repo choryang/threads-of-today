@@ -99,6 +99,8 @@ test('칸 사이 이동: 바다 위 칸은 건너뛰어 한 구간, 배가 있�
   assert.deepEqual(walkLegs(['corn-farmer', 'barge-crew', 'nola-port', 'bulk-crew', 'starch-plant']).map((g) => g!.mode), ['land', 'land', 'sea', 'sea'])
   // 나라를 건너면서 한쪽이 공항이면 하늘, 실려 가는 것을 모르면 거리만(cross)
   assert.deepEqual(walkLegs(['cpu-fab', 'osat', 'air-cargo', 'warehouse']).map((g) => g!.mode), ['cross', 'air', 'land'])
+  // 앱·노래는 인터넷으로, 바다 밑 케이블 칸을 지나는 구간만 바다
+  assert.deepEqual(walkLegs(['track-maker', 'topliner', 'music-distributor', 'datacenter-tech', 'cable-repairer', 'base-station']).map((g) => g?.mode), ['net', 'net', 'net', 'sea', 'sea'])
   // 좌표 있는 다음 칸이 없으면 비워 둔다
   assert.deepEqual(walkLegs(['djibouti-docker', 'sea-crew']), [null])
   assert.deepEqual(walkLegs(['barista']), [])

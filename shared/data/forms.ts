@@ -202,6 +202,36 @@ export const FORMS: Record<string, MaterialForm[]> = {
     { name: '보리', formIcon: 'barley' },
     { name: '맥아', formIcon: 'malt', by: ['au-malt'] },
   ],
+  // 앱·노래·인터넷 (아이콘 없음)
+  app: [
+    { name: '아이디어' },
+    { name: '기획서', by: ['app-planner'] },
+    { name: '사용성 테스트 기록', by: ['ux-researcher'] },
+    { name: '화면 시안', by: ['ui-designer'] },
+    { name: '앱 코드', by: ['app-developer'] },
+    { name: '서버와 이어진 앱', by: ['server-developer'] },
+    { name: '테스트 빌드', by: ['qa-tester'] },
+    { name: '여러 언어로 된 앱', by: ['localizer'] },
+    { name: '심사 통과한 앱', by: ['app-reviewer'] },
+  ],
+  song: [
+    { name: '코드와 박자' },
+    { name: '비트', by: ['track-maker'] },
+    { name: '데모', by: ['topliner'] },
+    { name: '가사 붙은 데모', by: ['lyricist'] },
+    { name: '편곡', by: ['arranger'] },
+    { name: '악기 녹음', by: ['session-player'] },
+    { name: '보컬 녹음', by: ['recording-engineer'] },
+    { name: '믹스', by: ['mixing-engineer'] },
+    { name: '마스터 음원', by: ['mastering-engineer'] },
+    { name: '등록된 음원', by: ['music-distributor'] },
+  ],
+  internet: [
+    { name: '데이터' },
+    { name: '서버 속 데이터', by: ['datacenter-tech'] },
+    { name: '바다 밑 빛 신호', by: ['cable-repairer'] },
+    { name: '전파', by: ['base-station'] },
+  ],
   // 컴퓨터·주변기기 부품 (아이콘 없음)
   switch: [
     { name: '플라스틱 알갱이', formIcon: 'plastic-pellets' },

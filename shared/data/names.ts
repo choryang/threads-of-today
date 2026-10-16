@@ -66,6 +66,11 @@ export const NAME_GROUPS: NameGroup[] = [
       typesetter: '수아', 'press-operator': '한결', binder: '나래', 'book-logistics': '다온', bookseller: '소연',
       // 컴퓨터·주변기기 길: 2008년 상위 이름 중 남은 것(위 파이낸셜뉴스 2009). 그 뒤는 순위 출처 없는 평범한 이름
       'copper-smelter': '예준', 'ccl-maker': '윤서', 'panel-engineer': '지우', 'memory-packager': '혜원', 'pc-builder': '태민',
+      // 앱·노래·인터넷 길 (순위 출처 없는 평범한 이름)
+      'app-planner': '승우', 'ux-researcher': '다은', 'ui-designer': '재원', 'server-developer': '민호', localizer: '소희',
+      'content-moderator': '가은', topliner: '유나', lyricist: '동훈', arranger: '수연', 'session-player': '경민',
+      'vocal-director': '채원', 'recording-engineer': '재석', 'album-designer': '은비', 'music-distributor': '상우',
+      'datacenter-tech': '성우', 'base-station': '준기',
     },
   },
   {
@@ -85,6 +90,8 @@ export const NAME_GROUPS: NameGroup[] = [
       'cn-buckwheat-farmer': '융', // 勇
       'cn-tomato-paste': '징', // 静
       'keyboard-assembler': '민', // 敏 — 2019년 전국 성명 보고 상위 10에 张敏(위 중국신문망 2020-01-20)
+      // 아래는 순위 출처 없는 평범한 이름 (2026-10 사용자 결정)
+      'switch-maker': '쥔', 'switch-tester': '옌', 'pcb-maker': '밍', 'glass-maker': '리', 'mouse-assembler': '샤', // 军 艳 明 丽 霞
     },
   },
   {
@@ -122,6 +129,8 @@ export const NAME_GROUPS: NameGroup[] = [
     names: {
       'wheat-farmer': '로버트', 'grain-elevator': '킴벌리', 'pnw-port': '제이슨', 'grain-inspector': '제니퍼', 'corn-farmer': '제임스',
       'barge-crew': '브라이언', 'nola-port': '스테퍼니', 'us-buckwheat-farmer': '에이미', 'us-fries-plant': '크리스토퍼',
+      // 앱·노래 길: 순위 출처 확인 없이 평범한 이름 (2026-10 사용자 결정)
+      'app-reviewer': '멜리사', 'mixing-engineer': '마이클', 'mastering-engineer': '리사',
     },
   },
   {
@@ -161,7 +170,8 @@ export const NAME_GROUPS: NameGroup[] = [
     // 노르웨이: 통계청(SSB)「De mest brukte navnene i Norge gjennom tidene」(2023) https://www.ssb.no/befolkning/navn/artikler/de-mest-brukte-navnene-i-norge-gjennom-tidene
     //   1880~2022년 역대 Lars 7위·Bjørn 8위, Ingrid 4위·Kari 7위·Marit 9위
     country: '노르웨이',
-    names: { 'salmon-farmer': '라르스', 'salmon-processor': '카리', 'oslo-air': '비에른', 'fish-vet': '잉리드', 'seed-vault': '마리트' },
+    // track-maker의 올레(Ole)는 순위 출처 없는 평범한 이름 (2026-10 사용자 결정)
+    names: { 'salmon-farmer': '라르스', 'salmon-processor': '카리', 'oslo-air': '비에른', 'fish-vet': '잉리드', 'seed-vault': '마리트', 'track-maker': '올레' },
   },
   {
     // 네덜란드: 메르턴스 연구소 네덜란드 이름 은행 순위 예시(1970년 무렵 남자 Marco 4위, 여자 Sandra 5위)
@@ -234,6 +244,8 @@ export const NAME_GROUPS: NameGroup[] = [
       'vn-factory': '흐엉', 'vn-port': '훙', 'hanoi-air': '란', 'phone-tester': '뚜언', 'shrimp-farmer': '끄엉',
       'shrimp-processor': '마이', 'water-keeper': '호아', 'vn-coffee-farmer': '마인', 'vn-coffee-port': '히엔',
       'module-assembler': '중', // Dũng
+      // 아래는 순위 출처 없는 평범한 이름 (2026-10 사용자 결정)
+      'monitor-assembler': '투이', 'app-developer': '린', 'qa-tester': '프엉', // Thủy, Linh, Phương
     },
   },
   {
@@ -259,10 +271,12 @@ export const NAME_GROUPS: NameGroup[] = [
     names: {
       'sea-crew': '로널드', 'bulk-crew': '궈량', 'tanker-crew': '위차이', 'reefer-crew': '에르나와티', 'tuna-fisher': '와휴디',
       'fishery-observer': '수미아티', 'distant-squid-fisher': '안토니오', 'ship-cook': '타오', 'reefer-tech': '솜폰',
+      'cable-repairer': '하린',
     },
     from: {
       'sea-crew': '필리핀', 'bulk-crew': '중국', 'tanker-crew': '태국', 'reefer-crew': '인도네시아', 'tuna-fisher': '인도네시아',
       'fishery-observer': '인도네시아', 'distant-squid-fisher': '스페인', 'ship-cook': '중국', 'reefer-tech': '태국',
+      'cable-repairer': '대한민국',
     },
   },
 ]

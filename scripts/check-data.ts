@@ -451,7 +451,9 @@ for (const product of PRODUCTS) {
     const id = `2026-10-15-1-${i.toString(36).padStart(4, '0')}-r`
     const rev = reverseTimeline(product.materialIds, id, product.name)
     const fwd = forwardTimeline(product.materialIds, id, product.name)
-    if (rev[0]?.type !== 'stage' || !rev[0].closing) errors.push(`${product.id} ${id}: 거꾸로 가는 여정의 첫 칸이 가게 사람이 아님`)
+    // 건네주는 사람이 없는 것(노래, shops.ts 'online')은 첫 칸이 가게 사람이 아니어도 된다
+    const handed = CLOSINGS[closingKind(product.name, product.materialIds)].shop.length > 0
+    if (handed && (rev[0]?.type !== 'stage' || !rev[0].closing)) errors.push(`${product.id} ${id}: 거꾸로 가는 여정의 첫 칸이 가게 사람이 아님`)
     if (pairs(timelinePeople(product.materialIds, id, product.name)) !== forwardPairs(product.materialIds, id, product.name)) errors.push(`${product.id} ${id}: 거꾸로 간 여정의 사람이 정방향과 다름`)
     const kinds = (list: typeof rev) => list.filter((t) => t.type === 'quiz' || t.type === 'hidden' || t.type === 'event').map((t) => JSON.stringify(t)).sort().join()
     if (kinds(rev) !== kinds(fwd)) errors.push(`${product.id} ${id}: 퀴즈·숨은 만남·이야기가 정방향과 다름`)

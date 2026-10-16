@@ -23,7 +23,7 @@ export function revealingWords(p: Product): string[] {
   return [...new Set(words.flatMap((w) => [w, ...w.split(' ')]).filter((w) => w.length >= 2))]
 }
 
-const shopOf = (p: Product) => CLOSINGS[closingKind(p.name, p.materialIds)].shop[0]!
+const shopOf = (p: Product): string | undefined => CLOSINGS[closingKind(p.name, p.materialIds)].shop[0]
 
 /** 고른 출발지로 이어 붙인 여정의 사람들 (마지막 가게 사람 포함) */
 function pathOf(p: Product, choice: Choice): string[] {
@@ -32,7 +32,8 @@ function pathOf(p: Product, choice: Choice): string[] {
     if (!m.origins?.length) return m.stages
     return [...m.origins[choice[id] ?? 0]!.head, ...m.stages.slice(m.originHead ?? 0)]
   })
-  return [...people, shopOf(p)]
+  const shop = shopOf(p)
+  return shop ? [...people, shop] : people
 }
 
 /** 출발지 조합 전부. 첫 번째가 기본 출발지 */

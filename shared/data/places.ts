@@ -53,6 +53,16 @@ const list: Place[] = [
   { id: 'tw-hsinchu', name: '대만 신주', country: '대만', continent: 'asia', tz: 'Asia/Taipei' , lat: 24.8, lng: 120.97 },
   { id: 'vn-haiphong', name: '베트남 하이퐁', country: '베트남', continent: 'asia', tz: 'Asia/Ho_Chi_Minh' , lat: 20.86, lng: 106.68 },
   { id: 'vn-shtp', name: '호찌민 하이테크파크', country: '베트남', continent: 'asia', tz: 'Asia/Ho_Chi_Minh' , lat: 10.84, lng: 106.8 },
+  // 앱·노래·인터넷 길 (docs/redesign/app-song-people-review.md)
+  { id: 'kr-pangyo', name: '성남 판교', country: '대한민국', continent: 'korea', tz: 'Asia/Seoul' , lat: 37.4, lng: 127.11 },
+  { id: 'kr-chuncheon', name: '강원 춘천', country: '대한민국', continent: 'korea', tz: 'Asia/Seoul' , lat: 37.88, lng: 127.73 },
+  { id: 'kr-ansan', name: '경기 안산', country: '대한민국', continent: 'korea', tz: 'Asia/Seoul' , lat: 37.32, lng: 126.83 },
+  { id: 'vn-hcm-city', name: '베트남 호찌민', country: '베트남', continent: 'asia', tz: 'Asia/Ho_Chi_Minh' , lat: 10.78, lng: 106.7 },
+  { id: 'vn-hanoi-city', name: '베트남 하노이', country: '베트남', continent: 'asia', tz: 'Asia/Ho_Chi_Minh' , lat: 21.03, lng: 105.85 },
+  { id: 'no-trondheim', name: '노르웨이 트론헤임', country: '노르웨이', continent: 'europe', tz: 'Europe/Oslo' , lat: 63.43, lng: 10.4 },
+  { id: 'us-sunnyvale', name: '미국 서니베일', country: '미국', continent: 'americas', tz: 'America/Los_Angeles' , lat: 37.37, lng: -122.04 },
+  { id: 'us-virginia-beach', name: '미국 버지니아비치', country: '미국', continent: 'americas', tz: 'America/New_York' , lat: 36.85, lng: -75.98 },
+  { id: 'us-edgewater', name: '미국 뉴저지', country: '미국', continent: 'americas', tz: 'America/New_York' , lat: 40.83, lng: -73.97 },
   { id: 'cl-escondida', name: '칠레 에스콘디다 광산', country: '칠레', continent: 'americas', tz: 'America/Santiago' , lat: -24.27, lng: -69.07 },
 
   // 아시아

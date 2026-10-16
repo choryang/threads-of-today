@@ -28,6 +28,8 @@ export const MYSTERY_INFO: Record<string, { use: string; kind: MysteryKind }> = 
   oj: { kind: 'drink', use: '아침 식사에 한 잔 곁들여요. 새콤달콤해요.' },
   tofu: { kind: 'food', use: '찌개에 넣기도 하고 부쳐 먹기도 해요. 하얗고 말랑해요.' },
   bicycle: { kind: 'ride', use: '페달을 밟으면 두 바퀴로 달려요.' },
+  app: { kind: 'use', use: '하루에도 몇 번씩 화면을 눌러 열어요. 친구에게 소식을 보낼 때도 써요.' },
+  song: { kind: 'use', use: '이어폰을 꽂으면 귓가에 흘러나와요. 같은 부분을 몇 번이고 다시 들어요.' },
   keyboard: { kind: 'use', use: '손가락으로 두드리면 딸깍 소리가 나요. 글자를 쓸 때 꼭 필요해요.' },
   mouse: { kind: 'use', use: '손바닥에 쏙 들어와요. 움직이면 화면 속 화살표가 따라와요.' },
   monitor: { kind: 'use', use: '책상 위에 세워 두고 하루 종일 바라봐요.' },

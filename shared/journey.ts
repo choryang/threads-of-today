@@ -108,7 +108,9 @@ const isSea = (personId: string) => PLACES[PEOPLE[personId]?.placeId ?? '']?.con
 /** 여정 끝의 가게·사무실 사람. 사무실 사람(있으면) 다음 가게 사람 */
 export function closingPeople(itemName: string, materialIds: string[], journeyId: string, imported: boolean): string[] {
   const closing = CLOSINGS[closingKind(itemName, materialIds)]
-  const offices = imported ? [IMPORT_OFFICE, ...closing.office] : closing.office
+  // 건네주는 사람이 없는 것(노래)은 수입 사무실도 없이
+  if (!closing.shop.length) return []
+  const offices = imported && !closing.noImport ? [IMPORT_OFFICE, ...closing.office] : closing.office
   const pick = (list: string[], salt: string) => list[hash(`closing:${salt}:${journeyId}`) % list.length]!
   return [...(offices.length ? [pick(offices, 'office')] : []), pick(closing.shop, 'shop')]
 }

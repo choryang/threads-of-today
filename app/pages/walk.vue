@@ -107,13 +107,14 @@ const openSource = ref<string | null>(null)
 function toggleSource(key: string) {
   openSource.value = openSource.value === key ? null : key
 }
-const MODE_LABEL: Record<LegMode, string> = { sea: '바다', air: '하늘', land: '땅', cross: '' }
-/** 구간 첫 칸 사이에만 '바다 · 약 7,600km'(무엇에 실려 가는지 모르면 '약 2,900km'). 50km보다 짧은 땅 구간은 적지 않는다 */
+const MODE_LABEL: Record<LegMode, string> = { sea: '바다', air: '하늘', land: '땅', cross: '', net: '인터넷' }
+/** 구간 첫 칸 사이에만 '바다 · 약 7,600km'(무엇에 실려 가는지 모르면 '약 2,900km'). 50km보다 짧은 땅·인터넷 구간은 적지 않는다 */
 function legLabel(g: LegGap | null): string {
   if (!g?.first) return ''
   const km = roundKm(g.km) > 0 ? `약 ${formatKm(g.km)}km` : ''
   const label = MODE_LABEL[g.mode]
-  if (!km) return g.mode === 'land' ? '' : label
+  // 가까운 땅·인터넷 구간(같은 도시 안 등)은 적지 않는다
+  if (!km) return g.mode === 'land' || g.mode === 'net' ? '' : label
   return label ? `${label} · ${km}` : km
 }
 /** 칸마다 그 아래 칸 사이: 변신·이동 한 줄씩, 앞뒤가 바다 구간인지 (점선) */
@@ -210,7 +211,8 @@ const wake = computed(() => (walk.value ? wakeCounts(walkPeople(walk.value), new
           </template>
         </ol>
       </section>
-      <section v-if="hand.length" class="branch">
+      <!-- 노래처럼 건네주는 사람이 없으면 "나"만 -->
+      <section class="branch">
         <h2 class="branch-title">내 손에 닿기까지</h2>
         <ol class="thread">
           <template v-for="(s, i) in hand" :key="`h-${s.personId}-${i}`">

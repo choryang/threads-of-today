@@ -3,13 +3,15 @@
  * 물건 이름과 재료로 종류를 정하고(closingKind), 여정 끝에 사무실 사람 한 명(있으면)과 가게 사람 한 명을 붙인다.
  * 수입 재료가 지나온 여정이면 사무실 사람 후보에 수입 서류를 챙기는 무역회사 직원이 들어간다.
  */
-export type ClosingKind = 'cafe' | 'delivery' | 'cvs' | 'electronics' | 'clothes' | 'mart' | 'goods' | 'books' | 'computer'
+export type ClosingKind = 'cafe' | 'delivery' | 'cvs' | 'electronics' | 'clothes' | 'mart' | 'goods' | 'books' | 'computer' | 'app' | 'online'
 
 export interface Closing {
   /** 마지막에 물건을 건네는 사람 (후보 중 여정 id 시드로 하나) */
   shop: string[]
   /** 그 앞에 나오는 사무실 사람 후보. 비어 있으면 가게 사람만 */
   office: string[]
+  /** 물건이 아니라 통관이 없다(앱): 나라 밖을 지나도 무역회사 수입 담당을 붙이지 않는다 */
+  noImport?: true
 }
 
 export const CLOSINGS: Record<ClosingKind, Closing> = {
@@ -22,6 +24,9 @@ export const CLOSINGS: Record<ClosingKind, Closing> = {
   goods: { shop: ['courier'], office: ['dispatcher', 'cs-agent'] },
   books: { shop: ['bookseller'], office: [] },
   computer: { shop: ['pc-builder'], office: ['cs-agent'] },
+  app: { shop: ['cs-agent'], office: [], noImport: true },
+  /** 건네주는 사람 없이 인터넷으로 바로 닿는 것(노래) */
+  online: { shop: [], office: [] },
 }
 
 /** 수입 재료가 지나온 여정에서 사무실 사람 후보에 더한다 */
@@ -38,12 +43,15 @@ const KEYWORDS: Array<[ClosingKind, string[]]> = [
 const ELECTRONICS = ['assembly', 'chip']
 const CLOTHING = ['cotton', 'polyester', 'rubber']
 /** 먹을거리가 아닌 재료. 이것만으로 된 물건은 가게 물건(goods) */
-export const NON_FOOD = ['switch', 'pcb', 'panel', 'cpu', 'memory', 'sensor', 'publishing', 'cotton', 'polyester', 'plastic', 'rubber', 'cobalt', 'lithium', 'chip', 'assembly', 'aluminum', 'pulp', 'steel', 'glass', 'wood']
+export const NON_FOOD = ['app', 'song', 'internet', 'switch', 'pcb', 'panel', 'cpu', 'memory', 'sensor', 'publishing', 'cotton', 'polyester', 'plastic', 'rubber', 'cobalt', 'lithium', 'chip', 'assembly', 'aluminum', 'pulp', 'steel', 'glass', 'wood']
 
 export function closingKind(itemName: string, materialIds: string[]): ClosingKind {
   const name = itemName.replace(/\s+/g, ' ')
   const has = (words: string[]) => words.some((w) => name.includes(w))
   if (has(KEYWORDS[0]![1])) return 'cafe'
+  // 서비스: 앱은 고객센터 상담원, 노래는 건네주는 사람 없이
+  if (materialIds.includes('app')) return 'app'
+  if (materialIds.includes('song')) return 'online'
   // CPU가 든 물건(데스크톱)은 조립 PC 가게. 휴대폰 매장보다 먼저
   if (materialIds.includes('cpu')) return 'computer'
   if (materialIds.some((id) => ELECTRONICS.includes(id))) return 'electronics'
