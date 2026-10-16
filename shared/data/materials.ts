@@ -259,7 +259,7 @@ const list: Material[] = [
     ],
   },
   {
-    id: 'pulp', name: '종이', aliases: ['종이', '종이컵', '노트', '공책', '책', '휴지', '상자', '택배상자', '우유팩', '영수증'],
+    id: 'pulp', name: '종이', aliases: ['종이', '종이컵', '노트', '공책', '휴지', '상자', '택배상자', '우유팩', '영수증'],
     stages: ['eucalyptus', 'pulp-mill', 'santos-port', 'bulk-crew', 'paper-mill', 'warehouse'],
     quiz: {
       q: '종이 원료인 펄프를 세계에서 가장 많이 수출하는 나라는?',
@@ -270,6 +270,16 @@ const list: Material[] = [
     // 근거: 종이컵 안쪽은 폴리에틸렌(PE) 막으로 코팅한다(환경부 일회용컵 분리배출 안내)
     extraQuizzes: [
       { q: '종이컵 안쪽이 물에 젖지 않는 까닭은?', options: ['얇은 플라스틱 막을 입혀서', '소금을 발라서', '유리를 녹여 발라서'], answer: 0, explain: '종이컵 안쪽에는 아주 얇은 플라스틱 막이 입혀져 있어서 물이 스며들지 않아요.', rewardId: 'forest-auditor' },
+    ],
+  },
+  {
+    // 책 = 출판(이 길) + 종이(pulp). 번역서는 출발지 변형으로 (docs/redesign/book-people-review.md)
+    id: 'publishing', name: '출판', aliases: ['출판', '출판사', '소설', '만화책', '잡지', '교과서', '문제집'],
+    stages: ['book-writer', 'book-editor', 'proofreader', 'cover-designer', 'typesetter', 'press-operator', 'binder', 'book-logistics'],
+    originHead: 1,
+    origins: [
+      { id: 'kr', name: '우리말로 쓴 책', weight: 3, head: ['book-writer'] },
+      { id: 'translated', name: '번역한 책', weight: 1, head: ['book-translator'] },
     ],
   },
   {
@@ -648,6 +658,7 @@ export const PRODUCTS: Product[] = [
   { id: 'oj', name: '오렌지 주스', aliases: ['오렌지주스', '주스'], materialIds: ['orange', 'pulp'] },
   { id: 'tofu', name: '두부', aliases: ['두부'], materialIds: ['soybean', 'plastic'] },
   { id: 'bicycle', name: '자전거', aliases: ['자전거', '따릉이'], materialIds: ['steel', 'aluminum', 'rubber'] },
+  { id: 'book', name: '책', aliases: ['책', '소설책', '소설', '만화책', '잡지', '교과서', '문제집', '동화책', '시집'], materialIds: ['publishing', 'pulp'] },
   { id: 'notebook', name: '공책', aliases: ['공책', '노트', '다이어리'], materialIds: ['pulp'] },
   { id: 'tuna-can', name: '참치캔', aliases: ['참치캔', '참치'], materialIds: ['tuna', 'steel'] },
   { id: 'banana-milk', name: '바나나우유', aliases: ['바나나우유'], materialIds: ['milk', 'sugar', 'plastic'] },

@@ -38,6 +38,8 @@ const list: Place[] = [
   { id: 'kr-daejeo', name: '부산 대저', country: '대한민국', continent: 'korea', tz: 'Asia/Seoul' , lat: 35.21, lng: 128.97 },
   { id: 'kr-ulleung', name: '울릉도', country: '대한민국', continent: 'korea', tz: 'Asia/Seoul' , lat: 37.48, lng: 130.9 },
   { id: 'kr-town', name: '우리 동네', country: '대한민국', continent: 'korea', tz: 'Asia/Seoul' , lat: 37.57, lng: 126.98 },
+  // 파주출판도시: 출판·인쇄·제본·물류가 한곳에 모여 있다(경기일보 2025 https://kyeonggi.com/article/20250810580202, 프레시안 https://pressian.com/pages/articles/43307)
+  { id: 'kr-paju', name: '파주', country: '대한민국', continent: 'korea', tz: 'Asia/Seoul' , lat: 37.71, lng: 126.69 },
 
   // 아시아
   { id: 'cn', name: '중국', country: '중국', continent: 'asia', tz: 'Asia/Shanghai' , lat: 34.75, lng: 113.63 },

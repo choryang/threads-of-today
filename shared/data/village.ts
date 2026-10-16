@@ -110,6 +110,7 @@ export const WORKPLACES = {
   'chicken-shop': '치킨집',
   'butcher': '정육점',
   'school-kitchen': '급식실',
+  'bookstore': '서점',
 } as const
 export type WorkplaceId = keyof typeof WORKPLACES
 
@@ -345,6 +346,16 @@ export const RESIDENCE: Record<string, [ZoneId, WorkplaceId]> = {
   'link-garak': ['town', 'market'],
   'mart-cashier': ['town', 'mart'],
   'merch-md': ['town', 'office'],
+  'book-writer': ['town', 'office'],
+  'book-translator': ['town', 'office'],
+  'book-editor': ['town', 'office'],
+  'proofreader': ['town', 'office'],
+  'cover-designer': ['town', 'office'],
+  'typesetter': ['town', 'office'],
+  'press-operator': ['factory', 'paper-wood-factory'],
+  'binder': ['factory', 'paper-wood-factory'],
+  'book-logistics': ['port', 'warehouse'],
+  'bookseller': ['town', 'bookstore'],
   'phone-clerk': ['town', 'phone-shop'],
   'table-setter': ['town', 'school-kitchen'],
   'trade-clerk': ['town', 'office'],

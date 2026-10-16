@@ -202,6 +202,15 @@ export const FORMS: Record<string, MaterialForm[]> = {
     { name: '보리', formIcon: 'barley' },
     { name: '맥아', formIcon: 'malt', by: ['au-malt'] },
   ],
+  // 책 만들기: 원고가 손을 거치며 바뀌는 모습 (아이콘 없음)
+  publishing: [
+    { name: '원고' },
+    { name: '다듬은 원고', by: ['book-editor'] },
+    { name: '교정지', by: ['proofreader'] },
+    { name: '인쇄용 파일', by: ['typesetter'] },
+    { name: '인쇄된 종이', by: ['press-operator'] },
+    { name: '책', by: ['binder'] },
+  ],
   squid: [
     { name: '오징어', formIcon: 'squid' },
     { name: '마른오징어', formIcon: 'dried-squid', by: ['squid-dryer'] },

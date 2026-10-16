@@ -30,7 +30,7 @@ export const MATERIAL_CLASS: Record<MaterialClass, string[]> = {
   plain: ['wheat', 'corn', 'soybean', 'cotton'],
   ranch: ['milk', 'beef', 'pork', 'chicken', 'egg'],
   home: ['rice', 'cabbage', 'chili', 'apple', 'grape', 'tomato', 'potato', 'sweet-potato', 'radish', 'buckwheat', 'barley', 'red-bean', 'tea', 'glass'],
-  forest: ['pulp', 'wood'],
+  forest: ['pulp', 'wood', 'publishing'],
 }
 export const CLASS_OF: Record<string, MaterialClass> = Object.fromEntries(
   (Object.entries(MATERIAL_CLASS) as Array<[MaterialClass, string[]]>).flatMap(([c, ids]) => ids.map((id) => [id, c])),

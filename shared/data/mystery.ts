@@ -28,6 +28,7 @@ export const MYSTERY_INFO: Record<string, { use: string; kind: MysteryKind }> = 
   oj: { kind: 'drink', use: '아침 식사에 한 잔 곁들여요. 새콤달콤해요.' },
   tofu: { kind: 'food', use: '찌개에 넣기도 하고 부쳐 먹기도 해요. 하얗고 말랑해요.' },
   bicycle: { kind: 'ride', use: '페달을 밟으면 두 바퀴로 달려요.' },
+  book: { kind: 'use', use: '자기 전에 몇 쪽씩 넘겨 읽어요. 읽던 곳을 접어 두기도 해요.' },
   notebook: { kind: 'use', use: '수업 시간에 펼쳐 두고 필기해요.' },
   'tuna-can': { kind: 'food', use: '뚜껑을 따서 밥에 얹거나 찌개에 넣어요.' },
   'banana-milk': { kind: 'drink', use: '목욕탕에 다녀온 뒤 생각나는 단지 모양 병이에요.' },

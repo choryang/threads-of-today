@@ -59,6 +59,10 @@ export const NAME_GROUPS: NameGroup[] = [
       'egg-gp': '수민', 'anko-maker': '현준', 'noodle-maker': '서영', 'curing-worker': '승민',
       'sweetpotato-seedling': '예원', 'apple-apc': '준서', barista: '예은', 'cvs-clerk': '지민', 'mart-cashier': '민서',
       'delivery-rider': '우진', 'clothing-clerk': '서윤', 'phone-clerk': '건우', 'cs-agent': '민성',
+      // 책 길(2026-10): 사용자가 검토 표(docs/redesign/book-people-review.md)에서 고른 이름.
+      //   하은은 2008년 상위 이름(위 파이낸셜뉴스), 도윤은 2015년 상위 이름(머니투데이 2015-12-16 https://www.mt.co.kr/society/2015/12/16/2015121616374076724)
+      'book-writer': '하은', 'book-translator': '지안', 'book-editor': '도윤', proofreader: '예린', 'cover-designer': '태오',
+      typesetter: '수아', 'press-operator': '한결', binder: '나래', 'book-logistics': '다온', bookseller: '소연',
     },
   },
   {

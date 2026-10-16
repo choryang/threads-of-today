@@ -22,7 +22,7 @@ apple(사과), notebook(공책), tshirt(면 티셔츠), tofu(두부), chopsticks
 | plain (넓은 들판) | wheat, corn, soybean, cotton |
 | ranch (목장) | milk, beef, pork, chicken, egg |
 | home (우리 땅) | rice, cabbage, chili, apple, grape, tomato, potato, sweet-potato, radish, buckwheat, barley, red-bean, tea, glass |
-| forest (숲) | pulp, wood |
+| forest (숲) | pulp, wood, publishing |
 
 새 재료가 생기면 이 표에 넣어야 한다. 분류가 없는 재료가 있으면 테스트가 실패하게 한다.
 

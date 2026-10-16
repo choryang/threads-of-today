@@ -397,6 +397,17 @@ const list: Person[] = [
   p('merch-md', '상품 MD', 'kr-seoul', '매장에 어떤 물건을 놓을지 골라요. 산지와 공장을 오가며 맛과 품질을 직접 확인해요.', 'none', 'magnifier', 'office', 'smile'),
   p('dispatcher', '물류 배차 담당자', 'kr-gyeonggi', '오늘 나갈 상자들을 보고 어느 차가 어느 길로 갈지 정해요.', 'headset', 'clipboard', 'office', 'sleepy'),
   p('cs-agent', '고객센터 상담원', 'kr-seoul', '주문한 물건이 어디쯤 왔는지, 어떻게 쓰는지 묻는 전화에 하나하나 답해요.', 'headset', 'phone', 'office', 'smile'),
+  // 책 길 (docs/redesign/book-people-review.md): 출판사·인쇄·제본·물류는 파주출판도시에
+  p('book-writer', '작가', 'kr-seoul', '책상 앞에서 한 문장을 몇 번이고 고쳐 써요. 몇 달, 길게는 몇 년 걸린 원고가 책 한 권의 시작이에요.', 'none', 'clipboard', 'office', 'focus'),
+  p('book-translator', '번역가', 'kr-seoul', '다른 나라 말로 쓰인 책을 우리말로 옮겨요. 꼭 맞는 낱말 하나를 찾느라 사전을 여러 권 펼쳐 둬요.', 'none', 'magnifier', 'office', 'focus'),
+  p('book-editor', '편집자', 'kr-paju', '원고를 가장 먼저 읽는 사람이에요. 작가와 함께 순서를 다듬고, 표지와 인쇄 일정까지 챙겨요.', 'none', 'clipboard', 'office', 'smile'),
+  p('proofreader', '교정·교열자', 'kr-paju', '맞춤법과 띄어쓰기, 연도와 이름이 맞는지 한 줄씩 확인해요. 같은 원고를 세 번 넘게 다시 읽어요.', 'none', 'magnifier', 'office', 'focus'),
+  p('cover-designer', '북디자이너', 'kr-seoul', '원고를 읽고 표지 시안을 여러 장 그려요. 서점에서 이 책이 처음 눈에 띈 건 이 사람이 고른 색과 글자 덕분이에요.', 'beanie', 'clipboard', 'office', 'glad'),
+  p('typesetter', '조판 디자이너', 'kr-paju', '본문을 책 크기에 맞춰 한 쪽씩 앉혀요. 줄 끝에 글자 하나만 덩그러니 남지 않게 살펴요.', 'none', 'clipboard', 'office', 'focus'),
+  p('press-operator', '인쇄 기장', 'kr-paju', '판을 걸고 잉크를 맞춰, 큰 종이 한 장에 여러 쪽을 한꺼번에 찍어요. 색이 고르게 나오는지 계속 들여다봐요.', 'cap', 'gear', 'coverall', 'focus'),
+  p('binder', '제본 작업자', 'kr-paju', '인쇄된 종이를 접고 순서대로 모아 실로 꿰매거나 풀로 붙여요. 표지를 씌우고 세 면을 잘라 책 모양을 만들어요.', 'cap', 'box', 'apron', 'smile'),
+  p('book-logistics', '출판 물류센터 직원', 'kr-paju', '여러 출판사의 책을 맡아 두었다가 서점 주문대로 골라 상자에 담아요. 돌아온 책도 다시 제자리에 꽂아요.', 'cap', 'box', 'vest', 'smile'),
+  p('bookseller', '서점 직원', 'kr-town', '새로 나온 책을 매대에 놓고, 찾는 책이 어디 있는지 알려 줘요. 오늘 이 책을 건네준 사람이에요.', 'none', 'box', 'apron', 'smile'),
 
   // ── 숨은 만남 (에픽, 여정 중 아주 가끔) ──
   p('ship-cook', '배 위의 요리사', 'sea', '몇 주씩 바다 위에 있는 선원들의 하루 세 끼를 책임져요. 흔들리는 주방에서도 국을 끓여요.', 'chef', 'cup', 'apron', 'smile', 'epic', 'hidden'),

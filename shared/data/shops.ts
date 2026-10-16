@@ -3,7 +3,7 @@
  * 물건 이름과 재료로 종류를 정하고(closingKind), 여정 끝에 사무실 사람 한 명(있으면)과 가게 사람 한 명을 붙인다.
  * 수입 재료가 지나온 여정이면 사무실 사람 후보에 수입 서류를 챙기는 무역회사 직원이 들어간다.
  */
-export type ClosingKind = 'cafe' | 'delivery' | 'cvs' | 'electronics' | 'clothes' | 'mart' | 'goods'
+export type ClosingKind = 'cafe' | 'delivery' | 'cvs' | 'electronics' | 'clothes' | 'mart' | 'goods' | 'books'
 
 export interface Closing {
   /** 마지막에 물건을 건네는 사람 (후보 중 여정 id 시드로 하나) */
@@ -20,6 +20,7 @@ export const CLOSINGS: Record<ClosingKind, Closing> = {
   clothes: { shop: ['clothing-clerk'], office: ['merch-md'] },
   mart: { shop: ['mart-cashier'], office: ['merch-md'] },
   goods: { shop: ['courier'], office: ['dispatcher', 'cs-agent'] },
+  books: { shop: ['bookseller'], office: [] },
 }
 
 /** 수입 재료가 지나온 여정에서 사무실 사람 후보에 더한다 */
@@ -36,13 +37,15 @@ const KEYWORDS: Array<[ClosingKind, string[]]> = [
 const ELECTRONICS = ['assembly', 'chip']
 const CLOTHING = ['cotton', 'polyester', 'rubber']
 /** 먹을거리가 아닌 재료. 이것만으로 된 물건은 가게 물건(goods) */
-export const NON_FOOD = ['cotton', 'polyester', 'plastic', 'rubber', 'cobalt', 'lithium', 'chip', 'assembly', 'aluminum', 'pulp', 'steel', 'glass', 'wood']
+export const NON_FOOD = ['publishing', 'cotton', 'polyester', 'plastic', 'rubber', 'cobalt', 'lithium', 'chip', 'assembly', 'aluminum', 'pulp', 'steel', 'glass', 'wood']
 
 export function closingKind(itemName: string, materialIds: string[]): ClosingKind {
   const name = itemName.replace(/\s+/g, ' ')
   const has = (words: string[]) => words.some((w) => name.includes(w))
   if (has(KEYWORDS[0]![1])) return 'cafe'
   if (materialIds.some((id) => ELECTRONICS.includes(id))) return 'electronics'
+  // 출판 재료가 있으면 서점 ('책상'처럼 '책'이 든 다른 물건은 이름으로 고르지 않는다)
+  if (materialIds.includes('publishing')) return 'books'
   for (const [kind, words] of KEYWORDS.slice(1)) if (has(words)) return kind
   if (materialIds.includes('coffee')) return 'cafe'
   if (materialIds.every((id) => CLOTHING.includes(id)) && materialIds.some((id) => id === 'cotton' || id === 'polyester')) return 'clothes'
