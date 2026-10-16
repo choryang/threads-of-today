@@ -8,7 +8,8 @@ import { DOING } from '../shared/data/doing'
 import { PEOPLE } from '../shared/data/people'
 import { PLACES } from '../shared/data/places'
 import { clockAt, doingBucket } from '../shared/local-time'
-import { RECENT_WALKS, rememberWalk, wakeCounts, walkJourneyId, walkPath, walkPeople } from '../shared/walk'
+import { FORMS } from '../shared/data/forms'
+import { RECENT_WALKS, formChanges, rememberWalk, wakeCounts, walkJourneyId, walkPath, walkPeople } from '../shared/walk'
 
 const AMERICANO = { materialIds: ['coffee', 'plastic'], name: '아이스 아메리카노' }
 
@@ -53,4 +54,26 @@ test('맨 위 요약: 길 위의 사람을 그곳 시각의 일·저녁·잠으�
   }
   // 같은 사람은 한 번만
   assert.deepEqual(wakeCounts(['barista', 'barista'], new Date('2026-10-16T03:00:00Z')), { awake: 1, asleep: 0 })
+})
+
+test('칸 사이 변신: forms.ts의 형태 이름만, 바뀌는 칸에만', () => {
+  assert.deepEqual(formChanges('coffee', ['coffee-picker', 'washing-station', 'djibouti-docker', 'sea-crew', 'busan-crane', 'roaster', 'warehouse']), [
+    null,
+    { from: '커피 체리', to: '생두' },
+    { from: '생두', to: '생두 자루' },
+    null,
+    null,
+    { from: '생두 자루', to: '볶은 원두' },
+    null,
+  ])
+  // 형태 목록이 없는 재료는 아무것도 없다
+  assert.deepEqual(formChanges('nothing', ['a', 'b']), [null, null])
+  // 어느 길로 걸어도 이름은 forms.ts에 있는 것뿐
+  for (let i = 0; i < 20; i++) {
+    const walk = walkPath(AMERICANO.materialIds, `2026-10-15-1-w${i.toString(36).padStart(5, '0')}`, AMERICANO.name)
+    for (const b of walk.branches) {
+      const names = new Set((FORMS[b.materialId] ?? []).map((f) => f.name))
+      for (const c of formChanges(b.materialId, b.stops)) if (c) assert.ok(names.has(c.from) && names.has(c.to))
+    }
+  }
 })

@@ -1,4 +1,5 @@
 import { DOING } from './data/doing'
+import { FORMS, formAt } from './data/forms'
 import { MATERIALS } from './data/materials'
 import { PEOPLE } from './data/people'
 import { PLACES } from './data/places'
@@ -68,4 +69,16 @@ export function wakeCounts(personIds: string[], now: Date): { awake: number; asl
     else awake++
   }
   return { awake, asleep }
+}
+
+/**
+ * 칸마다 그 사람 손에서 바뀌는 모습 ('커피 체리 → 생두'). 형태 이름은 forms.ts 그대로, 바뀌지 않으면 null.
+ * 첫 칸은 처음 모습(FORMS의 맨 앞)에서, 그다음은 앞 칸을 떠날 때 모습에서
+ */
+export function formChanges(materialId: string, stops: string[]): ({ from: string; to: string } | null)[] {
+  return stops.map((id, i) => {
+    const before = i === 0 ? FORMS[materialId]?.[0] : formAt(materialId, stops, stops[i - 1]!)
+    const after = formAt(materialId, stops, id)
+    return before && after && before.name !== after.name ? { from: before.name, to: after.name } : null
+  })
 }
