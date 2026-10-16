@@ -24,7 +24,8 @@ import { resolveItem } from '../utils/resolve-item'
  */
 useHead({ htmlAttrs: { class: 'today-ui' }, title: '실 따라 걷기' })
 
-const CHOICES = ['아이스 아메리카노', '스마트폰', '참치마요 삼각김밥', '라면', '운동화', '면 티셔츠']
+/** 먹고 입는 것 넷 + 새로 생긴 길(책·노래·컴퓨터·영화) 넷 */
+const CHOICES = ['아이스 아메리카노', '라면', '스마트폰', '운동화', '책', '노래', '컴퓨터', '영화']
 const RECENT_KEY = 'my-day-people:walk-recent'
 
 const recent = ref<string[]>([])
