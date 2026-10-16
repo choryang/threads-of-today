@@ -92,8 +92,8 @@ const RIVER = new Set(['barge-crew'])
 /** cross: 나라를 건너는데 무엇에 실려 가는지 모르는 구간(거리만 적는다) · net: 앱·노래처럼 인터넷으로 오가는 구간 */
 export type LegMode = 'sea' | 'air' | 'land' | 'cross' | 'net'
 
-/** 물건이 아니라 인터넷으로 오가는 길의 사람들 (앱·노래·드라마·애니메이션·인터넷 재료. 그림·영상도 파일로 오간다) */
-const NET = new Set(['app', 'song', 'drama', 'anime-jp', 'anime-kr', 'internet'].flatMap((id) => MATERIALS[id]?.stages ?? []))
+/** 물건이 아니라 인터넷으로 오가는 길의 사람들 (앱·노래·드라마·애니메이션·게임·인터넷 재료. 그림·영상도 파일로 오간다) */
+const NET = new Set(['app', 'song', 'drama', 'anime-jp', 'anime-kr', 'game', 'internet'].flatMap((id) => MATERIALS[id]?.stages ?? []))
 export interface LegGap {
   mode: LegMode
   /** 이 구간의 대권 거리(반올림 전). 화면에는 roundKm으로 */

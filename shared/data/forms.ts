@@ -202,6 +202,22 @@ export const FORMS: Record<string, MaterialForm[]> = {
     { name: '보리', formIcon: 'barley' },
     { name: '맥아', formIcon: 'malt', by: ['au-malt'] },
   ],
+  // 게임 (아이콘 없음)
+  game: [
+    { name: '아이디어' },
+    { name: '기획서', by: ['game-designer'] },
+    { name: '세계와 대사', by: ['game-writer'] },
+    { name: '콘셉트 그림', by: ['concept-artist'] },
+    { name: '3D 캐릭터', by: ['game-3d-artist'] },
+    { name: '움직이는 캐릭터', by: ['game-animator'] },
+    { name: '반짝이는 효과', by: ['vfx-designer'] },
+    { name: '놀 수 있는 맵', by: ['level-designer'] },
+    { name: '화면 속 게임', by: ['client-programmer'] },
+    { name: '함께 노는 서버', by: ['server-programmer'] },
+    { name: '소리 든 게임', by: ['sound-designer'] },
+    { name: '테스트 빌드', by: ['game-qa'] },
+    { name: '업데이트된 게임', by: ['live-ops'] },
+  ],
   // 애니메이션 (아이콘 없음)
   'anime-jp': [
     { name: '원작' },

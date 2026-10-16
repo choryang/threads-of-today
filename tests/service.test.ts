@@ -48,3 +48,11 @@ test('애니메이션: 일본 길은 서울·마닐라를 거쳐 도쿄로 돌�
   assert.ok(stops.indexOf('ink-painter') < stops.indexOf('compositor-jp'))
   assert.equal(walkPath(['anime-kr'], id(1), '어린이 애니메이션').branches[0]!.stops[0], 'kids-anime-pd')
 })
+
+test('게임: 하노이 그래픽 스튜디오를 거쳐 라이브 운영까지, 인터넷으로 바로 나에게', () => {
+  assert.deepEqual(matchLocal('모바일 게임')?.materialIds, ['game', 'internet'])
+  assert.notDeepEqual(matchLocal('롤케이크')?.materialIds, ['game', 'internet'])
+  const walk = walkPath(['game', 'internet'], id(1), '게임')
+  assert.deepEqual(walk.hand, [])
+  assert.equal(walk.branches[0]!.stops.at(-1), 'live-ops')
+})

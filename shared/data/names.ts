@@ -71,6 +71,8 @@ export const NAME_GROUPS: NameGroup[] = [
       'content-moderator': '가은', topliner: '유나', lyricist: '동훈', arranger: '수연', 'session-player': '경민',
       'vocal-director': '채원', 'recording-engineer': '재석', 'album-designer': '은비', 'music-distributor': '상우',
       'datacenter-tech': '성우', 'base-station': '준기', lear: '리어', // 첫 사용자 본인이 정한 이름
+      // 게임 길 (순위 출처 없는 평범한 이름)
+      'game-designer': '지환', 'game-writer': '서진', 'concept-artist': '하람', 'game-animator': '수현', 'vfx-designer': '은채', 'level-designer': '도하', 'client-programmer': '정우', 'server-programmer': '윤재', 'sound-designer': '아린', 'game-qa': '세린', 'live-ops': '가람',
       // 애니메이션 길 (순위 출처 없는 평범한 이름)
       'inbetweener': '시온', 'subtitle-translator': '윤아', 'kids-anime-pd': '태호', 'kids-scriptwriter': '민경', 'character-designer': '주희', 'storyboard-artist': '동진', 'modeler-3d': '다인', 'rigger': '건호', 'animator-3d': '예슬', 'lighting-artist': '지혜원', 'render-wrangler': '시후', 'compositor-kr': '주원', 'dubbing-actor': '소율', 'kids-music': '지호',
       // 영화·드라마 길 (순위 출처 없는 평범한 이름)
@@ -255,6 +257,7 @@ export const NAME_GROUPS: NameGroup[] = [
       'module-assembler': '중', // Dũng
       // 아래는 순위 출처 없는 평범한 이름 (2026-10 사용자 결정)
       'monitor-assembler': '투이', 'app-developer': '린', 'qa-tester': '프엉', // Thủy, Linh, Phương
+      'game-3d-artist': '바오', // Bảo
     },
   },
   {

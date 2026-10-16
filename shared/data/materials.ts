@@ -285,6 +285,11 @@ const list: Material[] = [
     id: 'internet', name: '인터넷', aliases: ['인터넷', '와이파이', '데이터'],
     stages: ['datacenter-tech', 'cable-repairer', 'base-station'],
   },
+  // 게임 (docs/redesign/game-people-review.md). 그래픽 일부는 하노이 스튜디오에서
+  {
+    id: 'game', name: '게임 만들기', aliases: ['게임 만들기', '게임 개발'],
+    stages: ['game-designer', 'game-writer', 'concept-artist', 'game-3d-artist', 'game-animator', 'vfx-designer', 'level-designer', 'client-programmer', 'server-programmer', 'sound-designer', 'game-qa', 'live-ops'],
+  },
   // 애니메이션 (docs/redesign/anime-people-review.md). 일본 길은 동화를 서울, 채색을 마닐라에 맡겼다가 도쿄로 돌아온다
   {
     id: 'anime-jp', name: '일본 애니메이션 만들기', aliases: ['일본 애니메이션 만들기'],
@@ -716,6 +721,7 @@ export const PRODUCTS: Product[] = [
   { id: 'bicycle', name: '자전거', aliases: ['자전거', '따릉이'], materialIds: ['steel', 'aluminum', 'rubber'] },
   { id: 'app', name: '앱', aliases: ['앱', '어플', '애플리케이션', '메신저', '메신저 앱', '배달앱', '배달 앱', '카톡', '카카오톡'], materialIds: ['app', 'internet'] },
   { id: 'song', name: '노래', aliases: ['노래', '음악', '음원', '케이팝', 'K팝', '플레이리스트', '신곡'], materialIds: ['song', 'internet'] },
+  { id: 'game', name: '게임', aliases: ['게임', '모바일 게임', '온라인 게임', '폰게임', '롤플레잉', 'RPG'], materialIds: ['game', 'internet'] },
   { id: 'anime', name: '애니메이션', aliases: ['애니메이션', '애니', '일본 애니', '일본 애니메이션', '아니메'], materialIds: ['anime-jp', 'internet'] },
   { id: 'kids-anime', name: '어린이 애니메이션', aliases: ['어린이 애니메이션', '유아 애니', '유아 애니메이션', '만화영화', '어린이 만화'], materialIds: ['anime-kr', 'internet'] },
   { id: 'film', name: '영화', aliases: ['영화', '영화관', '극장', '개봉 영화', '영화 한 편'], materialIds: ['film'] },
