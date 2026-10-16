@@ -78,7 +78,8 @@ shared/                 앱과 서버가 상대 경로로 함께 import (Nuxt �
   progress.ts           Save 타입, mergeSaves·sanitizeSave(예전 필드도 합치고 검사한다), hasProgress(서버 기록을 만들지)
   friendship.ts         출처 있는 사실(factOf)·예전 사람별 기록 합치기(Save 호환)
   nickname.ts · recovery.ts(복구 코드 '낱말-낱말-숫자4') · voice.ts({name} 자리표시자, AI에 닉네임을 보내지 않는다)
-  match/                AI 없는 매칭. normalize → exact → synonym → typo(자모 편집 거리) → compound → partial, 결과에 via
+  match/                AI 없는 매칭. normalize → exact → synonym → typo(자모 편집 거리, 세 글자 이상) → compound → partial, 결과에 via.
+                        입력이 들어 있는 다른 물건(딸기 → 딸기 우유)으로는 잡지 않는다(widen.ts, 서버 AI 결과·캐시도 같은 규칙)
   journey.ts            경로 시드 계산(buildTimeline·keyPeople·materialRoute). 한 사람 고르기와 걷기가 쓴다
   key-story.ts          이야기 편(storyEpisodes, 예전 판 편 번호 옮기기)
   distance.ts           장소 좌표로 대권 거리, 100km 단위 반올림

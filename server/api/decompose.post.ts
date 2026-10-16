@@ -2,6 +2,7 @@ import { allowAiCall, countMissing, readCache, toDecomposed, writeCache } from '
 import { decomposeWithClaude, type DecomposeInput, type DecomposeResult } from '../utils/decompose'
 import type { H3Event } from 'h3'
 import { matchText } from '../utils/matcher'
+import { widensInput } from '../../shared/match'
 
 const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp']
 const MAX_IMAGE_BASE64 = 1_500_000 // 약 1.1MB. 클라이언트에서 줄여서 보낸다.
@@ -36,7 +37,8 @@ async function decompose(event: H3Event): Promise<DecomposeResult> {
     const local = matchText(text)
     if (local) return { ok: true, source: 'local', ...local }
     const cached = await readCache(text).catch(() => null)
-    if (cached) return { ok: true, source: 'ai', via: 'cache', ...toDecomposed(cached) }
+    // 예전 캐시 중 입력이 들어 있는 다른 물건('딸기' → 딸기 우유)으로 이은 것은 쓰지 않고 다시 묻는다
+    if (cached && !widensInput(text, cached.name)) return { ok: true, source: 'ai', via: 'cache', ...toDecomposed(cached) }
   }
 
   const config = useRuntimeConfig(event)
@@ -67,6 +69,8 @@ async function decompose(event: H3Event): Promise<DecomposeResult> {
       return result
     }
 
+    // 입력이 들어 있는 다른 물건으로 이었으면 그 길을 보여 주지 않는다(캐시에도 남기지 않는다)
+    if (!result.proper && widensInput(text, result.name)) return { ok: true, source: 'ai', name: text, materialIds: [] }
     await writeCache(text, result).catch((err) => console.error('[decompose] cache write', err))
     return result
   } catch (err) {

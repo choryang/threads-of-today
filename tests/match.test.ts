@@ -39,16 +39,40 @@ test('무의미한 입력은 매칭하지 않는다', () => {
 })
 
 test('정확 일치는 대표 물건 이름으로 돌려준다', () => {
-  assert.equal(match('삼각김밥')?.name, '참치마요 삼각김밥')
+  assert.equal(match('참치마요')?.name, '참치마요 삼각김밥')
   assert.equal(match('카페라떼')?.name, '카페라떼')
-  assert.equal(match('삼각김밥')?.via, 'exact')
+  assert.equal(match('참치마요')?.via, 'exact')
+})
+
+test('입력한 말이 들어 있는 다른 물건으로 잡지 않는다', async () => {
+  const { createMatcher, productEntries, widensInput } = await import('../shared/match')
+  assert.ok(widensInput('딸기', '딸기 우유'))
+  assert.ok(widensInput('레몬', '레몬 에이드 한 잔'))
+  assert.ok(widensInput('고양이', '고양이 사료'))
+  assert.ok(!widensInput('꿀', '꿀병'))
+  assert.ok(!widensInput('레몬차', '레몬차 한 잔'))
+  assert.ok(!widensInput('락스', '락스 (욕실 세정제)'))
+  assert.ok(!widensInput('월요일', '아이스 아메리카노'))
+  // '삼각김밥'은 참치마요 삼각김밥이 아니라 삼각김밥의 재료로
+  assert.equal(match('삼각김밥')?.name, '삼각김밥')
+  assert.deepEqual(match('삼각김밥')?.materialIds, ['rice', 'laver', 'tuna'])
+  assert.equal(match('참치')?.name, '참치')
+  assert.deepEqual(match('참치')?.materialIds, ['tuna'])
+  // 사전(AI가 만든 것)의 그런 별칭은 쓰지 않는다. 대표 물건 별칭은 그대로
+  const m = createMatcher([...productEntries(), { key: '딸기우유', name: '딸기 우유', aliases: ['딸기', '딸기우유'], materialIds: ['milk'] }])
+  assert.notEqual(m.match('딸기')?.name, '딸기 우유')
+  assert.equal(m.match('딸기우유')?.name, '딸기 우유')
+  assert.equal(m.match('폰')?.name, '스마트폰')
+  // 덜 쓴 말을 채운 낱말, 두 글자 오타는 잡지 않는다
+  assert.equal(match('아이스아메리카'), null)
+  assert.notEqual(match('운동')?.name, '우동')
 })
 
 test('수식어를 지운다', () => {
   assert.equal(normalize('편의점 삼각김밥 하나'), '삼각김밥')
   assert.equal(normalize('오늘 아메리카노 한 잔'), '아메리카노')
   assert.equal(match('오늘 마신 아메리카노 한잔')?.name, '아이스 아메리카노')
-  assert.equal(match('편의점삼각김밥')?.name, '참치마요 삼각김밥')
+  assert.deepEqual(match('편의점삼각김밥')?.materialIds, ['rice', 'laver', 'tuna'])
   // 한 글자 수식어는 붙여 쓰면 지우지 않는다
   assert.equal(normalize('새우깡'), '새우깡')
 })
@@ -80,11 +104,11 @@ test('물건 사전 항목: 같은 물건을 다시 넣으면 voices 중 하나�
   const voices = ['하나', '둘', '셋']
   const m = createMatcher([
     ...productEntries(),
-    { key: '고양이', name: '고양이 사료', aliases: ['고양이'], materialIds: ['chicken', 'corn'], twist: '고양이 밥그릇을 채우는 것부터', voices },
+    { key: '고양이사료', name: '고양이 사료', aliases: ['캣푸드'], materialIds: ['chicken', 'corn'], twist: '고양이 밥그릇을 채우는 것부터', voices },
   ])
   const seen = new Set<string>()
   for (let i = 0; i < 50; i++) {
-    const r = m.match('고양이')
+    const r = m.match('캣푸드')
     assert.equal(r?.name, '고양이 사료')
     assert.ok(r?.twist)
     assert.ok(voices.includes(r!.voice!))

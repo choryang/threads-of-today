@@ -8,14 +8,19 @@
  *   4. typo           자모 편집 거리로 오타 허용 (짧은 단어일수록 엄격)
  *   5. compound       사전 단어로 가장 긴 것부터 쪼개 2개 이상 잡히면 재료를 합침
  *   6. partial        재료 별칭(2글자 이상) 부분 일치
+ *
+ * 입력한 말이 들어 있는 다른 물건으로는 잡지 않는다('딸기' → '딸기 우유', 오타로 본 '아이스아메리카' → '아이스 아메리카노'. widen.ts).
+ * 물건 사전(AI가 만든 것)의 별칭 중 그런 것은 쓰지 않는다. 대표 물건(PRODUCTS)의 별칭은 손으로 고른 것이라 그대로 쓴다('폰' → 스마트폰).
  */
 import { MATERIAL_LIST, PRODUCTS } from '../data/materials'
 import { SYNONYM_GROUPS } from '../data/synonyms'
 import { MAX_MATERIALS, journeyMaterialIds, type Decomposed } from '../logic'
 import { editDistance, hasSyllable, toJamo } from './hangul'
 import { compact, normalize } from './normalize'
+import { widensInput } from './widen'
 
 export { compact, normalize } from './normalize'
+export { widensInput } from './widen'
 
 export type MatchVia = 'exact' | 'synonym' | 'typo' | 'compound' | 'partial'
 
@@ -36,10 +41,12 @@ export interface DictEntry {
   voices?: string[]
   /** 주재료인데 아직 여정이 없는 재료 이름. 이것만 있고 materialIds가 비어 있을 수도 있다 */
   missing?: string[]
+  /** 손으로 고른 대표 물건. 이름보다 짧은 별칭('폰')도 그대로 쓴다 */
+  curated?: true
 }
 
 export function productEntries(): DictEntry[] {
-  return PRODUCTS.map((p) => ({ key: p.id, name: p.name, aliases: p.aliases, materialIds: p.materialIds }))
+  return PRODUCTS.map((p) => ({ key: p.id, name: p.name, aliases: p.aliases, materialIds: p.materialIds, curated: true as const }))
 }
 
 /** 낱말 하나가 가리키는 대상: 사전 항목 하나, 또는 그 별칭을 가진 재료들 */
@@ -72,7 +79,8 @@ export function createMatcher(entries: DictEntry[]) {
   /** 사전 항목의 이름·별칭 → 항목 (먼저 나온 항목이 우선) */
   const entryWords = new Map<string, DictEntry>()
   for (const e of entries) {
-    for (const w of [e.name, ...e.aliases].map(compact)) if (w && !entryWords.has(w)) entryWords.set(w, e)
+    const aliases = e.curated ? e.aliases : e.aliases.filter((a) => !widensInput(a, e.name))
+    for (const w of [e.name, ...aliases].map(compact)) if (w && !entryWords.has(w)) entryWords.set(w, e)
   }
   /** 재료 이름·별칭 → 그 별칭을 가진 재료 id들 */
   const materialWords = new Map<string, string[]>()
@@ -131,12 +139,15 @@ export function createMatcher(entries: DictEntry[]) {
 
   function typo(s: string): DictEntry | string[] | null {
     const j = toJamo(s)
-    const limit = typoThreshold(j.length)
+    // 두 글자 말은 자모 하나만 달라도 다른 낱말이 많다('운동' → '우동')
+    const limit = s.length < 3 ? 0 : typoThreshold(j.length)
     if (!limit) return null
     let best: { w: string; d: number } | null = null
     for (const v of vocabJamo) {
       const d = editDistance(j, v.j, Math.min(limit, typoThreshold(v.j.length)))
       if (d === 0 || d > Math.min(limit, typoThreshold(v.j.length))) continue
+      // 덜 쓴 말을 채운 더 긴 낱말은 오타가 아니라 다른 물건이다 ('아이스아메리카' → '아이스아메리카노')
+      if (v.w.includes(s)) continue
       if (!best || d < best.d || (d === best.d && entryWords.has(v.w) && !entryWords.has(best.w))) best = { w: v.w, d }
     }
     if (!best) return null

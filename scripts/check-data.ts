@@ -268,8 +268,9 @@ for (const [canonical] of SYNONYM_GROUPS) {
 }
 
 // 로직 스모크 테스트 (자세한 매칭 사례는 npm test)
+// 입력이 들어 있는 다른 물건(참치마요 삼각김밥)이 아니라 삼각김밥 그대로
 const samgak = match('삼각김밥')
-if (samgak?.name !== '참치마요 삼각김밥') errors.push(`match 삼각김밥 실패: ${JSON.stringify(samgak)}`)
+if (samgak?.name !== '삼각김밥' || !samgak.materialIds.includes('rice')) errors.push(`match 삼각김밥 실패: ${JSON.stringify(samgak)}`)
 const tkg = match('참치김치김밥')
 for (const id of ['tuna', 'chili', 'cabbage', 'rice']) if (!tkg?.materialIds.includes(id)) errors.push(`참치김치김밥에 ${id} 없음: ${JSON.stringify(tkg)}`)
 if (tkg?.name !== '참치김치김밥') errors.push(`참치김치김밥이 대표 물건으로 잘못 매칭: ${tkg?.name}`)
