@@ -89,7 +89,8 @@ export function formChanges(materialId: string, stops: string[]): ({ from: strin
 /** 강을 오가는 배: transport.ts에서는 배지만 걷기에서는 땅 구간으로 본다 */
 const RIVER = new Set(['barge-crew'])
 
-export type LegMode = 'sea' | 'air' | 'land'
+/** cross: 나라를 건너는데 무엇에 실려 가는지 모르는 구간(거리만 적는다) */
+export type LegMode = 'sea' | 'air' | 'land' | 'cross'
 export interface LegGap {
   mode: LegMode
   /** 이 구간의 대권 거리(반올림 전). 화면에는 roundKm으로 */
@@ -101,7 +102,8 @@ export interface LegGap {
 /**
  * 칸 사이 이동. gaps[i]는 ids[i]와 ids[i+1] 사이. 좌표가 있는 두 칸 사이를 한 구간으로 보고(바다 위처럼 좌표가 없는 칸은 건너뛴다)
  * 구간 안의 칸 사이에 모두 같은 값을 둔다. 좌표 있는 다음 칸이 없으면 null.
- * 바다: 떠나는 칸이나 그 사이에 배(transport.ts, 강을 오가는 바지선은 빼고)나 바다 위 사람이 있다. 하늘: 공항 화물 담당에서 공항 화물 담당으로. 그 밖은 땅
+ * 바다: 떠나는 칸이나 그 사이에 배(transport.ts, 강을 오가는 바지선은 빼고)나 바다 위 사람이 있다.
+ * 하늘: 나라를 건너고 한쪽 끝이 공항 화물 담당. 땅: 같은 나라 안. 그 밖(나라를 건너는데 실려 가는 것을 모름)은 cross
  */
 export function walkLegs(ids: string[]): (LegGap | null)[] {
   const gaps: (LegGap | null)[] = ids.slice(1).map(() => null)
@@ -112,7 +114,10 @@ export function walkLegs(ids: string[]): (LegGap | null)[] {
     while (b < ids.length && !points[b]) b++
     if (b >= ids.length) break
     const sea = ids.slice(a, b).some((id) => (TRANSPORT[id] === 'ship' && !RIVER.has(id)) || PLACES[PEOPLE[id]?.placeId ?? '']?.continent === 'sea')
-    const mode: LegMode = sea ? 'sea' : TRANSPORT[ids[a]!] === 'air' && TRANSPORT[ids[b]!] === 'air' ? 'air' : 'land'
+    const country = (id: string) => PLACES[PEOPLE[id]?.placeId ?? '']?.country
+    const abroad = country(ids[a]!) !== country(ids[b]!)
+    const air = TRANSPORT[ids[a]!] === 'air' || TRANSPORT[ids[b]!] === 'air'
+    const mode: LegMode = sea ? 'sea' : !abroad ? 'land' : air ? 'air' : 'cross'
     const km = greatCircleKm(points[a]!, points[b]!)
     for (let i = a; i < b; i++) gaps[i] = { mode, km, first: i === a }
     a = b

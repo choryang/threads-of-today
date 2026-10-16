@@ -107,12 +107,14 @@ const openSource = ref<string | null>(null)
 function toggleSource(key: string) {
   openSource.value = openSource.value === key ? null : key
 }
-const MODE_LABEL: Record<LegMode, string> = { sea: '바다', air: '하늘', land: '땅' }
-/** 구간 첫 칸 사이에만 '바다 · 약 7,600km'. 50km보다 짧은 땅 구간은 적지 않는다 */
+const MODE_LABEL: Record<LegMode, string> = { sea: '바다', air: '하늘', land: '땅', cross: '' }
+/** 구간 첫 칸 사이에만 '바다 · 약 7,600km'(무엇에 실려 가는지 모르면 '약 2,900km'). 50km보다 짧은 땅 구간은 적지 않는다 */
 function legLabel(g: LegGap | null): string {
   if (!g?.first) return ''
-  const km = roundKm(g.km) > 0 ? ` · 약 ${formatKm(g.km)}km` : ''
-  return km || g.mode !== 'land' ? `${MODE_LABEL[g.mode]}${km}` : ''
+  const km = roundKm(g.km) > 0 ? `약 ${formatKm(g.km)}km` : ''
+  const label = MODE_LABEL[g.mode]
+  if (!km) return g.mode === 'land' ? '' : label
+  return label ? `${label} · ${km}` : km
 }
 /** 칸마다 그 아래 칸 사이: 변신·이동 한 줄씩, 앞뒤가 바다 구간인지 (점선) */
 function withGaps(stops: string[], gaps: (LegGap | null)[], changes: ({ from: string; to: string } | null)[] = []) {

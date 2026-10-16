@@ -81,10 +81,11 @@ test('칸 사이 변신: forms.ts의 형태 이름만, 바뀌는 칸에만', () 
   }
 })
 
-test('칸 사이 이동: 바다 위 칸은 건너뛰어 한 구간, 배가 있으면 바다, 공항끼리는 하늘, 그 밖은 땅', () => {
+test('칸 사이 이동: 바다 위 칸은 건너뛰어 한 구간, 배가 있으면 바다, 나라를 건너 공항이면 하늘, 같은 나라는 땅', () => {
   const coffee = walkLegs(['coffee-picker', 'washing-station', 'djibouti-docker', 'sea-crew', 'busan-crane', 'roaster'])
   assert.equal(coffee.length, 5)
-  assert.equal(coffee[1]!.mode, 'land')
+  // 에티오피아 → 지부티: 나라를 건너는데 실려 가는 것을 모름
+  assert.equal(coffee[1]!.mode, 'cross')
   // 지부티 → (바다 위) → 부산: 두 칸 사이가 한 구간, 이름·거리는 첫 칸 사이에만
   assert.equal(coffee[2]!.mode, 'sea')
   assert.equal(coffee[3]!.mode, 'sea')
@@ -96,6 +97,8 @@ test('칸 사이 이동: 바다 위 칸은 건너뛰어 한 구간, 배가 있�
   assert.deepEqual(salmon.map((g) => g!.mode), ['land', 'air', 'land'])
   // 강을 오가는 바지선은 땅, 항구에서 큰 배로는 바다
   assert.deepEqual(walkLegs(['corn-farmer', 'barge-crew', 'nola-port', 'bulk-crew', 'starch-plant']).map((g) => g!.mode), ['land', 'land', 'sea', 'sea'])
+  // 나라를 건너면서 한쪽이 공항이면 하늘, 실려 가는 것을 모르면 거리만(cross)
+  assert.deepEqual(walkLegs(['cpu-fab', 'osat', 'air-cargo', 'warehouse']).map((g) => g!.mode), ['cross', 'air', 'land'])
   // 좌표 있는 다음 칸이 없으면 비워 둔다
   assert.deepEqual(walkLegs(['djibouti-docker', 'sea-crew']), [null])
   assert.deepEqual(walkLegs(['barista']), [])
