@@ -35,8 +35,6 @@ npm run cache:export   # AI 캐시를 조회 수 순으로 data/review/cache.csv
    | `NUXT_ANTHROPIC_MODEL` | 선택 | 기본 `claude-haiku-5-5` |
    | `KV_REST_API_URL` / `KV_REST_API_TOKEN` | 권장 | Upstash 연결 시 자동. 없으면 캐시·요청 제한이 인스턴스 메모리로만 동작하고, 진행 상황 서버 저장(다른 기기에서 이어 하기)은 꺼진다 |
    | `NUXT_AI_DAILY_LIMIT` | 선택 | IP별 하루 AI 호출 한도. 기본 20 |
-   | `NUXT_GOOGLE_MAPS_KEY` | 선택 | 고유명사를 구글 지도(Places API Text Search, New)에서 찾을 때. 없으면 "Google 지도에서 찾아보기" 링크만 |
-   | `NUXT_MAPS_DAILY_LIMIT` | 선택 | IP별 하루 지도 검색 한도. 기본 30 |
    | `NUXT_IP_SALT` | 권장 | 요청 제한 키에 쓰는 IP 해시의 소금값. 아무 긴 문자열 |
    | `CRON_SECRET` | 권장 | Vercel Cron(`/api/cron/cleanup`, 매일 서울 새벽 4시)이 보내는 Bearer 토큰. 없으면 청소가 늘 거절되어 이틀 지난 `meet:*`·`thanks:day:*` 키가 쌓인다. 16자 이상 무작위 문자열 |
    | `MEET_SNAPSHOT_MINUTES` | 선택 | 모두의 오늘 숫자를 다시 세는 간격(분). 기본 30, 1~1440. CDN 캐시(`s-maxage`)와 기기의 다시 묻기 간격도 이 값을 따른다. 짧을수록 숫자가 빨리 바뀌지만 다시 셀 때마다 Upstash 명령이 약 227개 든다 |
@@ -51,7 +49,7 @@ npm run cache:export   # AI 캐시를 조회 수 순으로 data/review/cache.csv
 1. **로컬 매칭** (`shared/match`): 정규화 → 대표 물건·물건 사전 정확 일치 → 동의어 → 오타(자모 편집 거리) → 합성어 분해 → 재료 별칭 부분 일치
 2. **공유 캐시** (Upstash): 예전에 누군가 AI로 분해한 입력이면 그 결과를 쓴다. 정규화한 입력이 키
 3. **Claude**: IP별 하루 한도(`NUXT_AI_DAILY_LIMIT`) 안에서만. 결과는 캐시에 저장. 하루는 한국 시간(Asia/Seoul) 자정에 바뀐다
-   - 고유명사(회사·기관·브랜드·서비스·게임·장소, 사람 이름 빼고)면 재료로 나누지 않고 `proper`로 캐시한다. 걷기는 길 대신 `/api/whereis`로 구글 지도 첫 결과(엉뚱해도 그대로)와 Claude의 한마디를 보여 준다. 지도 내용(이름·주소)은 약관상 저장하지 않고 볼 때마다 받는다. 저장하는 건 한마디뿐(입력 + 장소 id 키)
+   - 고유명사(회사·기관·브랜드·서비스·게임·장소, 사람 이름 빼고)면 재료로 나누지 않고 `proper`로 캐시한다. 걷기는 길 대신 `/api/whereis`로 Claude의 한마디와 입력 그대로의 구글 지도 검색 링크를 보여 준다(지도 API는 부르지 않는다). 한마디는 입력 키로 캐시
 
 ### 아직 여정이 없는 주재료
 
