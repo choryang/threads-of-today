@@ -1,6 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 640" width="512" height="640">
-<!-- prop-drop: 기름·우유 방울 (fill 색만 바꿔 우유로) -->
-
-<path d="M384 350 Q430 410 430 430 A46 46 0 0 1 338 430 Q338 410 384 350 Z" fill="#3A3A48" stroke="#2A2A35" stroke-width="8" stroke-linejoin="round" stroke-linecap="round"/>
-<ellipse cx="364" cy="424" rx="9" ry="16" fill="#fff" opacity=".35"/>
-</svg>

@@ -1,4 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
-<!-- parcel-box: 택배 상자 -->
-<ellipse cx="64" cy="116" rx="40" ry="6" fill="#000" opacity=".14"/><path d="M20 50 L64 34 L108 50 V100 L64 116 L20 100 Z" fill="#D3A06A" stroke="#2A2A35" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/><path d="M20 50 L64 66 L108 50 M64 66 V116" fill="none" stroke="#2A2A35" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/><path d="M42 42 L86 58 V74" fill="none" stroke="#B07E48" stroke-width="7"/><rect x="72" y="80" width="24" height="14" rx="2" fill="#F3F1EA" transform="skewY(-20) translate(0 30)"/>
-</svg>

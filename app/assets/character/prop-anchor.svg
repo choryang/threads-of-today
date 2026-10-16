@@ -1,9 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 640" width="512" height="640">
-<!-- prop-anchor: 닻 -->
-
-<g fill="none" stroke-linecap="round">
-<circle cx="392" cy="378" r="16" stroke="#2A2A35" stroke-width="20"/><circle cx="392" cy="378" r="16" stroke="#45607F" stroke-width="8"/>
-<path d="M392 394 V510 M360 418 H424 M336 476 Q344 520 392 516 Q440 520 448 476" stroke="#2A2A35" stroke-width="22"/>
-<path d="M392 394 V510 M360 418 H424 M336 476 Q344 520 392 516 Q440 520 448 476" stroke="#45607F" stroke-width="10"/>
-</g>
-</svg>

@@ -1,4 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
-<!-- chilled-pork: 냉장 돼지고기 -->
-<ellipse cx="64" cy="116" rx="40" ry="6" fill="#000" opacity=".14"/><rect x="16" y="40" width="96" height="66" rx="10" fill="#E9EEF5" stroke="#2A2A35" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/><path d="M30 56 Q50 46 76 52 Q100 56 98 76 Q92 96 64 94 Q30 96 28 76 Q26 64 30 56 Z" fill="#F28F8F" stroke="#2A2A35" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/><path d="M30 70 H98 M30 82 H96" stroke="#FFF1E6" stroke-width="5"/><path d="M30 56 Q50 46 76 52" stroke="#FFF6EE" stroke-width="6" fill="none" stroke-linecap="round"/><path d="M16 40 H112" stroke="#BFE3F2" stroke-width="3"/><path d="M24 48 L40 48" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" opacity="0.8"/>
-</svg>

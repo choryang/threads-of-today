@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 640" width="512" height="640">
-<!-- hair-gray: 희끗한 짧은 머리 -->
-
-<path d="M124 262 Q112 128 256 116 Q400 128 388 262 Q384 214 360 196 Q336 222 300 204 Q276 228 240 206 Q210 226 180 204 Q148 218 124 262 Z" fill="#C4C6CC" stroke="#2A2A35" stroke-width="10" stroke-linejoin="round" stroke-linecap="round"/>
-<path d="M188 140 Q232 126 262 132" fill="none" stroke="#E6E8EC" stroke-width="10" stroke-linecap="round"/>
-<path d="M300 150 Q326 156 344 172" fill="none" stroke="#A3A6AE" stroke-width="7" stroke-linecap="round"/>
-</svg>

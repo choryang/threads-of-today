@@ -1,4 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
-<!-- wet-laver: 물김 -->
-<ellipse cx="64" cy="116" rx="40" ry="6" fill="#000" opacity=".14"/><path d="M40 100 Q26 70 44 40 Q52 28 48 18" fill="none" stroke="#3E6B4A" stroke-width="10" stroke-linecap="round"/><path d="M62 100 Q48 70 66 40 Q74 28 70 18" fill="none" stroke="#3E6B4A" stroke-width="10" stroke-linecap="round"/><path d="M84 100 Q70 70 88 40 Q96 28 92 18" fill="none" stroke="#3E6B4A" stroke-width="10" stroke-linecap="round"/><path d="M18 104 Q40 96 64 104 T110 104" stroke="#7FB2E5" stroke-width="6" fill="none" stroke-linecap="round"/>
-</svg>

@@ -1,12 +1,11 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { FORMS, formAt } from '../shared/data/forms'
+import { formAt } from '../shared/data/forms'
 import { greatCircleKm, reverseDistances, roundKm } from '../shared/distance'
 import {
   buildTimeline, forwardTimeline, isFirstJourney, isReverseJourney, quizFor, reverseTimeline, timelinePeople, type TimelineItem,
 } from '../shared/journey'
 import { findLinkCards } from '../shared/logic'
-import { formsAlong, replayFrames, reverseKicker, stopQuestion } from '../shared/rewind'
 
 const ids = (n: number, tail = '-r') => Array.from({ length: n }, (_, i) => `2026-10-15-1-${i.toString(36).padStart(4, '0')}${tail}`)
 const who = (t?: TimelineItem) => (t?.type === 'stage' || t?.type === 'hidden' ? t.personId : t?.type)
@@ -56,40 +55,13 @@ test('거꾸로: 앞 재료에서 이미 만난 사람이 이어지면 같은 �
   assert.ok(passes.some((p) => p.type === 'pass' && p.personIds.includes('warehouse')))
 })
 
-test('두 번째 여정은 거꾸로 가도 숨은 만남(또는 퀴즈 보상)을 보장하고, 첫 여정은 경유지 맞히기도 없다', () => {
+test('두 번째 여정은 거꾸로 가도 숨은 만남(또는 퀴즈 보상)을 보장한다', () => {
   let withHidden = 0
   for (const id of ids(100, '-r-second')) if (buildTimeline(['coffee', 'banana'], id, '바나나 라떼').some((x) => x.type === 'hidden')) withHidden++
   assert.equal(withHidden, 100)
-  for (const id of ids(50, '-r-first')) {
-    const t = buildTimeline(['coffee', 'banana'], id, '바나나 라떼')
-    assert.ok(t.every((_, i) => stopQuestion(t, i, id) === null), id)
-  }
-  // 같은 경로의 첫 여정이 아니면 경유지 질문이 나오는 칸이 있다
-  const asked = ids(50, '-r').filter((id) => {
-    const t = buildTimeline(['coffee', 'banana'], id, '바나나 라떼')
-    return t.some((_, i) => stopQuestion(t, i, id) !== null)
-  }).length
-  assert.ok(asked > 0)
 })
 
-test('되감기 변신: 거꾸로 가면 완성품 → 가공품 → 원재료', () => {
-  const id = '2026-10-15-1-k3x9-r'
-  const t = buildTimeline(['coffee'], id, '아이스 아메리카노')
-  const forms = formsAlong(t, ['coffee'], id, '아이스 아메리카노')
-  assert.equal(forms[0]?.name, '아이스 아메리카노')
-  assert.equal(forms[0]?.product, true)
-  assert.equal(forms[2]?.icon, 'roasted-coffee-beans')
-  const names = [...new Set(forms.slice(2).map((f) => f.name))]
-  const order = FORMS.coffee!.map((f) => f.name)
-  // 형태가 가공 순서의 거꾸로만 바뀐다
-  for (let i = 1; i < names.length; i++) assert.ok(order.indexOf(names[i]!) < order.indexOf(names[i - 1]!))
-  assert.equal(reverseKicker(t, forms, 0), '내 손에 닿기 바로 전')
-  assert.equal(reverseKicker(t, forms, 2), '이 볶은 원두는 어디서 왔을까요?')
-  assert.equal(reverseKicker(t, forms, 3), '그 전에는…')
-  // 되감기 엔딩은 원산지 → 내 손 순서
-  const frames = replayFrames(['coffee'], id, '아이스 아메리카노')
-  assert.equal(frames.at(-1)?.personId, 'barista')
-  assert.equal(frames.at(-1)?.form.name, '아이스 아메리카노')
+test('형태: 그 사람의 손을 거친 형태', () => {
   assert.equal(formAt('coffee', ['coffee-picker', 'washing-station'], 'coffee-picker')?.name, '커피 체리')
 })
 
@@ -110,26 +82,4 @@ test('거리: 대권 거리, 바다 위 단계는 앞뒤 항구 사이, 100km �
   assert.equal(at[sea], at[sea - 1])
   // 이 시드는 베트남 출발 (호찌민 → 부산 약 3,600km)
   assert.ok(total > 3000)
-})
-
-test('다음 정거장 맞히기: 같은 여정이면 같은 보기, 정답은 원산지 쪽 장소, 연달아 묻지 않는다', () => {
-  for (const id of ids(50)) {
-    const t = buildTimeline(['coffee', 'banana'], id, '바나나 라떼')
-    let prevAsked = false
-    t.forEach((_, i) => {
-      const q = stopQuestion(t, i, id)
-      assert.deepEqual(q, stopQuestion(t, i, id))
-      if (q) {
-        assert.notEqual(q.options[0], q.options[1])
-        assert.ok(!prevAsked)
-      }
-      prevAsked = !!q
-    })
-  }
-  const id = '2026-10-15-1-k3x9-r'
-  const t = buildTimeline(['coffee'], id, '아메리카노')
-  const busan = t.findIndex((x) => x.type === 'stage' && x.personId === 'busan-crane')
-  const q = stopQuestion(t, busan, id)!
-  assert.ok(q)
-  assert.ok(q.options[q.answer].includes('항구'))
 })

@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 640" width="512" height="640">
-<!-- hat-beanie: 방울 비니 -->
-
-<circle cx="256" cy="86" r="26" fill="#F3F1EA" stroke="#2A2A35" stroke-width="10" stroke-linejoin="round" stroke-linecap="round"/>
-<path d="M146 200 Q146 96 256 96 Q366 96 366 200 Z" fill="#3B6EA8" stroke="#2A2A35" stroke-width="10" stroke-linejoin="round" stroke-linecap="round"/>
-<rect x="138" y="180" width="236" height="40" rx="18" fill="#2E5888" stroke="#2A2A35" stroke-width="10" stroke-linejoin="round" stroke-linecap="round"/>
-<path d="M170 188 V212 M200 188 V212 M230 188 V212 M260 188 V212 M290 188 V212 M320 188 V212 M348 188 V212" stroke="#24476F" stroke-width="5"/>
-</svg>

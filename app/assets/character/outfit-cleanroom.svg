@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 640" width="512" height="640">
-<!-- outfit-cleanroom: 온몸을 덮는 방진복 -->
-<g class="sleeve-l"><path d="M196 386 Q160 420 150 452" fill="none" stroke="#2A2A35" stroke-width="56" stroke-linecap="round"/><path d="M196 386 Q160 420 150 452" fill="none" stroke="#E9F1FB" stroke-width="38" stroke-linecap="round"/></g><g class="sleeve-r"><path d="M316 386 Q352 420 362 452" fill="none" stroke="#2A2A35" stroke-width="56" stroke-linecap="round"/><path d="M316 386 Q352 420 362 452" fill="none" stroke="#E9F1FB" stroke-width="38" stroke-linecap="round"/></g><path d="M206 540 V588 H250 V540 Z" fill="#E9F1FB" stroke="#2A2A35" stroke-width="10" stroke-linejoin="round" stroke-linecap="round"/><path d="M262 540 V588 H306 V540 Z" fill="#E9F1FB" stroke="#2A2A35" stroke-width="10" stroke-linejoin="round" stroke-linecap="round"/>
-<path d="M198 590 Q198 574 228 574 Q256 574 256 590 Z M256 590 Q256 574 286 574 Q314 574 314 590 Z" fill="#9EC3E8" stroke="#2A2A35" stroke-width="10" stroke-linejoin="round" stroke-linecap="round"/>
-<path d="M190 356 Q256 382 322 356 Q340 450 334 528 Q332 552 306 552 H206 Q180 552 178 528 Q172 450 190 356 Z" fill="#E9F1FB" stroke="#2A2A35" stroke-width="10" stroke-linejoin="round" stroke-linecap="round"/>
-<path d="M256 380 V548" stroke="#9EC3E8" stroke-width="8"/>
-<rect x="278" y="410" width="34" height="26" rx="5" fill="#9EC3E8"/>
-</svg>

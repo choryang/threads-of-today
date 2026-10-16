@@ -8,8 +8,6 @@
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
     "check:data": "tsx scripts/check-data.ts",
-    "check:day-types": "tsx scripts/day-type-dist.ts",
-    "build:og": "tsx scripts/build-og.ts",
     "build:og-cards": "tsx scripts/build-og-cards.ts",
     "build:map-overview": "tsx scripts/build-map-overview.ts",
     "typecheck": "nuxt typecheck",

@@ -1,4 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="304 332 156 156" width="128" height="128">
-<!-- prop-chip: 반도체 칩 -->
-<path d="M364 360 V374 M364 446 V460 M332 414 H346 M418 414 H432" stroke="#C9A24A" stroke-width="7" stroke-linecap="round"/><path d="M382 360 V374 M382 446 V460 M332 432 H346 M418 432 H432" stroke="#C9A24A" stroke-width="7" stroke-linecap="round"/><path d="M400 360 V374 M400 446 V460 M332 450 H346 M418 450 H432" stroke="#C9A24A" stroke-width="7" stroke-linecap="round"/><rect x="346" y="374" width="72" height="72" rx="8" fill="#3D4A5C" stroke="#2A2A35" stroke-width="8" stroke-linejoin="round" stroke-linecap="round"/><rect x="364" y="392" width="36" height="36" rx="4" fill="#8C9AAD"/>
-</svg>

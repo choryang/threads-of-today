@@ -1,9 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 640" width="512" height="640">
-<!-- outfit-rider: 배달·택배 점퍼 -->
-<g class="sleeve-l"><path d="M196 386 Q170 404 158 432" fill="none" stroke="#2A2A35" stroke-width="56" stroke-linecap="round"/><path d="M196 386 Q170 404 158 432" fill="none" stroke="#2F80C9" stroke-width="38" stroke-linecap="round"/></g><g class="sleeve-r"><path d="M316 386 Q342 404 354 432" fill="none" stroke="#2A2A35" stroke-width="56" stroke-linecap="round"/><path d="M316 386 Q342 404 354 432" fill="none" stroke="#2F80C9" stroke-width="38" stroke-linecap="round"/></g><path d="M190 356 Q256 382 322 356 Q340 450 334 528 Q332 552 306 552 H206 Q180 552 178 528 Q172 450 190 356 Z" fill="#2F80C9" stroke="#2A2A35" stroke-width="10" stroke-linejoin="round" stroke-linecap="round"/>
-<path d="M222 366 Q256 392 290 366 L284 352 Q256 372 228 352 Z" fill="#256AA8" stroke="#2A2A35" stroke-linejoin="round" stroke-linecap="round" stroke-width="7"/>
-<path d="M256 384 V550" stroke="#1E5A8F" stroke-width="7"/>
-<path d="M178 452 H334" stroke="#F3F1EA" stroke-width="14"/>
-<path d="M178 452 H334" stroke="#F2C14E" stroke-width="5"/>
-<rect x="280" y="480" width="34" height="30" rx="5" fill="#256AA8" stroke="#2A2A35" stroke-linejoin="round" stroke-linecap="round" stroke-width="6"/>
-</svg>

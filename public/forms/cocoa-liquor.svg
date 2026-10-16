@@ -1,4 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
-<!-- cocoa-liquor: 코코아 원료 -->
-<ellipse cx="64" cy="116" rx="40" ry="6" fill="#000" opacity=".14"/><path d="M24 62 L54 46 H104 V88 L74 104 H24 Z" fill="#5A3420" stroke="#2A2A35" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/><path d="M24 62 H74 V104 M74 62 L104 46" fill="none" stroke="#3A2010" stroke-width="3"/><path d="M36 74 H62 M36 88 H62" stroke="#7A4A2E" stroke-width="4"/><path d="M30 66 L44 66" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" opacity="0.4"/>
-</svg>

@@ -1,4 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
-<!-- pulp-bale: 펄프 -->
-<ellipse cx="64" cy="116" rx="40" ry="6" fill="#000" opacity=".14"/><rect x="22" y="92" width="84" height="16" rx="3" fill="#EFE8D8" stroke="#2A2A35" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/><rect x="22" y="76" width="84" height="16" rx="3" fill="#EFE8D8" stroke="#2A2A35" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/><rect x="22" y="60" width="84" height="16" rx="3" fill="#EFE8D8" stroke="#2A2A35" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/><rect x="22" y="44" width="84" height="16" rx="3" fill="#EFE8D8" stroke="#2A2A35" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/><path d="M50 40 V108 M78 40 V108" stroke="#8C9AAD" stroke-width="4"/>
-</svg>

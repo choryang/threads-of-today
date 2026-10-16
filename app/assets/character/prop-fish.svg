@@ -1,9 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 640" width="512" height="640">
-<!-- prop-fish: 물고기 -->
-
-<path d="M366 476 L346 446 L346 506 Z" fill="#F28B6B" stroke="#2A2A35" stroke-width="8" stroke-linejoin="round" stroke-linecap="round"/>
-<ellipse cx="418" cy="476" rx="58" ry="32" fill="#F28B6B" stroke="#2A2A35" stroke-width="8" stroke-linejoin="round" stroke-linecap="round"/>
-<path d="M404 448 Q418 476 404 504" fill="none" stroke="#D96F50" stroke-width="6"/>
-<circle cx="448" cy="468" r="7" fill="#2A2A35"/>
-<path d="M466 484 Q458 490 450 488" fill="none" stroke="#2A2A35" stroke-width="5" stroke-linecap="round"/>
-</svg>

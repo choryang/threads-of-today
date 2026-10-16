@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 640" width="512" height="640">
-<!-- prop-leaf: 잎사귀 -->
-
-<path d="M366 470 Q350 380 444 352 Q456 448 366 470 Z" fill="#6DBA6A" stroke="#2A2A35" stroke-width="8" stroke-linejoin="round" stroke-linecap="round"/>
-<path d="M366 470 Q392 420 430 372" fill="none" stroke="#4E9A4C" stroke-width="7" stroke-linecap="round"/>
-<path d="M392 432 L410 420 M380 452 L398 446" stroke="#4E9A4C" stroke-width="5" stroke-linecap="round"/>
-</svg>

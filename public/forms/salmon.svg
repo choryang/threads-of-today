@@ -1,4 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
-<!-- salmon: 연어 -->
-<ellipse cx="64" cy="116" rx="40" ry="6" fill="#000" opacity=".14"/><path d="M14 66 Q36 34 78 40 Q100 44 106 66 Q100 88 78 92 Q36 98 14 66 Z" fill="#9AB0C6" stroke="#2A2A35" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/><path d="M28 74 Q56 92 96 78" stroke="#F7C2A4" stroke-width="7" fill="none" stroke-linecap="round"/><path d="M106 66 L122 48 L118 66 L122 84 Z" fill="#9AB0C6" stroke="#2A2A35" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/><circle cx="34" cy="60" r="4" fill="#2A2A35"/><path d="M50 56 q4 4 8 0 M66 54 q4 4 8 0" stroke="#5A6F8E" stroke-width="2.5" fill="none"/>
-</svg>

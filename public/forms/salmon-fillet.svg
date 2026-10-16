@@ -1,4 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
-<!-- salmon-fillet: 손질한 연어 -->
-<ellipse cx="64" cy="116" rx="40" ry="6" fill="#000" opacity=".14"/><path d="M18 76 Q30 46 72 44 Q108 46 110 70 Q104 92 70 94 Q34 96 18 76 Z" fill="#F28B6B" stroke="#2A2A35" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/><path d="M42 50 Q34 70 42 90" stroke="#FFD2BE" stroke-width="4" fill="none"/><path d="M58 50 Q50 70 58 90" stroke="#FFD2BE" stroke-width="4" fill="none"/><path d="M74 50 Q66 70 74 90" stroke="#FFD2BE" stroke-width="4" fill="none"/><path d="M90 50 Q82 70 90 90" stroke="#FFD2BE" stroke-width="4" fill="none"/>
-</svg>

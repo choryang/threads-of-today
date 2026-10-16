@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 640" width="512" height="640">
-<!-- prop-seed: 새싹이 난 씨앗 -->
-
-<path d="M372 446 Q368 404 340 388 M372 430 Q380 396 412 386" fill="none" stroke="#5A8F4E" stroke-width="8" stroke-linecap="round"/>
-<ellipse cx="336" cy="386" rx="20" ry="12" fill="#6DBA6A" stroke="#2A2A35" stroke-width="8" stroke-linejoin="round" stroke-linecap="round" transform="rotate(-20 336 386)"/>
-<ellipse cx="416" cy="384" rx="22" ry="13" fill="#6DBA6A" stroke="#2A2A35" stroke-width="8" stroke-linejoin="round" stroke-linecap="round" transform="rotate(15 416 384)"/>
-<ellipse cx="372" cy="456" rx="30" ry="20" fill="#B5823F" stroke="#2A2A35" stroke-width="8" stroke-linejoin="round" stroke-linecap="round"/>
-</svg>

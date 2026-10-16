@@ -1,4 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
-<!-- milk-carton: 팩 우유 -->
-<ellipse cx="64" cy="116" rx="40" ry="6" fill="#000" opacity=".14"/><path d="M36 40 L64 40 L64 112 H36 Z" fill="#FFFFFF" stroke="#2A2A35" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/><path d="M64 40 L94 40 L94 112 H64 Z" fill="#E9EEF5" stroke="#2A2A35" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/><path d="M36 40 L50 18 H78 L94 40" fill="#FFFFFF" stroke="#2A2A35" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/><path d="M50 18 L64 40" fill="none" stroke="#2A2A35" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/><rect x="36" y="64" width="58" height="30" fill="#7FB2E5" stroke="#2A2A35" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/><path d="M48 80 q8 -8 16 0 t16 0" stroke="#fff" stroke-width="4" fill="none" stroke-linecap="round"/>
-</svg>

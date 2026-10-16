@@ -1,4 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
-<!-- paper: 종이 -->
-<ellipse cx="64" cy="116" rx="40" ry="6" fill="#000" opacity=".14"/><path d="M24 96 L40 50 H104 L88 96 Z" fill="#FFFFFF" stroke="#2A2A35" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/><path d="M28 86 L44 40 H100 L84 86 Z" fill="#FFFFFF" stroke="#2A2A35" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/><path d="M32 76 L48 30 H96 L80 76 Z" fill="#FFFFFF" stroke="#2A2A35" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/><path d="M50 66 H84 M46 76 H76" stroke="#C9D2DE" stroke-width="4" stroke-linecap="round"/>
-</svg>

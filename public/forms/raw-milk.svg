@@ -1,4 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
-<!-- raw-milk: 갓 짠 원유 -->
-<ellipse cx="64" cy="116" rx="40" ry="6" fill="#000" opacity=".14"/><path d="M44 30 H84 V40 Q98 48 98 62 V104 Q98 112 90 112 H38 Q30 112 30 104 V62 Q30 48 44 40 Z" fill="#C9D2DE" stroke="#2A2A35" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/><rect x="40" y="18" width="48" height="14" rx="5" fill="#AEB8C6" stroke="#2A2A35" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/><path d="M30 74 H98" stroke="#AEB8C6" stroke-width="6"/><path d="M40 62 L40 100" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" opacity="0.6"/>
-</svg>

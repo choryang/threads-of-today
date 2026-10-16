@@ -1,6 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 640" width="512" height="640">
-<!-- hat-hood: 방진복 후드 -->
-
-<path d="M108 300 Q98 98 256 92 Q414 98 404 300 Q406 364 380 384 H132 Q106 364 108 300 Z M256 178 A104 92 0 1 0 256.1 178 Z" fill="#F4F7FB" fill-rule="evenodd" stroke="#2A2A35" stroke-width="10" stroke-linejoin="round" stroke-linecap="round"/>
-<ellipse cx="256" cy="270" rx="104" ry="92" fill="none" stroke="#C9D2DE" stroke-width="8"/>
-</svg>

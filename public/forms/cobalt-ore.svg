@@ -1,4 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
-<!-- cobalt-ore: 코발트 광석 -->
-<ellipse cx="64" cy="116" rx="40" ry="6" fill="#000" opacity=".14"/><path d="M24 92 L34 56 L58 40 L86 46 L106 70 L100 104 L64 112 L34 108 Z" fill="#6E7D8C" stroke="#2A2A35" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/><circle cx="44" cy="90" r="5.3" fill="#3B6EA8"/><circle cx="50" cy="76" r="4.3" fill="#3B6EA8"/><circle cx="72" cy="88" r="3.3" fill="#3B6EA8"/><circle cx="38" cy="89" r="4.3" fill="#3B6EA8"/><circle cx="79" cy="56" r="4.3" fill="#3B6EA8"/><circle cx="76" cy="65" r="5.8" fill="#3B6EA8"/><circle cx="86" cy="57" r="3.1" fill="#3B6EA8"/><path d="M58 40 L64 70 L106 70 M64 70 L34 108" fill="none" stroke="#00000030" stroke-width="3"/>
-</svg>

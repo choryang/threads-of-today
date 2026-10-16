@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="310 342 152 152" width="128" height="128">
-<!-- prop-orange: 오렌지 -->
-
-<circle cx="384" cy="430" r="36" fill="#F39A2B" stroke="#2A2A35" stroke-width="8" stroke-linejoin="round" stroke-linecap="round"/>
-<path d="M384 394 Q388 380 400 376" fill="none" stroke="#5A8F4E" stroke-width="7" stroke-linecap="round"/>
-<ellipse cx="408" cy="376" rx="14" ry="7" fill="#6DBA6A" stroke="#2A2A35" stroke-linejoin="round" stroke-linecap="round" stroke-width="5"/>
-<circle cx="370" cy="418" r="7" fill="#fff" opacity=".45"/>
-</svg>

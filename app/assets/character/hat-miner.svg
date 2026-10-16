@@ -1,9 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 640" width="512" height="640">
-<!-- hat-miner: 헤드램프 달린 빨간 안전모 -->
-
-<path d="M146 196 Q146 80 256 78 Q366 80 366 196 Z" fill="#E0705F" stroke="#2A2A35" stroke-width="10" stroke-linejoin="round" stroke-linecap="round"/>
-<rect x="124" y="184" width="264" height="30" rx="15" fill="#B85646" stroke="#2A2A35" stroke-width="10" stroke-linejoin="round" stroke-linecap="round"/>
-<path d="M256 116 L206 30 M256 116 L306 30" stroke="#FFF4C2" stroke-width="10" opacity=".55" stroke-linecap="round"/>
-<circle cx="256" cy="136" r="28" fill="#FFF4C2" stroke="#2A2A35" stroke-width="10" stroke-linejoin="round" stroke-linecap="round"/>
-<circle cx="256" cy="136" r="14" fill="#FFE07A"/>
-</svg>

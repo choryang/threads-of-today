@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 640" width="512" height="640">
-<!-- prop-pickaxe: 곡괭이 -->
-
-<path d="M362 494 L414 360" stroke="#2A2A35" stroke-width="24" stroke-linecap="round"/>
-<path d="M362 494 L414 360" stroke="#A8743E" stroke-width="12" stroke-linecap="round"/>
-<path d="M352 356 Q414 318 474 380" fill="none" stroke="#2A2A35" stroke-width="28" stroke-linecap="round"/>
-<path d="M352 356 Q414 318 474 380" fill="none" stroke="#8C9AAD" stroke-width="16" stroke-linecap="round"/>
-</svg>

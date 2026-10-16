@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 640" width="512" height="640">
-<!-- outfit-apron: 가게 앞치마 -->
-<g class="sleeve-l"><path d="M196 386 Q170 404 158 432" fill="none" stroke="#2A2A35" stroke-width="56" stroke-linecap="round"/><path d="M196 386 Q170 404 158 432" fill="none" stroke="#EDE7D9" stroke-width="38" stroke-linecap="round"/></g><g class="sleeve-r"><path d="M316 386 Q342 404 354 432" fill="none" stroke="#2A2A35" stroke-width="56" stroke-linecap="round"/><path d="M316 386 Q342 404 354 432" fill="none" stroke="#EDE7D9" stroke-width="38" stroke-linecap="round"/></g><path d="M190 356 Q256 382 322 356 Q340 450 334 528 Q332 552 306 552 H206 Q180 552 178 528 Q172 450 190 356 Z" fill="#EDE7D9" stroke="#2A2A35" stroke-width="10" stroke-linejoin="round" stroke-linecap="round"/>
-<path d="M206 400 Q256 420 306 400 L316 548 Q256 560 196 548 Z" fill="#3F6E5E" stroke="#2A2A35" stroke-width="10" stroke-linejoin="round" stroke-linecap="round"/>
-<path d="M206 400 L222 366 M306 400 L290 366" stroke="#3F6E5E" stroke-width="12" stroke-linecap="round"/>
-<rect x="230" y="460" width="52" height="38" rx="8" fill="#355E50" stroke="#2A2A35" stroke-linejoin="round" stroke-linecap="round" stroke-width="7"/>
-<path d="M178 470 Q160 474 150 486" fill="none" stroke="#3F6E5E" stroke-width="8" stroke-linecap="round"/>
-</svg>

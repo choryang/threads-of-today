@@ -1,6 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 640" width="512" height="640">
-<!-- hair-bob: 단발 -->
-
-<path d="M116 334 Q100 150 256 112 Q412 150 396 334 Q382 344 366 332 Q372 250 350 210 Q300 222 256 206 Q212 222 162 210 Q140 250 146 332 Q130 344 116 334 Z" fill="#3A2E2A" stroke="#2A2A35" stroke-width="10" stroke-linejoin="round" stroke-linecap="round"/>
-<path d="M190 140 Q232 124 266 130" fill="none" stroke="#5E4A40" stroke-width="10" stroke-linecap="round"/>
-</svg>

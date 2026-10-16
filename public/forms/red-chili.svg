@@ -1,4 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
-<!-- red-chili: 붉은 고추 -->
-<ellipse cx="64" cy="116" rx="40" ry="6" fill="#000" opacity=".14"/><path d="M40 34 Q36 80 70 108 Q96 116 84 102 Q60 80 56 34 Z" fill="#D2352B" stroke="#2A2A35" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/><path d="M38 34 Q48 22 58 34 Z" fill="#5A9A4E" stroke="#2A2A35" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/><path d="M48 28 Q46 16 54 10" stroke="#5A9A4E" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M46 48 L52 78" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" opacity="0.45"/>
-</svg>

@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 640" width="512" height="640">
-<!-- prop-crane: 크레인 갈고리 -->
-
-<path d="M392 330 V410" stroke="#45607F" stroke-width="8"/>
-<rect x="378" y="404" width="28" height="22" rx="5" fill="#F2C14E" stroke="#2A2A35" stroke-width="8" stroke-linejoin="round" stroke-linecap="round"/>
-<path d="M392 426 V446 Q392 476 368 476 Q346 476 346 456" fill="none" stroke="#2A2A35" stroke-width="22" stroke-linecap="round"/>
-<path d="M392 426 V446 Q392 476 368 476 Q346 476 346 456" fill="none" stroke="#8C9AAD" stroke-width="10" stroke-linecap="round"/>
-</svg>
